@@ -1,0 +1,39 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "perigraph"
+version = "0.1.0"
+description = "A record of what surrounded the model: the harness, its per-part content digests, and what the record cannot see"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+authors = [{ name = "littlemex" }]
+keywords = ["llm", "observability", "provenance", "harness", "opentelemetry"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+# A shim that a sender installs into its own process must not drag an evidence package in with it, and the
+# collector is arithmetic over a dict either way. The tracer is an extra, not a requirement: a sender with no
+# tracer still gets a record it can carry however it likes.
+dependencies = []
+
+[project.optional-dependencies]
+otel = ["opentelemetry-api>=1.20"]
+dev = ["pytest>=7"]
+
+[project.urls]
+Homepage = "https://github.com/littlemex/perigraph"
+Issues = "https://github.com/littlemex/perigraph/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/perigraph"]
+
+[tool.hatch.build]
+# The spec travels with the package: a reader of an installed copy must be able to check it against the
+# vocabularies it was built from, and a package that left them behind would be unverifiable.
+include = ["src/perigraph", "spec/vocabularies.json"]
