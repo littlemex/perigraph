@@ -1,0 +1,26 @@
+{
+  "name": "@perigraph/perigraph",
+  "version": "0.1.0",
+  "description": "A record of what surrounded the model: the harness, its per-part content digests, and what the record cannot see",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "vocabularies.json"
+  ],
+  "scripts": {
+    "build": "tsc && node -e \"const f=require('node:fs');f.copyFileSync('vocabularies.json','dist/vocabularies.json');f.copyFileSync('fixtures-identity.json','dist/fixtures-identity.json')\"",
+    "test": "npm run build && node --test dist/test/",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "typescript": "^5.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/littlemex/perigraph.git"
+  }
+}

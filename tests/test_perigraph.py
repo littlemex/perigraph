@@ -6,6 +6,7 @@ is why the instruction is hashed raw and why a part nobody named is treated as a
 """
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -308,3 +309,33 @@ def test_emit_sets_every_attribute_on_a_span_and_survives_one_it_rejects():
     assert list(attrs)[1] == rejected, "the rejected key has to be early for this test to mean anything"
     assert rejected not in span.attrs
     assert set(attrs) - {rejected} == set(span.attrs), "everything except the rejected key should have been set"
+
+
+# --- the golden fixtures both implementations must reproduce ---------------------------------------------------------------
+
+FIXTURES = json.loads((ROOT / "spec" / "fixtures" / "identity.json").read_text(encoding="utf-8"))
+
+
+def test_every_golden_identity_is_reproduced():
+    """The fixtures exist because the second implementation could not have matched these from the spec alone: nothing said
+    how the identity combines its parts, that it is truncated, or what bytes a string has. A divergence here is now a test
+    failure on both sides rather than something discovered by comparing two records in production."""
+    for case in FIXTURES["cases"]:
+        r = collect.from_request(case["body"], collector="fixture", version="1")
+        assert r.identity == case["identity"], case["name"]
+        got = next((p.content_digest for p in r.parts if p.kind == "instruction"), None)
+        assert got == case["instruction_digest"], case["name"]
+
+
+def test_a_non_ascii_instruction_is_covered_because_that_is_where_an_encoding_disagreement_shows():
+    """A UTF-16 implementation would produce a different identity for every non-ASCII instruction while passing every test
+    it wrote for itself, so the fixture set has to contain one."""
+    assert any(any(ord(c) > 127 for c in m.get("content", ""))
+               for case in FIXTURES["cases"] for m in case["body"]["messages"])
+
+
+def test_the_fixtures_hold_no_parsed_digest():
+    """A `parsed` digest is collector-local by spec, and the two reference implementations legitimately disagree on one.
+    Pinning one here would freeze an accident of a serialiser."""
+    assert all("instruction_digest" in case and set(case) == {"name", "body", "identity", "instruction_digest"}
+               for case in FIXTURES["cases"])

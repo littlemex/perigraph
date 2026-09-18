@@ -1,0 +1,94 @@
+{
+  "note": "Golden fixtures every implementation MUST reproduce. Only `model_visible` values appear here: a `parsed` digest is collector-local by spec and the two reference implementations legitimately disagree on one. Produced by the Python implementation and verified against the TypeScript one; a future divergence on any identity here is a test failure on both sides rather than a discovery made by comparing two records in production.",
+  "cases": [
+    {
+      "name": "terse instruction with a tool and two sampler knobs",
+      "body": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Answer with the option letter only. Do not explain."
+          },
+          {
+            "role": "user",
+            "content": "Q1"
+          }
+        ],
+        "tools": [
+          {
+            "function": {
+              "name": "search",
+              "parameters": {
+                "type": "object"
+              }
+            }
+          }
+        ],
+        "temperature": 0.0,
+        "top_p": 1.0
+      },
+      "identity": "eeb813c17bed213fe02c7100",
+      "instruction_digest": "a57ac565bffcbeaeb74a934deef4f5e089ea851bb1d23001b2e578f137473a0a"
+    },
+    {
+      "name": "instruction only",
+      "body": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Terse."
+          }
+        ]
+      },
+      "identity": "785c5f3fce7a1cfb747ab8bd",
+      "instruction_digest": "adfaa1973e3c206b83d071dbcc6611aa3e358a9e9d1ddcfc493dd5d4990c25ed"
+    },
+    {
+      "name": "two system messages, newline joined",
+      "body": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "First."
+          },
+          {
+            "role": "system",
+            "content": "Second."
+          },
+          {
+            "role": "user",
+            "content": "Q"
+          }
+        ]
+      },
+      "identity": "6e534c0481805f3cfb3189d3",
+      "instruction_digest": "4bc5477fed25998af01e98e34df946bf1e65236886e0b042adf832b7bcf4373a"
+    },
+    {
+      "name": "a non-ascii instruction, which is where an encoding disagreement would show",
+      "body": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "選択肢の文字だけで答えよ。説明するな。"
+          }
+        ]
+      },
+      "identity": "1413e77105d3bec0f8ab200a",
+      "instruction_digest": "bbf45641c651f3089f079f3a5bca0b487fbc59dd95efcede9ddcab59e743025b"
+    },
+    {
+      "name": "whitespace differs from the first case only",
+      "body": {
+        "messages": [
+          {
+            "role": "system",
+            "content": " Answer with the option letter only. Do not explain."
+          }
+        ]
+      },
+      "identity": "35d1123979a29b8ddba4d753",
+      "instruction_digest": "00855b7d30a6499b70ec45e7973b6346c5fc88a2d0c2e7b4a8a4ec74ab2c03cf"
+    }
+  ]
+}

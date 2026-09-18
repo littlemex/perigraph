@@ -24,8 +24,13 @@ comparison at all.
 **Not a logging format, and not an evaluation framework.** It carries the facts a claim about accuracy or cost
 needs in order to be checkable, and it is deliberately unopinionated about what you then claim.
 
-**Not a standard.** It is a spec with one implementation, published in the hope that the shape is right. The
-`spec/` directory is normative; this README is not.
+**Not a standard.** It is a spec with two implementations by one author, published in the hope that the shape is
+right. The `spec/` directory is normative; this README is not.
+
+Writing the second implementation found **five sentences that read two ways**, one of them fatal to interoperability:
+the identity's serialisation was never specified, so two conformant senders would have produced two identities for one
+run. All five are fixed and pinned by fixtures. See [docs/ambiguities.md](docs/ambiguities.md) -- four of the five were
+invisible from inside the first implementation, whose tests all passed before and after.
 
 ## The design in one table
 
@@ -91,9 +96,11 @@ unequal, so a real difference is **missed**. A rule that could authorise would t
 |---|---|
 | `spec/vocabularies.json` | normative, version 1 |
 | `SPEC.md` | the prose that goes with it |
-| Python collector and wire form | implemented |
-| Injection into a live client | not implemented |
-| A second implementation | none, and the spec is not testable as a spec until there is one |
+| Python sender and receiver | implemented, 37 tests |
+| TypeScript sender | implemented, 29 tests |
+| `spec/fixtures/identity.json` | golden identities both implementations reproduce, including a non-ASCII one |
+| Riding on a tracer's auto-instrumentation | not implemented -- one explicit `wrap` at the client boundary for now |
+| A third implementation, by somebody else | none. **That is the remaining test** |
 
 ## Relationship to the projects it came out of
 
