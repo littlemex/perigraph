@@ -52,7 +52,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ["20", "22"]
+        # Node 20 reached end of life on 2026-04-30 and is deliberately not here. It is also the version that forced
+        # the decision: `node --test` took a DIRECTORY on 20 and takes a GLOB from 22, and no single argument works on
+        # both -- so supporting an unsupported runtime would have meant a shim in the test script to hide it.
+        node: ["22", "24"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -79,7 +82,7 @@ jobs:
           python-version: "3.12"
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
       - run: npm install && npm run build
         working-directory: typescript
       - name: both senders agree on every identity, and disagree only where the spec says they may

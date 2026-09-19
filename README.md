@@ -102,7 +102,7 @@ unequal, so a real difference is **missed**. A rule that could authorise would t
 | Riding on a tracer's auto-instrumentation | not implemented -- one explicit `wrap` at the client boundary for now |
 | A third implementation, by somebody else | none. **That is the remaining test** -- see [CONTRIBUTING.md](CONTRIBUTING.md) |
 
-CI runs both suites on four Python versions and two Node versions, proves the spec ships **inside** each built package,
+CI runs both suites on four Python versions (3.10-3.13) and two Node versions (22, 24 -- 20 is end of life), proves the spec ships **inside** each built package,
 checks that the three copies of the normative JSON are byte-identical, and runs `tools/cross_check.py` -- **the only
 check neither implementation can pass by agreeing with itself.**
 
