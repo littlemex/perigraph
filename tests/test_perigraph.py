@@ -339,3 +339,58 @@ def test_the_fixtures_hold_no_parsed_digest():
     Pinning one here would freeze an accident of a serialiser."""
     assert all("instruction_digest" in case and set(case) == {"name", "body", "identity", "instruction_digest"}
                for case in FIXTURES["cases"])
+
+
+# --- the prose and the normative JSON must not drift apart -----------------------------------------------------------------
+
+SPEC_MD = (ROOT / "SPEC.md").read_text(encoding="utf-8")
+RAW_SPEC = json.loads((ROOT / "spec" / "vocabularies.json").read_text(encoding="utf-8"))
+
+
+def test_every_closed_vocabulary_value_appears_in_the_prose():
+    """SPEC.md says the JSON wins where they disagree, and that is the right tie-break -- but a reader follows the prose,
+    so a value the prose never mentions is a value nobody implements. This was not hypothetical: the digest rules, the
+    collector-local rule and the ninth receiver obligation lived in the JSON for a commit while SPEC.md said nothing."""
+    for section in ("parts", "sourcing", "boundaries", "absence_reasons", "status", "context_crossings",
+                    "tool_determinism", "billed_legs"):
+        for value in RAW_SPEC[section]["values"]:
+            assert value in SPEC_MD, f"{section}.{value} is in the vocabulary and not in SPEC.md"
+
+
+def test_every_receiver_obligation_appears_in_the_prose():
+    """Checked by the distinctive phrase rather than the whole sentence, because the prose is allowed to word it its own
+    way -- what is not allowed is the prose being silent about a refusal that decides conformance."""
+    markers = {
+        "status is not complete": "status",
+        "record with no identity": "no identifying part",
+        "not_reachable": "not_reachable",
+        "not model_visible": "model_visible",
+        "missing different facts": "missing different facts",
+        "different turn counts": "turn count",
+        "context_partitioning is unrecorded": "context_partitioning",
+        "different collectors or different collector versions": "collector-local",
+        "occasion and the tool declared determinism": "declared_deterministic",
+    }
+    obligations = RAW_SPEC["receiver_obligations"]["must_refuse"]
+    assert len(obligations) == len(markers), (
+        f"{len(obligations)} obligations and {len(markers)} markers; a new obligation needs a marker here and a sentence "
+        f"in SPEC.md, and adding one is a breaking change under section 6")
+    matched = set()
+    for phrase, marker in markers.items():
+        hits = [o for o in obligations if phrase in o]
+        assert len(hits) == 1, f"{phrase!r} matches {len(hits)} obligations; a marker has to name exactly one"
+        matched.add(hits[0])
+        assert marker in SPEC_MD, f"SPEC.md never mentions {marker!r}, which decides conformance"
+    assert matched == set(obligations), f"unmatched: {sorted(set(obligations) - matched)}"
+
+
+def test_the_digest_rules_are_in_the_prose_because_they_are_what_interop_needs():
+    for needle in ("sha256", "utf-8", "24", "U+000A"):
+        assert needle in SPEC_MD, needle
+
+
+def test_the_spec_declares_what_a_breaking_change_is():
+    """A protocol whose compatibility rules are negotiable is a protocol two implementations disagree about quietly."""
+    assert "## 7. Versioning" in SPEC_MD
+    for needle in ("breaking", "spec_version"):
+        assert needle in SPEC_MD, needle

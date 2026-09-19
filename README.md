@@ -100,7 +100,11 @@ unequal, so a real difference is **missed**. A rule that could authorise would t
 | TypeScript sender | implemented, 29 tests |
 | `spec/fixtures/identity.json` | golden identities both implementations reproduce, including a non-ASCII one |
 | Riding on a tracer's auto-instrumentation | not implemented -- one explicit `wrap` at the client boundary for now |
-| A third implementation, by somebody else | none. **That is the remaining test** |
+| A third implementation, by somebody else | none. **That is the remaining test** -- see [CONTRIBUTING.md](CONTRIBUTING.md) |
+
+CI runs both suites on four Python versions and two Node versions, proves the spec ships **inside** each built package,
+checks that the three copies of the normative JSON are byte-identical, and runs `tools/cross_check.py` -- **the only
+check neither implementation can pass by agreeing with itself.**
 
 ## Relationship to the projects it came out of
 

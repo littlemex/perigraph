@@ -1,0 +1,115 @@
+name: ci
+
+# The job that matters here is `cross`. Both implementations' own suites passed before and after the five spec fixes a
+# second implementation found, because a test written against an implementation cannot find a sentence that
+# implementation happened to interpret one way -- so the suites are necessary and only running them against each other
+# is sufficient.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The floor is what pyproject declares. The ceiling is there because a package with no runtime dependencies has
+        # no excuse for breaking on a new interpreter, and finding out from a user is worse than finding out here.
+        python: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: install
+        run: |
+          python -m pip install --upgrade pip
+          # Installed rather than run from src, so the test also proves the spec file ships inside the package: a
+          # released copy that left `vocabularies.json` behind would be unverifiable by anybody who did not clone.
+          pip install ".[dev]"
+      - name: the spec travels with the installed package
+        run: |
+          cd "$(mktemp -d)"
+          python -c "
+          import perigraph, pathlib
+          from perigraph import vocab
+          p = pathlib.Path(vocab.SPEC_PATH)
+          assert p.is_file(), f'the spec did not ship: {p}'
+          assert 'site-packages' in str(p) or 'dist-packages' in str(p), f'read from the source tree, not the install: {p}'
+          print('spec found inside the installed package:', p.name, vocab.SPEC_VERSION)
+          "
+      - name: test
+        run: python -m pytest tests/ -q
+
+  typescript:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["20", "22"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm ci || npm install
+        working-directory: typescript
+      - name: typecheck, build and test
+        run: npm test
+        working-directory: typescript
+      - name: the spec and the fixtures travel with the built package
+        run: |
+          npm pack --silent >/dev/null
+          tar tzf *.tgz | grep -E 'vocabularies.json$' || { echo 'the spec did not ship in the tarball'; exit 1; }
+        working-directory: typescript
+
+  cross:
+    # The one job neither implementation can pass by agreeing with itself.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install && npm run build
+        working-directory: typescript
+      - name: both senders agree on every identity, and disagree only where the spec says they may
+        run: PYTHONPATH=src python tools/cross_check.py
+
+  spec:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: the normative JSON is valid, and the three copies of it are identical
+        run: |
+          python -c "
+          import hashlib, pathlib, json
+          src = pathlib.Path('spec/vocabularies.json')
+          json.loads(src.read_text(encoding='utf-8'))
+          want = hashlib.sha256(src.read_bytes()).hexdigest()
+          for copy in ('src/perigraph/vocabularies.json', 'typescript/vocabularies.json'):
+              got = hashlib.sha256(pathlib.Path(copy).read_bytes()).hexdigest()
+              assert got == want, f'{copy} has drifted from spec/vocabularies.json'
+          print('all copies identical:', want[:16])
+          "
+      - name: the fixtures are identical in both places
+        run: |
+          python -c "
+          import hashlib, pathlib
+          a = hashlib.sha256(pathlib.Path('spec/fixtures/identity.json').read_bytes()).hexdigest()
+          b = hashlib.sha256(pathlib.Path('typescript/fixtures-identity.json').read_bytes()).hexdigest()
+          assert a == b, 'the TypeScript fixture copy has drifted'
+          print('fixtures identical:', a[:16])
+          "
