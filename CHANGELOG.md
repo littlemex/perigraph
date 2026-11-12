@@ -20,6 +20,16 @@ implementation's source. See [docs/ambiguities.md](docs/ambiguities.md).
 - **Section 7 says what a breaking change is.** It did not exist, which makes a protocol's compatibility rules
   whatever two implementations each assumed.
 
+Three clarifications that change no vocabulary and no obligation:
+
+- **An absent record is never a clean one.** A sender that can lose records should report how many, and a loss nobody
+  reported is unknown, not zero.
+- **Any claim a receiver cannot check may only subtract**, whether it is a pushed part or a declaration beside the
+  record.
+- **A digest names content**: a file is cited by its bytes, and digests are compared whole, never truncated.
+  Section 2.5 says what the identity cannot tell apart: two precisions of one checkpoint, or an answer read from
+  probabilities versus one parsed from generated text.
+
 Also: `spec/fixtures/identity.json`, the golden identities every implementation must reproduce, including one
 non-ASCII case that exists solely to catch an encoding disagreement.
 

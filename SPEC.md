@@ -51,6 +51,11 @@ crashed MUST still emit a record, with status `collector_failed`, because **a co
 
 A receiver MUST refuse a verdict over a record whose status is not `complete`, and MUST NOT refuse to store it.
 
+**An absent record is never a clean one.** A record can also be lost after it is emitted: a bounded queue drops it, an
+exporter samples it away. A sender that can lose records SHOULD report how many it lost, and a receiver reads a loss
+nobody reported as **unknown, never as zero**. Otherwise fewer records than runs reads as a population with nothing
+wrong in it.
+
 ### 1.1a How a fact reached the record
 
 Closed, and the four are **not interchangeable**: they differ in what the fact may support.
@@ -72,6 +77,9 @@ measurement.
 after the owner's signed change window used the old shapes while the record says the new ones -- undetectably, because
 the absence of observation is what admits the channel in the first place. So a pushed fact may **widen** a verdict to
 unknown and may never narrow one.
+
+The rule is not limited to parts. **Any claim a receiver cannot check, whether a pushed part or a declaration that
+travels beside the record, may trigger a refusal and may never lift one.**
 
 ### 1.2 Every absence names whose it is
 
@@ -169,6 +177,18 @@ A sender MAY canonicalise a `parsed` payload. **The difference is who reads them
 cannot tell two spellings apart.
 
 A sender MUST NOT digest a payload after transmission. That hashes something other than what was sent.
+
+**A digest names content, never a description of it.** A digest that cites a file is over the file's bytes as stored,
+which pins a list of ids and their contents together. Two digests are compared as whole strings. A truncated digest, or
+a digest over a summary of the content, can agree while the content differs.
+
+### 2.5 What the identity cannot tell apart
+
+The identity is over the harness, not the weights. Two precisions of one checkpoint, bf16 and int8 for example, served
+under one model name share every part, so they share one identity, although quantisation can change the answers. The
+identity also cannot tell an answer read from the model's option probabilities from one parsed out of generated text,
+when the same `readout` describes both. A receiver that must separate either needs a version string that the sender
+composes for whatever answered, and compares it without parsing it. perigraph neither defines that string nor reads it.
 
 ## 3. Evidence about tools
 
