@@ -1,6 +1,6 @@
 {
   "name": "@perigraph/perigraph",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A record of what surrounded the model: the harness, its per-part content digests, and what the record cannot see",
   "license": "Apache-2.0",
   "type": "module",
@@ -11,7 +11,7 @@
     "vocabularies.json"
   ],
   "scripts": {
-    "build": "tsc && node -e \"const f=require('node:fs');f.copyFileSync('vocabularies.json','dist/vocabularies.json');f.copyFileSync('fixtures-identity.json','dist/fixtures-identity.json')\"",
+    "build": "tsc && node -e \"const f=require('node:fs');f.copyFileSync('vocabularies.json','dist/vocabularies.json');f.copyFileSync('fixtures-identity.json','dist/fixtures-identity.json');f.copyFileSync('fixtures-model-identity.json','dist/fixtures-model-identity.json')\"",
     "test": "npm run build && node --test \"dist/test/**/*.test.js\"",
     "prepublishOnly": "npm run build"
   },

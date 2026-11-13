@@ -3,3 +3,13 @@ export { DEFAULT_COLLECTOR, DEFAULT_VERSION, emit, observe, wrap, type SpanLike 
 export { Absence, Manifest, Part, Record_, digest } from "./record.js";
 export { SPEC_VERSION, Unidentified, conformance } from "./vocab.js";
 export { PREFIX, fromAttributes, toAttributes, type Attributes } from "./wire.js";
+export {
+  Model,
+  ModelAbsence,
+  ModelPart,
+  checkpointDigest,
+  linesDigest,
+  loaded,
+  precisionDigest,
+  runtimeDigest,
+} from "./model.js";

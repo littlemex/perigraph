@@ -168,7 +168,7 @@ test("an empty manifest round trips rather than becoming a part named empty-stri
 
 test("an absent identity is omitted rather than empty", () => {
   const attrs = toAttributes(read({ messages: [{ role: "user", content: "Q" }], temperature: 0 }));
-  assert.equal(attrs["perigraph.identity"], undefined);
+  assert.equal(attrs["perigraph.harness_identity"], undefined);
 });
 
 test("every wire value is a scalar a tracer will accept", () => {
@@ -250,4 +250,63 @@ test("a non-ascii instruction is covered, because that is where an encoding disa
     ),
   );
   assert.ok(anyNonAscii);
+});
+
+// --- version 2: the model half -------------------------------------------------------------------------------------------
+
+import { createHash } from "node:crypto";
+import * as model from "../src/model.js";
+
+const MODEL_FIXTURES = require_("../fixtures-model-identity.json") as {
+  cases: {
+    name: string;
+    files: Record<string, string>;
+    precision: Record<string, string>;
+    runtime: Record<string, string>;
+    answer_mode: string;
+    checkpoint_digest: string;
+    precision_digest: string;
+    runtime_digest: string;
+    model_identity: string;
+    artifact_identity: string;
+  }[];
+};
+
+const sha = (t: string) => createHash("sha256").update(Buffer.from(t, "utf8")).digest("hex");
+
+test("every golden model identity is reproduced", () => {
+  for (const c of MODEL_FIXTURES.cases) {
+    const cp = model.checkpointDigest(Object.entries(c.files).map(([p, t]) => [p, sha(t)] as [string, string]));
+    assert.equal(cp, c.checkpoint_digest, c.name);
+    assert.equal(model.precisionDigest(c.precision), c.precision_digest, c.name);
+    assert.equal(model.runtimeDigest(c.runtime), c.runtime_digest, c.name);
+    const m = model.loaded({ checkpoint: cp, precision: c.precision_digest, runtime: c.runtime_digest, answerMode: c.answer_mode });
+    assert.equal(m.modelIdentity, c.model_identity, c.name);
+    assert.equal(m.artifactIdentity, c.artifact_identity, c.name);
+  }
+});
+
+test("int8 at load is a different model and the same artifact", () => {
+  const a = MODEL_FIXTURES.cases[0]!;
+  const b = MODEL_FIXTURES.cases[1]!;
+  assert.notEqual(a.model_identity, b.model_identity);
+  assert.equal(a.artifact_identity, b.artifact_identity);
+});
+
+test("a request never carries a model part and a harness part is never loaded", () => {
+  assert.throws(() => new model.ModelPart({ kind: "checkpoint", sourcing: "in_the_request", contentDigest: "a".repeat(64) }));
+  assert.throws(() => new Part({ kind: "instruction", sourcing: "loaded_by_us", contentDigest: digest(TERSE) }));
+});
+
+test("the model half round-trips over the wire and a forged identity is refused", () => {
+  const c = MODEL_FIXTURES.cases[2]!;
+  const m = model.loaded({ checkpoint: c.checkpoint_digest, precision: c.precision_digest, runtime: c.runtime_digest, answerMode: c.answer_mode });
+  const base = read();
+  const r = new Record_(base.manifest, base.status, base.parts, base.absences, m);
+  const attrs = toAttributes(r);
+  assert.equal(attrs["perigraph.model_identity"], c.model_identity);
+  assert.equal(attrs["perigraph.artifact_identity"], c.artifact_identity);
+  const back = fromAttributes(attrs);
+  assert.equal((back.model as model.Model).modelIdentity, c.model_identity);
+  assert.throws(() => fromAttributes({ ...attrs, "perigraph.model_identity": "0".repeat(24) }), /does not follow/);
 });

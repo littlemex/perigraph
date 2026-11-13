@@ -74,6 +74,12 @@ export class Part {
     }
     if (!SOURCING.includes(this.sourcing)) throw new Unidentified(`${this.sourcing} is not one of ${SOURCING}`);
     if (!BOUNDARIES.includes(this.boundary)) throw new Unidentified(`${this.boundary} is not one of ${BOUNDARIES}`);
+    if (this.sourcing === "loaded_by_us") {
+      throw new Unidentified(
+        `${this.kind} is a harness part and cannot be loaded_by_us: that sourcing means the collector loaded the model, ` +
+          `and a harness part is what surrounded it`,
+      );
+    }
     if (this.sourcing === "not_observable" && this.contentDigest !== "") {
       throw new Unidentified(
         `${this.kind} is recorded as not observable and carries a digest, so something was hashed. If bytes exist, ` +
@@ -112,6 +118,7 @@ export class Part {
       pulled_by_us: "pulled",
       pushed_by_owner: "owner says",
       not_observable: "NOT OBSERVABLE",
+      loaded_by_us: "loaded",
     };
     let head = `${this.kind} (${who[this.sourcing]}`;
     if (this.readLagSeconds !== null) head += `, ${this.readLagSeconds}s before the request`;
@@ -186,17 +193,33 @@ export class Manifest {
   }
 }
 
+export interface ModelHalf {
+  readonly hasModelIdentity: boolean;
+  readonly modelIdentity: string;
+  readonly hasArtifactIdentity: boolean;
+  readonly artifactIdentity: string;
+}
+
 export class Record_ {
   readonly manifest: Manifest;
   readonly status: string;
   readonly parts: readonly Part[];
   readonly absences: readonly Absence[];
+  /** What answered (spec section 9). `null` is "nothing was said", never "known to be the same". */
+  readonly model: ModelHalf | null;
 
-  constructor(manifest: Manifest, status = "complete", parts: readonly Part[] = [], absences: readonly Absence[] = []) {
+  constructor(
+    manifest: Manifest,
+    status = "complete",
+    parts: readonly Part[] = [],
+    absences: readonly Absence[] = [],
+    model: ModelHalf | null = null,
+  ) {
     this.manifest = manifest;
     this.status = status;
     this.parts = parts;
     this.absences = absences;
+    this.model = model;
     if (!STATUS.includes(status)) throw new Unidentified(`${status} is not one of ${STATUS}`);
     const held = parts.map((p) => p.kind);
     if (new Set(held).size !== held.length) {
@@ -213,6 +236,11 @@ export class Record_ {
           `and a consumer reads whichever it happened to check first`,
       );
     }
+  }
+
+  /** The version 2 name of `identity`; the computation is unchanged. */
+  get harnessIdentity(): string {
+    return this.identity;
   }
 
   get hasIdentity(): boolean {

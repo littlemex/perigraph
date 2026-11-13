@@ -90,15 +90,47 @@ either way.
 This one-sidedness is what makes the remaining hole safe: two serialisations of the same logical arguments compare
 unequal, so a real difference is **missed**. A rule that could authorise would turn that miss into a false licence.
 
+## Version 2: what answered
+
+Version 1 identified the harness and said, in its own words, that it could not tell two precisions of one checkpoint
+apart, nor an answer read from option scores from one parsed out of generated text. In one distillation record each of
+these moved answers while every name stayed the same:
+
+| what changed | names that did not change | effect |
+|---|---|---|
+| the checkpoint was re-trained from the same script and seed | model name, recipe | 93.4 % label agreement |
+| dynamic int8 quantisation at load | the stored bytes, the model name | 33-40 % agreement with the bf16 run |
+| the serving image lost packages | model name, checkpoint | 97 of 100 re-answered the same |
+| option scores against generated text | model family | the score-trained student generated "1111" |
+
+So version 2 adds four **model parts** -- `checkpoint` (every file the process read, adapters, tokenizer and template
+included), `precision` (read off the loaded parameters), `runtime` (package versions resolved in-process) and
+`answer_mode` -- and one sourcing, `loaded_by_us`, the only one that may key a model identity: a digest has to be taken
+by the process that holds the bytes. Over them sit two identities:
+
+| identity | over | comparable |
+|---|---|---|
+| `perigraph.model_identity` | all four model parts | within one collector and version |
+| `perigraph.artifact_identity` | `checkpoint` alone | anywhere: anybody holding the files computes it, a trainer at save time included |
+
+How a tuned model came to be -- parent, method, training sets, the signal it learned from -- is a separate **lineage**
+document its trainer writes about one artifact identity. It can only subtract: a set it names as trained on refuses a
+verdict on that set, and a missing lineage is unknown, never clean. A model behind somebody else's API has no model
+identity and stays admissible.
+
+**perigraph identifies and refuses; it does not switch.** A router decides which model answers; perigraph makes that
+decision checkable afterwards (SPEC section 11).
+
 ## Status
 
 | | |
 |---|---|
-| `spec/vocabularies.json` | normative, version 1 |
+| `spec/vocabularies.json` | normative, version 2 |
 | `SPEC.md` | the prose that goes with it |
-| Python sender and receiver | implemented, 37 tests |
-| TypeScript sender | implemented, 29 tests |
+| Python sender and receiver | implemented, 56 tests |
+| TypeScript sender | implemented, 33 tests (lineage is Python only: it is read by receivers) |
 | `spec/fixtures/identity.json` | golden identities both implementations reproduce, including a non-ASCII one |
+| `spec/fixtures/model_identity.json` | golden model and artifact identities: bf16 against int8 of the same files, and a non-ASCII path |
 | Riding on a tracer's auto-instrumentation | not implemented -- one explicit `wrap` at the client boundary for now |
 | A third implementation, by somebody else | none. **That is the remaining test** -- see [CONTRIBUTING.md](CONTRIBUTING.md) |
 

@@ -9,10 +9,14 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from perigraph.vocab import (ABSENCE_BLAMES, ABSENCE_REASONS, ADMISSIBLE_STATUS, BOUNDARIES,
                             DETAIL_REQUIRED_WHEN_BLAMES, IDENTIFYING_BOUNDARIES, IDENTIFYING_SOURCING,
                             NEVER_IDENTIFYING, PARTS, SOURCING, STATUS, Unidentified)
+
+if TYPE_CHECKING:  # pragma: no cover
+    from perigraph.model import Model
 
 
 def digest(payload: str) -> str:
@@ -50,6 +54,10 @@ class Part:
             raise Unidentified(f"{self.sourcing!r} is not one of {SOURCING}")
         if self.boundary not in BOUNDARIES:
             raise Unidentified(f"{self.boundary!r} is not one of {BOUNDARIES}")
+        if self.sourcing == "loaded_by_us":
+            raise Unidentified(
+                f"{self.kind!r} is a harness part and cannot be loaded_by_us: that sourcing means the collector loaded "
+                f"the model, and a harness part is what surrounded it")
         if self.sourcing == "not_observable" and self.content_digest:
             raise Unidentified(
                 f"{self.kind!r} is recorded as not observable and carries a digest, so something was hashed. If bytes "
@@ -85,7 +93,7 @@ class Part:
 
     def __str__(self) -> str:
         who = {"in_the_request": "in the request", "pulled_by_us": "pulled", "pushed_by_owner": "owner says",
-               "not_observable": "NOT OBSERVABLE"}[self.sourcing]
+               "not_observable": "NOT OBSERVABLE", "loaded_by_us": "loaded"}[self.sourcing]
         head = f"{self.kind} ({who}"
         if self.read_lag_seconds is not None:
             head += f", {self.read_lag_seconds:g}s before the request"
@@ -178,6 +186,9 @@ class Record:
     status: str = "complete"
     parts: tuple[Part, ...] = ()
     absences: tuple[Absence, ...] = ()
+    #: What answered (spec section 9), present only when a collector in the loading process -- or a relay forwarding its
+    #: stamp verbatim -- recorded it. `None` is not "the model is unknown to be different"; it is "nothing was said".
+    model: "Model | None" = None
 
     def __post_init__(self) -> None:
         if self.status not in STATUS:
@@ -216,6 +227,11 @@ class Record:
         for p in sorted((p for p in self.parts if p.identifying), key=lambda p: p.kind):
             h.update(f"{p.kind}={p.content_digest};".encode())
         return h.hexdigest()[:24]
+
+    @property
+    def harness_identity(self) -> str:
+        """The version 2 name of `identity`; the computation is unchanged."""
+        return self.identity
 
     @property
     def unaccounted(self) -> tuple[str, ...]:

@@ -19,8 +19,9 @@ An identity is a truncated sha256 — **the first 24 hex characters**, which is 
 key, not against an adversary. It is adequate against accident and is **not** a commitment: an attacker who can choose
 instruction text can look for a collision far more cheaply than against the full digest.
 
-**Do not use `perigraph.identity` as an authorisation decision or a content commitment.** Use the full
-`perigraph.part.instruction.digest` if you need one, and sign it with something built for that.
+**Do not use `perigraph.harness_identity`, `perigraph.model_identity` or `perigraph.artifact_identity` as an
+authorisation decision or a content commitment.** Use the full `perigraph.part.instruction.digest` or
+`perigraph.model.checkpoint.digest` if you need one, and sign it with something built for that.
 
 ## Handling records
 

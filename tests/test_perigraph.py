@@ -59,9 +59,10 @@ def test_conformance_names_what_a_second_implementation_has_to_reproduce():
     """Data rather than assertions, so an implementation in another language can compare its own tables against the same
     file without reimplementing this module's opinions."""
     c = pg.conformance()
-    assert c["namespace"] == "perigraph" and c["spec_version"] == 1
-    assert set(c) == {"spec_version", "namespace", "parts", "sourcing", "boundaries", "absence_reasons", "status",
-                      "context_crossings", "tool_determinism", "billed_legs"}
+    assert c["namespace"] == "perigraph" and c["spec_version"] == 2
+    assert set(c) == {"spec_version", "namespace", "parts", "model_parts", "answer_modes", "lineage_methods",
+                      "lineage_set_roles", "sourcing", "boundaries", "absence_reasons", "status", "context_crossings",
+                      "tool_determinism", "billed_legs"}
 
 
 def test_a_broken_spec_is_refused_when_it_is_read():
@@ -238,7 +239,8 @@ def test_an_absent_identity_is_omitted_rather_than_empty():
     """An empty identity string compares equal to another empty one, which would group every unidentifiable run
     together -- the failure the identity rules exist to prevent, reintroduced by the transport."""
     attrs = wire.to_attributes(read({"messages": [{"role": "user", "content": "Q"}], "temperature": 0.0}))
-    assert "perigraph.identity" not in attrs
+    assert "perigraph.harness_identity" not in attrs
+    assert not any(k.endswith("identity") for k in attrs)
 
 
 def test_every_wire_value_is_a_scalar_a_tracer_will_accept():
@@ -351,8 +353,8 @@ def test_every_closed_vocabulary_value_appears_in_the_prose():
     """SPEC.md says the JSON wins where they disagree, and that is the right tie-break -- but a reader follows the prose,
     so a value the prose never mentions is a value nobody implements. This was not hypothetical: the digest rules, the
     collector-local rule and the ninth receiver obligation lived in the JSON for a commit while SPEC.md said nothing."""
-    for section in ("parts", "sourcing", "boundaries", "absence_reasons", "status", "context_crossings",
-                    "tool_determinism", "billed_legs"):
+    for section in ("parts", "model_parts", "answer_modes", "sourcing", "boundaries", "absence_reasons", "status",
+                    "context_crossings", "tool_determinism", "billed_legs"):
         for value in RAW_SPEC[section]["values"]:
             assert value in SPEC_MD, f"{section}.{value} is in the vocabulary and not in SPEC.md"
 
@@ -362,14 +364,18 @@ def test_every_receiver_obligation_appears_in_the_prose():
     way -- what is not allowed is the prose being silent about a refusal that decides conformance."""
     markers = {
         "status is not complete": "status",
-        "record with no identity": "no identifying part",
+        "record with no harness identity": "no identifying part",
         "not_reachable": "not_reachable",
         "not model_visible": "model_visible",
         "missing different facts": "missing different facts",
         "different turn counts": "turn count",
         "context_partitioning is unrecorded": "context_partitioning",
-        "different collectors or different collector versions": "collector-local",
+        "two `parsed` digests produced by different collectors": "collector-local",
         "occasion and the tool declared determinism": "declared_deterministic",
+        "sourcing is not loaded_by_us": "loaded_by_us",
+        "more than one model identity": "more than one model identity",
+        "do not carry that model identity": "do not carry that model identity",
+        "two model identities produced by different collectors": "artifact identity",
     }
     obligations = RAW_SPEC["receiver_obligations"]["must_refuse"]
     assert len(obligations) == len(markers), (
@@ -394,3 +400,178 @@ def test_the_spec_declares_what_a_breaking_change_is():
     assert "## 7. Versioning" in SPEC_MD
     for needle in ("breaking", "spec_version"):
         assert needle in SPEC_MD, needle
+
+
+# --- version 2: the model half ---------------------------------------------------------------------------------------
+
+from perigraph import lineage as lin, model as mdl  # noqa: E402
+
+MODEL_FIXTURES = json.loads((ROOT / "spec" / "fixtures" / "model_identity.json").read_text(encoding="utf-8"))
+
+
+def _sha(text):
+    import hashlib
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _model(case):
+    cp = mdl.checkpoint_digest([(p, _sha(t)) for p, t in case["files"].items()])
+    return cp, mdl.loaded(checkpoint=cp, precision=mdl.precision_digest(case["precision"]),
+                          runtime=mdl.runtime_digest(case["runtime"]), answer_mode=case["answer_mode"])
+
+
+def test_every_model_fixture_reproduces():
+    for case in MODEL_FIXTURES["cases"]:
+        cp, m = _model(case)
+        assert cp == case["checkpoint_digest"], case["name"]
+        assert mdl.precision_digest(case["precision"]) == case["precision_digest"], case["name"]
+        assert mdl.runtime_digest(case["runtime"]) == case["runtime_digest"], case["name"]
+        assert m.model_identity == case["model_identity"], case["name"]
+        assert m.artifact_identity == case["artifact_identity"], case["name"]
+
+
+def test_int8_at_load_changes_the_model_identity_and_not_the_artifact_identity():
+    """R6: dynamic int8 left the stored bytes unchanged and agreed with the GPU on 33-40 % of labels. Version 1 gave both
+    one identity; here the model identities differ and the artifact identities agree, which is what a trainer needs."""
+    bf16, int8 = (_model(c)[1] for c in MODEL_FIXTURES["cases"][:2])
+    assert bf16.model_identity != int8.model_identity
+    assert bf16.artifact_identity == int8.artifact_identity
+
+
+def test_a_retrain_with_the_same_script_and_seed_is_a_different_artifact():
+    """R12 -> R13: same recipe, 93.4 % label agreement. Different bytes, so a different artifact and model identity."""
+    a = mdl.checkpoint_digest([("model.safetensors", _sha("run 1"))])
+    b = mdl.checkpoint_digest([("model.safetensors", _sha("run 2"))])
+    assert a != b
+
+
+def test_option_scores_and_generated_text_are_different_models():
+    """R5-R10 against R12: a score-trained student generated '1111'. The answer mode keys the model identity."""
+    case = MODEL_FIXTURES["cases"][0]
+    cp = case["checkpoint_digest"]
+    a = mdl.loaded(checkpoint=cp, precision=case["precision_digest"], runtime=case["runtime_digest"],
+                   answer_mode="generated_text")
+    b = mdl.loaded(checkpoint=cp, precision=case["precision_digest"], runtime=case["runtime_digest"],
+                   answer_mode="option_scores")
+    assert a.model_identity != b.model_identity and a.artifact_identity == b.artifact_identity
+
+
+def test_a_runtime_change_changes_the_model_identity():
+    """R14: the serving image lost packages and the teacher re-answered 97 of 100 the same."""
+    case = MODEL_FIXTURES["cases"][0]
+    a = _model(case)[1]
+    b = mdl.loaded(checkpoint=case["checkpoint_digest"], precision=case["precision_digest"],
+                   runtime=mdl.runtime_digest({**case["runtime"], "torch": "2.15.1"}), answer_mode=case["answer_mode"])
+    assert a.model_identity != b.model_identity
+
+
+def test_no_model_identity_unless_all_four_parts_are_loaded_by_us():
+    case = MODEL_FIXTURES["cases"][0]
+    parts = list(_model(case)[1].parts)
+    parts[1] = mdl.ModelPart("precision", "pushed_by_owner", case["precision_digest"])
+    m = mdl.Model(parts=tuple(parts), reaches=vocab.MODEL_PARTS)
+    assert not m.has_model_identity and m.has_artifact_identity
+    with pytest.raises(vocab.Unidentified, match="precision"):
+        m.model_identity
+
+
+def test_a_cached_digest_is_pulled_and_needs_its_age():
+    with pytest.raises(vocab.Unidentified, match="lag"):
+        mdl.ModelPart("checkpoint", "pulled_by_us", "a" * 64)
+    assert not mdl.ModelPart("checkpoint", "pulled_by_us", "a" * 64, read_lag_seconds=3600).identifying
+
+
+def test_a_request_never_carries_a_model_part_and_a_harness_part_is_never_loaded():
+    with pytest.raises(vocab.Unidentified, match="weights"):
+        mdl.ModelPart("checkpoint", "in_the_request", "a" * 64)
+    with pytest.raises(vocab.Unidentified, match="harness part"):
+        rec.Part(kind="instruction", sourcing="loaded_by_us", content_digest=rec.digest(TERSE))
+
+
+def test_unresolved_precision_is_refused_rather_than_hashed():
+    with pytest.raises(vocab.Unidentified, match="unresolved"):
+        mdl.precision_digest({"dtype": "auto"})
+
+
+def test_a_provider_model_has_no_identity_and_stays_admissible():
+    m = mdl.behind_a_provider("claude-haiku-4-5")
+    r = rec.Record(manifest=read().manifest, parts=read().parts, absences=read().absences, model=m)
+    assert not m.has_model_identity and not m.has_artifact_identity
+    assert r.admissible_to_a_verdict()
+
+
+def test_checkpoint_paths_are_normative():
+    for bad in ("/abs", "a/../b", "a\tb", "a\nb", "a\\b", "./a"):
+        with pytest.raises(vocab.Unidentified):
+            mdl.checkpoint_digest([(bad, "a" * 64)])
+    a = mdl.checkpoint_digest([("b", "a" * 64), ("a", "b" * 64)])
+    assert a == mdl.checkpoint_digest([("a", "b" * 64), ("b", "a" * 64)])
+
+
+def test_the_model_half_round_trips_over_the_wire_and_a_forged_identity_is_refused():
+    case = MODEL_FIXTURES["cases"][2]
+    base = read()
+    r = rec.Record(manifest=base.manifest, parts=base.parts, absences=base.absences, model=_model(case)[1])
+    attrs = wire.to_attributes(r)
+    assert attrs["perigraph.model_identity"] == case["model_identity"]
+    assert attrs["perigraph.artifact_identity"] == case["artifact_identity"]
+    back = wire.from_attributes(attrs)
+    assert back.model.model_identity == case["model_identity"]
+    with pytest.raises(vocab.Unidentified, match="does not follow"):
+        wire.from_attributes({**attrs, "perigraph.model_identity": "0" * 24})
+
+
+def test_a_version_1_record_is_refused_by_a_version_2_reader():
+    attrs = wire.to_attributes(read())
+    with pytest.raises(vocab.Unidentified, match="spec_version"):
+        wire.from_attributes({**attrs, "perigraph.spec_version": 1})
+
+
+class _R:
+    def __init__(self, model, collector="c", version="1"):
+        self.model = model
+        self.manifest = rec.Manifest(collector=collector, version=version, reaches=())
+
+
+def test_receiver_refusals_over_model_identities():
+    a, b = (_model(c)[1] for c in MODEL_FIXTURES["cases"][:2])
+    mdl.refuse_mixed_model_identities({"student": [_R(a), _R(a)]})
+    with pytest.raises(vocab.Unidentified, match="model identities"):
+        mdl.refuse_mixed_model_identities({"student": [_R(a), _R(b)]})
+    with pytest.raises(vocab.Unidentified, match="model identities"):
+        mdl.refuse_mixed_model_identities({"student": [_R(a), _R(None)]})
+    mdl.refuse_unbound_claim(a.model_identity, [_R(a)])
+    with pytest.raises(vocab.Unidentified, match="something else"):
+        mdl.refuse_unbound_claim(a.model_identity, [_R(b)])
+    mdl.refuse_cross_collector_model_comparison(_R(a), _R(b))
+    with pytest.raises(vocab.Unidentified, match="collector-local"):
+        mdl.refuse_cross_collector_model_comparison(_R(a), _R(b, version="2"))
+
+
+# --- version 2: lineage ------------------------------------------------------------------------------------------------
+
+ROOT_ID, CHILD_ID, GRAND_ID = "1" * 24, "2" * 24, "3" * 24
+CERT = "c" * 64
+
+
+def test_lineage_is_closed_and_subtract_only():
+    root = lin.load({"spec_version": 2, "subject": ROOT_ID, "parent": "none", "method": "pretrained"})
+    child = lin.load({"spec_version": 2, "subject": CHILD_ID, "parent": ROOT_ID, "method": "sft",
+                      "sets": [{"role": "trained_on", "digest": CERT}]})
+    grand = lin.load({"spec_version": 2, "subject": GRAND_ID, "parent": CHILD_ID, "method": "rl",
+                      "signal": {"digest": "d" * 64}})
+    docs = {d.subject: d for d in (root, child, grand)}
+    # a quantised or RL child lists no sets, and its parent trained on the certification set: the chain finds it
+    assert lin.trained_on_anywhere(GRAND_ID, docs, CERT) is True
+    assert lin.trained_on_anywhere(GRAND_ID, docs, "e" * 64) is False
+    # a missing ancestor is unknown, never clean
+    assert lin.trained_on_anywhere(GRAND_ID, {GRAND_ID: grand}, "e" * 64) is None
+    # a lineage about another artifact is read as absent
+    assert lin.about(child, ROOT_ID) is None and lin.about(child, CHILD_ID) is child
+    with pytest.raises(vocab.Unidentified, match="not one of"):
+        lin.load({"spec_version": 2, "subject": CHILD_ID, "parent": ROOT_ID, "method": "sft",
+                  "sets": [{"role": "excluded", "digest": CERT}]})
+    with pytest.raises(vocab.Unidentified, match="signal"):
+        lin.load({"spec_version": 2, "subject": CHILD_ID, "parent": ROOT_ID, "method": "distillation"})
+    with pytest.raises(vocab.Unidentified, match="not lineage fields"):
+        lin.load({"spec_version": 2, "subject": CHILD_ID, "parent": ROOT_ID, "method": "sft", "excluded": []})

@@ -7,6 +7,7 @@
  * named empty-string, and `Manifest` then refuses the record. The first implementation filtered the empty entry out
  * silently; this one hit it as a crash on the first empty manifest it built.
  */
+import { Model, ModelAbsence, ModelPart } from "./model.js";
 import { Absence, Manifest, Part, Record_ } from "./record.js";
 import { NAMESPACE, SPEC_VERSION, Unidentified } from "./vocab.js";
 
@@ -24,7 +25,24 @@ export function toAttributes(record: Record_): Attributes {
   };
   // Omitted rather than empty: an empty identity compares equal to another empty identity, which would group every
   // unidentifiable run together -- the failure the identity rules exist to prevent, reintroduced by the transport.
-  if (record.hasIdentity) out[`${PREFIX}.identity`] = record.identity;
+  if (record.hasIdentity) out[`${PREFIX}.harness_identity`] = record.identity;
+  const m = record.model;
+  if (m instanceof Model) {
+    out[`${PREFIX}.model_reaches`] = m.reaches.join(",");
+    if (m.hasModelIdentity) out[`${PREFIX}.model_identity`] = m.modelIdentity;
+    if (m.hasArtifactIdentity) out[`${PREFIX}.artifact_identity`] = m.artifactIdentity;
+    for (const mp of m.parts) {
+      const base = `${PREFIX}.model.${mp.kind}`;
+      out[`${base}.sourcing`] = mp.sourcing;
+      if (mp.contentDigest !== "") out[`${base}.digest`] = mp.contentDigest;
+      if (mp.label !== "") out[`${base}.label`] = mp.label;
+      if (mp.readLagSeconds !== null) out[`${base}.read_lag_seconds`] = mp.readLagSeconds;
+    }
+    for (const ma of m.absences) {
+      out[`${PREFIX}.model_absent.${ma.kind}.reason`] = ma.reason;
+      if (ma.detail !== "") out[`${PREFIX}.model_absent.${ma.kind}.detail`] = ma.detail;
+    }
+  }
   for (const p of record.parts) {
     const base = `${PREFIX}.part.${p.kind}`;
     out[`${base}.sourcing`] = p.sourcing;
@@ -53,7 +71,29 @@ export function fromAttributes(attrs: Attributes): Record_ {
   }
   const parts: Part[] = [];
   const absences: Absence[] = [];
+  const mparts: ModelPart[] = [];
+  const mabsences: ModelAbsence[] = [];
   for (const [key, value] of Object.entries(attrs)) {
+    if (key.startsWith(`${PREFIX}.model.`) && key.endsWith(".sourcing")) {
+      const kind = key.slice(`${PREFIX}.model.`.length, -".sourcing".length);
+      const base = `${PREFIX}.model.${kind}`;
+      const lag = attrs[`${base}.read_lag_seconds`];
+      mparts.push(
+        new ModelPart({
+          kind,
+          sourcing: String(value),
+          contentDigest: String(attrs[`${base}.digest`] ?? ""),
+          label: String(attrs[`${base}.label`] ?? ""),
+          readLagSeconds: lag === undefined ? null : Number(lag),
+        }),
+      );
+      continue;
+    }
+    if (key.startsWith(`${PREFIX}.model_absent.`) && key.endsWith(".reason")) {
+      const kind = key.slice(`${PREFIX}.model_absent.`.length, -".reason".length);
+      mabsences.push(new ModelAbsence(kind, String(value), String(attrs[`${PREFIX}.model_absent.${kind}.detail`] ?? "")));
+      continue;
+    }
     if (key.startsWith(`${PREFIX}.part.`) && key.endsWith(".sourcing")) {
       const kind = key.slice(`${PREFIX}.part.`.length, -".sourcing".length);
       const base = `${PREFIX}.part.${kind}`;
@@ -77,10 +117,29 @@ export function fromAttributes(attrs: Attributes): Record_ {
   const reaches = String(attrs[`${PREFIX}.collector_reaches`] ?? "")
     .split(",")
     .filter((r) => r !== "");
-  return new Record_(
+  let model: Model | null = null;
+  if (`${PREFIX}.model_reaches` in attrs || mparts.length > 0 || mabsences.length > 0) {
+    const mreach = String(attrs[`${PREFIX}.model_reaches`] ?? "")
+      .split(",")
+      .filter((r) => r !== "");
+    model = new Model(mparts, mabsences, mreach);
+  }
+  const record = new Record_(
     new Manifest(String(attrs[`${PREFIX}.collector`]), String(attrs[`${PREFIX}.collector_version`]), reaches),
     String(attrs[`${PREFIX}.status`]),
     parts,
     absences,
+    model,
   );
+  const checks: [string, boolean, () => string][] = [
+    [`${PREFIX}.harness_identity`, record.hasIdentity, () => record.identity],
+    [`${PREFIX}.model_identity`, model !== null && model.hasModelIdentity, () => model!.modelIdentity],
+    [`${PREFIX}.artifact_identity`, model !== null && model.hasArtifactIdentity, () => model!.artifactIdentity],
+  ];
+  for (const [key, have, get] of checks) {
+    if (key in attrs && (!have || attrs[key] !== get())) {
+      throw new Unidentified(`${key}=${attrs[key]} does not follow from the parts this record carries`);
+    }
+  }
+  return record;
 }

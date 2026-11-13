@@ -111,8 +111,10 @@ jobs:
         run: |
           python -c "
           import hashlib, pathlib
-          a = hashlib.sha256(pathlib.Path('spec/fixtures/identity.json').read_bytes()).hexdigest()
-          b = hashlib.sha256(pathlib.Path('typescript/fixtures-identity.json').read_bytes()).hexdigest()
-          assert a == b, 'the TypeScript fixture copy has drifted'
-          print('fixtures identical:', a[:16])
+          for spec, copy in (('spec/fixtures/identity.json', 'typescript/fixtures-identity.json'),
+                             ('spec/fixtures/model_identity.json', 'typescript/fixtures-model-identity.json')):
+              a = hashlib.sha256(pathlib.Path(spec).read_bytes()).hexdigest()
+              b = hashlib.sha256(pathlib.Path(copy).read_bytes()).hexdigest()
+              assert a == b, f'{copy} has drifted from {spec}'
+              print('fixtures identical:', copy, a[:16])
           "

@@ -12,6 +12,7 @@ sentence nobody is testing, and the next person to read it will believe it is en
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import pathlib
 import subprocess
@@ -23,6 +24,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from perigraph import collect, wire  # noqa: E402
 
 CASES = json.loads((ROOT / "spec" / "fixtures" / "identity.json").read_text(encoding="utf-8"))["cases"]
+MODEL_CASES = json.loads((ROOT / "spec" / "fixtures" / "model_identity.json").read_text(encoding="utf-8"))["cases"]
 
 NODE_SCRIPT = """
 import { fromRequest } from "%(dist)s/src/collect.js";
@@ -44,6 +46,45 @@ def typescript_attributes(bodies: list[dict]) -> list[dict]:
     return json.loads(out.stdout)
 
 
+MODEL_SCRIPT = """
+import { createHash } from "node:crypto";
+import { checkpointDigest, precisionDigest, runtimeDigest, loaded } from "%(dist)s/src/model.js";
+const cases = %(cases)s;
+console.log(JSON.stringify(cases.map((c) => {
+  const m = loaded({ checkpoint: checkpointDigest(Object.entries(c.files).map(([p, t]) => [p, createHash("sha256").update(Buffer.from(t, "utf8")).digest("hex")])), precision: precisionDigest(c.precision),
+                     runtime: runtimeDigest(c.runtime), answerMode: c.answer_mode });
+  return { model: m.modelIdentity, artifact: m.artifactIdentity };
+})));
+"""
+
+
+def model_failures() -> list[str]:
+    """The model identity is defined by bytes, not by a collector, so the two senders must agree on every case.
+
+    Run on the helpers rather than on a loader, because the helpers are the only place the two could disagree."""
+    from perigraph import model as pm
+
+    dist = ROOT / "typescript" / "dist"
+    script = MODEL_SCRIPT % {"dist": dist.as_posix(), "cases": json.dumps(MODEL_CASES)}
+    out = subprocess.run([  # noqa: S603
+        "node", "--input-type=module", "-e", script], capture_output=True, text=True, check=False)
+    if out.returncode != 0:
+        raise SystemExit(f"the TypeScript model helpers failed:\n{out.stderr}")
+    failures = []
+    for case, ts in zip(MODEL_CASES, json.loads(out.stdout)):
+        m = pm.loaded(checkpoint=pm.checkpoint_digest([(p, hashlib.sha256(t.encode("utf-8")).hexdigest())
+                                                           for p, t in case["files"].items()]),
+                      precision=pm.precision_digest(case["precision"]), runtime=pm.runtime_digest(case["runtime"]),
+                      answer_mode=case["answer_mode"])
+        for key, py, want in (("model", m.model_identity, case["model_identity"]),
+                              ("artifact", m.artifact_identity, case["artifact_identity"])):
+            if py != ts[key]:
+                failures.append(f"{case['name']}: {key} identity {py} against {ts[key]}")
+            elif py != want:
+                failures.append(f"{case['name']}: both senders agree on {key} {py} and the fixture says {want}")
+    return failures
+
+
 def main() -> int:
     bodies = [c["body"] for c in CASES]
     ts = typescript_attributes(bodies)
@@ -54,7 +95,7 @@ def main() -> int:
         py_attrs = wire.to_attributes(collect.from_request(case["body"], collector="x", version="1"))
         name = case["name"]
 
-        py_id, ts_id = py_attrs.get("perigraph.identity"), ts_attrs.get("perigraph.identity")
+        py_id, ts_id = py_attrs.get("perigraph.harness_identity"), ts_attrs.get("perigraph.harness_identity")
         if py_id != ts_id:
             failures.append(f"{name}: identity {py_id} against {ts_id}")
         elif py_id is not None and py_id != case["identity"]:
@@ -87,7 +128,8 @@ def main() -> int:
             "collector-local rule in SPEC.md section 2.3 is no longer exercised by anything: either the rule should be "
             "tightened into a normative serialisation, or a case that does differ belongs in the fixtures")
 
-    print(f"checked {len(CASES)} bodies across two independent senders")
+    failures.extend(model_failures())
+    print(f"checked {len(CASES)} bodies and {len(MODEL_CASES)} model cases across two independent senders")
     for f in failures:
         print(f"FAIL {f}")
     if not failures:

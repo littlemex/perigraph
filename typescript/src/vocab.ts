@@ -14,12 +14,16 @@ const SPEC = require_("../vocabularies.json") as SpecShape;
 interface Vocabulary {
   values: string[];
   may_key_identity?: string[];
+  may_key_model_identity?: string[];
 }
 
 interface SpecShape {
   spec_version: number;
   namespace: string;
   parts: Vocabulary;
+  model_parts: Vocabulary & { comparable_across_collectors: string[] };
+  answer_modes: Vocabulary;
+  lineage: { fields: string[]; methods: string[]; set_roles: string[]; signal_forms: string[] };
   sourcing: Vocabulary;
   boundaries: Vocabulary;
   never_identifying: Vocabulary;
@@ -35,8 +39,16 @@ interface SpecShape {
 export const SPEC_VERSION = SPEC.spec_version;
 export const NAMESPACE = SPEC.namespace;
 export const PARTS = SPEC.parts.values;
+export const MODEL_PARTS = SPEC.model_parts.values;
+export const MODEL_COMPARABLE_ACROSS_COLLECTORS = SPEC.model_parts.comparable_across_collectors;
+export const ANSWER_MODES = SPEC.answer_modes.values;
+export const LINEAGE_FIELDS = SPEC.lineage.fields;
+export const LINEAGE_METHODS = SPEC.lineage.methods;
+export const LINEAGE_SET_ROLES = SPEC.lineage.set_roles;
+export const LINEAGE_SIGNAL_FORMS = SPEC.lineage.signal_forms;
 export const SOURCING = SPEC.sourcing.values;
 export const IDENTIFYING_SOURCING = SPEC.sourcing.may_key_identity ?? [];
+export const IDENTIFYING_MODEL_SOURCING = SPEC.sourcing.may_key_model_identity ?? [];
 export const BOUNDARIES = SPEC.boundaries.values;
 export const IDENTIFYING_BOUNDARIES = SPEC.boundaries.may_key_identity ?? [];
 export const NEVER_IDENTIFYING = SPEC.never_identifying.values;
@@ -74,6 +86,10 @@ export function conformance(): Record<string, unknown> {
     spec_version: SPEC_VERSION,
     namespace: NAMESPACE,
     parts: PARTS,
+    model_parts: MODEL_PARTS,
+    answer_modes: ANSWER_MODES,
+    lineage_methods: LINEAGE_METHODS,
+    lineage_set_roles: LINEAGE_SET_ROLES,
     sourcing: SOURCING,
     boundaries: BOUNDARIES,
     absence_reasons: ABSENCE_REASONS,
@@ -105,7 +121,12 @@ export function checkSpecIsTotal(): void {
       `tool_determinism.divergence_licenses covers ${licensed} and the vocabulary is ${[...TOOL_DETERMINISM].sort()}`,
     );
   }
+  if (IDENTIFYING_SOURCING.some((v) => IDENTIFYING_MODEL_SOURCING.includes(v))) {
+    throw new Unidentified("a sourcing may key the harness identity or the model identity, never both");
+  }
   for (const [name, subset, whole] of [
+    ["sourcing.may_key_model_identity", IDENTIFYING_MODEL_SOURCING, SOURCING],
+    ["model_parts.comparable_across_collectors", MODEL_COMPARABLE_ACROSS_COLLECTORS, MODEL_PARTS],
     ["sourcing", IDENTIFYING_SOURCING, SOURCING],
     ["boundaries", IDENTIFYING_BOUNDARIES, BOUNDARIES],
     ["never_identifying", NEVER_IDENTIFYING, PARTS],

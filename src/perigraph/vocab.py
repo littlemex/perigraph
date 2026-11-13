@@ -24,8 +24,16 @@ SPEC_VERSION: int = _SPEC["spec_version"]
 NAMESPACE: str = _SPEC["namespace"]
 
 PARTS: tuple[str, ...] = tuple(_SPEC["parts"]["values"])
+MODEL_PARTS: tuple[str, ...] = tuple(_SPEC["model_parts"]["values"])
+MODEL_COMPARABLE_ACROSS_COLLECTORS: tuple[str, ...] = tuple(_SPEC["model_parts"]["comparable_across_collectors"])
+ANSWER_MODES: tuple[str, ...] = tuple(_SPEC["answer_modes"]["values"])
+LINEAGE_FIELDS: tuple[str, ...] = tuple(_SPEC["lineage"]["fields"])
+LINEAGE_METHODS: tuple[str, ...] = tuple(_SPEC["lineage"]["methods"])
+LINEAGE_SET_ROLES: tuple[str, ...] = tuple(_SPEC["lineage"]["set_roles"])
+LINEAGE_SIGNAL_FORMS: tuple[str, ...] = tuple(_SPEC["lineage"]["signal_forms"])
 SOURCING: tuple[str, ...] = tuple(_SPEC["sourcing"]["values"])
 IDENTIFYING_SOURCING: tuple[str, ...] = tuple(_SPEC["sourcing"]["may_key_identity"])
+IDENTIFYING_MODEL_SOURCING: tuple[str, ...] = tuple(_SPEC["sourcing"]["may_key_model_identity"])
 BOUNDARIES: tuple[str, ...] = tuple(_SPEC["boundaries"]["values"])
 IDENTIFYING_BOUNDARIES: tuple[str, ...] = tuple(_SPEC["boundaries"]["may_key_identity"])
 NEVER_IDENTIFYING: tuple[str, ...] = tuple(_SPEC["never_identifying"]["values"])
@@ -60,6 +68,10 @@ def conformance() -> dict[str, object]:
         "spec_version": SPEC_VERSION,
         "namespace": NAMESPACE,
         "parts": PARTS,
+        "model_parts": MODEL_PARTS,
+        "answer_modes": ANSWER_MODES,
+        "lineage_methods": LINEAGE_METHODS,
+        "lineage_set_roles": LINEAGE_SET_ROLES,
         "sourcing": SOURCING,
         "boundaries": BOUNDARIES,
         "absence_reasons": ABSENCE_REASONS,
@@ -88,7 +100,13 @@ def check_spec_is_total() -> None:
             f"tool_determinism.divergence_licenses covers {sorted(DIVERGENCE_LICENSES)} and the vocabulary is "
             f"{sorted(TOOL_DETERMINISM)}. A determinism value with no licence would let a divergence be read as "
             f"whatever the caller hoped")
-    for name, subset, whole in (("sourcing", IDENTIFYING_SOURCING, SOURCING),
+    if set(MODEL_COMPARABLE_ACROSS_COLLECTORS) - set(MODEL_PARTS):
+        raise Unidentified(f"model_parts.comparable_across_collectors names parts not in model_parts")
+    if set(IDENTIFYING_SOURCING) & set(IDENTIFYING_MODEL_SOURCING):
+        raise Unidentified("a sourcing may key the harness identity or the model identity, never both: a request does "
+                           "not carry weights, and a loader does not hold what the model read")
+    for name, subset, whole in (("sourcing.may_key_model_identity", IDENTIFYING_MODEL_SOURCING, SOURCING),
+                                ("sourcing", IDENTIFYING_SOURCING, SOURCING),
                                 ("boundaries", IDENTIFYING_BOUNDARIES, BOUNDARIES)):
         extra = set(subset) - set(whole)
         if extra:

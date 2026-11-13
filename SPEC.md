@@ -1,4 +1,4 @@
-# perigraph, version 1
+# perigraph, version 2
 
 Normative. Where this document and `spec/vocabularies.json` disagree, **the JSON is correct** — it is what both sides
 read, and a prose copy of a list is how two sides drift.
@@ -63,6 +63,7 @@ Closed, and the four are **not interchangeable**: they differ in what the fact m
 | sourcing | what it means | may key an identity |
 |---|---|---|
 | `in_the_request` | the bytes are held. It *is* what was sent: verifiable and contemporaneous | **yes** |
+| `loaded_by_us` | the collector runs in the process that loaded the model and digested what it loaded, during this load. Only a model part can have it (section 9) | the **model** identity only |
 | `pulled_by_us` | fetched, so verifiable and **not contemporaneous** | no |
 | `pushed_by_owner` | a declaration the receiver cannot check | no |
 | `not_observable` | no mode reaches it | no |
@@ -110,7 +111,9 @@ face value.
 
 ## 2. Identity
 
-A record's identity is a digest over its identifying parts, sorted by part name. A part is identifying only when **all
+A record's **harness identity** (`perigraph.harness_identity`, called `perigraph.identity` in version 1 and computed
+exactly as before) is a digest over its identifying parts, sorted by part name. Section 9 adds a model identity and an
+artifact identity beside it; "identity" alone in sections 2 to 6 means the harness identity. A part is identifying only when **all
 three** hold:
 
 1. its sourcing is `in_the_request` — the bytes are held, so the fact *is* what was sent;
@@ -182,13 +185,13 @@ A sender MUST NOT digest a payload after transmission. That hashes something oth
 which pins a list of ids and their contents together. Two digests are compared as whole strings. A truncated digest, or
 a digest over a summary of the content, can agree while the content differs.
 
-### 2.5 What the identity cannot tell apart
+### 2.5 What the harness identity cannot tell apart, and what now does
 
-The identity is over the harness, not the weights. Two precisions of one checkpoint, bf16 and int8 for example, served
-under one model name share every part, so they share one identity, although quantisation can change the answers. The
-identity also cannot tell an answer read from the model's option probabilities from one parsed out of generated text,
-when the same `readout` describes both. A receiver that must separate either needs a version string that the sender
-composes for whatever answered, and compares it without parsing it. perigraph neither defines that string nor reads it.
+The harness identity is over the harness, not the weights. Two precisions of one checkpoint, bf16 and int8 for example,
+served under one model name share every harness part, and an answer read from option scores shares a `readout` with one
+parsed out of generated text. Version 1 said a receiver needing either distinction had to rely on a version string the
+sender composed. Version 2 says it in the protocol instead: section 9's `precision` and `answer_mode` key the **model
+identity**, so the two cases above are two model identities over one harness identity.
 
 ## 3. Evidence about tools
 
@@ -262,6 +265,17 @@ unrecorded.** That is **undefined rather than uncertain**, and the difference de
 can be measured later from the same record, and an undefined one cannot, because the record does not contain the
 question.
 
+**Two arms grouped under one name that carry more than one model identity, or some with one and some without, MUST NOT
+be given one verdict.** A retrain from the same script and seed agreed with its predecessor on 93.4% of labels; pooled,
+the rate describes neither.
+
+**A claim bound to a model identity MUST NOT be applied to records that do not carry that model identity.** A
+certificate over answers from a model that no longer exists is a certificate over a different model.
+
+**Two model identities from different collectors or collector versions MUST NOT be compared.** `precision` and
+`runtime` are each collector's rendering, so the same model can digest differently in two of them. Compare the
+artifact identity instead, which is over file bytes anybody holding the files computes alike.
+
 ## 5. Cost, and why it is here at all
 
 Cost is in scope because **the cache discount attaches to the shape of a request rather than to its text**: identical
@@ -289,7 +303,7 @@ Flat, scalar, prefixed `perigraph.`, so it rides on a span any tracer already em
 Keys are indexed by **part name**, never by position: an integer index reorders when a collector learns to read one more
 part, and every historical record then means something different.
 
-`perigraph.identity` MUST be **omitted** when the record has none. An empty string compares equal to another empty
+`perigraph.harness_identity`, `perigraph.model_identity` and `perigraph.artifact_identity` MUST each be **omitted** when the record has none. An empty string compares equal to another empty
 string, which would group every unidentifiable run together — the failure the identity rules exist to prevent,
 reintroduced by the transport.
 
@@ -324,6 +338,11 @@ negotiable is a protocol two implementations disagree about quietly, and this on
 **A receiver meeting an unknown version refuses the record** (section 6). It does not downgrade, and it does not parse
 what it recognises: the fields it would drop are the ones that say what the record cannot see.
 
+**Version 2** is breaking on four counts: four entries in `must_refuse`, a new sourcing value that may key an identity,
+the attribute `perigraph.identity` renamed `perigraph.harness_identity`, and the model half, which a version-1 reader
+would drop -- and a dropped model absence is a hole nobody knows exists. The harness identity's computation and the
+version-1 identity fixtures are unchanged, so a version-1 identity value carries over as the harness identity.
+
 **A sender MUST NOT emit two versions from one collector version.** If it can produce either, it is two collectors and
 its manifest must say which one ran.
 
@@ -338,9 +357,75 @@ obligation is about -- may say so instead of implementing it, and MUST be able t
 Asserting it is a loophole; one of the two reference receivers does this for the `parsed`-digest comparison and proves
 it by showing that the only comparison it performs reads identifying parts, which are `model_visible` by construction.
 
-**Every implementation MUST reproduce `spec/fixtures/identity.json`.** It is the only part of conformance that a second
+**Every implementation MUST reproduce `spec/fixtures/identity.json` and `spec/fixtures/model_identity.json`.** It is the only part of conformance that a second
 implementation cannot pass by agreeing with itself.
 
 **Neither is conformant on the strength of this document alone.** There is one implementation, so the spec has not yet
 been tested as a spec — the first genuine test of it is a second implementation disagreeing about what a sentence here
 means.
+
+## 9. What answered: the model parts
+
+A record may carry a **model half**: the parts of what answered, as opposed to what surrounded it. It is written by a
+collector **in the process that loaded the model**, and stamped on every answer, because only that process holds the
+bytes. A request never carries weights, so a model part is never `in_the_request`, and a harness part is never
+`loaded_by_us`.
+
+| model part | what it is | content digested | needed because |
+|---|---|---|---|
+| `checkpoint` | every file the process read from the model artifact: parameters, adapters, tokenizer, chat template, configuration | for each file, sorted by the utf-8 bytes of its POSIX path relative to the artifact root, `<path>` TAB `<sha256 of the file>` LF; a path with a tab or a newline is refused | a retrain with the same script and seed agreed on 93.4% of labels under one name |
+| `precision` | the numeric transform in force once loading finished, read off the loaded parameters | `dtype.<name>=<count>`, `quantisation=<scheme or none>`, `device=<type>`, one per line, sorted; `auto` is unresolved and is `extraction_failed` | dynamic int8 at load left the stored bytes unchanged and agreed on 33-40% |
+| `runtime` | the code computing the answer | `<distribution>==<version>` for each package the collector declares it reads, resolved in-process, sorted | a rebuilt image lost packages; 97 of 100 answers agreed |
+| `answer_mode` | where the answer is taken from | one of `generated_text`, `option_scores`, `classifier_output` | a student trained on option scores generated "1111" |
+
+**Two identities.** The **model identity** is the section 2.2 serialisation over all four model parts, each
+`loaded_by_us` with a digest; with any one missing there is no model identity, since one without `precision` would let
+the int8 model wear the bf16 identity. It is **collector-local**, as a `parsed` digest is (section 2.3). The **artifact
+identity** is the same serialisation over `checkpoint` alone, and compares across collectors: it is what a trainer can
+compute when it saves a model, and what a lineage document (section 10) names.
+
+**What may key them.** Only `loaded_by_us`. A digest cached from an earlier load is `pulled_by_us`, with a lag equal to
+its age. A router or gateway that forwards a backend's stamp verbatim keeps its sourcing; one that reads the stamp back
+over a separate request has `pulled_by_us`, and the stamp it read may be another replica's.
+
+**Absence.** A model half uses the same absence reasons and blame rules as the harness half. A model behind a
+provider's API has every model part `not_observable` and no model identity. That record stays admissible: a receiver
+MUST NOT refuse it for having no model identity, and its claims are simply not bound to model bytes.
+
+**What it cannot see.** A sender that digests the wrong files, or declares a runtime list that misses a library that
+matters, produces a confident wrong identity; a closed vocabulary constrains spelling, not truth. Re-serialising
+identical tensors changes the checkpoint digest, which errs in the safe direction. Batch-dependent or nondeterministic
+kernels are not separated by any identity here.
+
+## 10. Lineage: how a tuned model came to be
+
+A **lineage document** is written by the trainer about one artifact, outside any record. It is never identifying --
+two trainings that produced the same bytes are the same model -- and always pushed, so section 1.1a applies: it may
+trigger a refusal and may never lift one.
+
+| field | form |
+|---|---|
+| `spec_version` | `2` |
+| `subject` | the artifact identity this document is about |
+| `parent` | the parent's artifact identity, or `none` for a `pretrained` artifact |
+| `method` | one of `pretrained`, `sft`, `distillation`, `rl`, `merge`, `reserialisation` |
+| `sets` | `{role, digest}` with role `trained_on` or `consulted` and the sha256 of the set's manifest file |
+| `signal` | for `distillation` and `rl`, required: one `{artifact_identity | digest | label: value}`; a label is unverifiable and never matches |
+| `trainer` | a label |
+
+A lineage whose `subject` is not the artifact observed is read as absent. A receiver checking whether a model was trained
+on some items walks the `parent` chain: a quantised or merged child lists no sets of its own while its parent may have
+trained on the very items in question. A missing ancestor, or a cited set nobody can open, is **unknown, never clean**.
+There is no `excluded` role, because by the rule above it could only ever lift a refusal.
+
+## 11. Switching (not normative)
+
+perigraph identifies what ran and refuses claims that do not follow from the record. It does not switch, and it does not
+say what to switch to: routers do. In the deployment it was designed with, Prismyra stamps its own answers with all four
+model parts; a vLLM backend is stamped by middleware in its own process (a wrapper that hashed a directory before launch
+is `pulled_by_us` and keys nothing); vLLM Semantic Router and the stratoclave gateway forward a backend's stamp verbatim
+and add their own decision as a label; a model behind a provider's API is `not_observable`. A receiver such as tierbook
+composes nothing from these attributes: it is handed opaque version strings that the emitters compose, recommended as
+`perigraph/2/model/<model identity>` for what answered and `perigraph/2/artifact/<artifact identity>` for what a trainer
+produced, and its own conformance test binds its refusals to `receiver_obligations`.
+

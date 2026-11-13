@@ -3,7 +3,30 @@
 Versions here are the **package** version. The **protocol** version is `spec_version` in
 `spec/vocabularies.json`, and [SPEC.md section 7](SPEC.md) says what forces it to change.
 
-## Unreleased
+## 0.2.0
+
+### Protocol, `spec_version` 2
+
+The model is now part of what a record identifies. Every addition cites a moment in a distillation record where the
+answers moved while every name stayed the same.
+
+- **A model half, written by the process that loaded the model**: four closed model parts, `checkpoint` (every file
+  read from the artifact), `precision` (read off the loaded parameters), `runtime` (packages resolved in-process) and
+  `answer_mode` (`generated_text`, `option_scores`, `classifier_output`), and a new sourcing `loaded_by_us`, the only
+  one that may key a model identity.
+- **Two new identities**: `perigraph.model_identity` over all four model parts, collector-local; and
+  `perigraph.artifact_identity` over the checkpoint alone, comparable across collectors. `perigraph.identity` is renamed
+  `perigraph.harness_identity`; its computation and fixtures are unchanged.
+- **Lineage documents**: a trainer-written, subtract-only record of how an artifact came to be (parent, method, the
+  item sets it trained on or consulted, its training signal), read as absent when its subject is not the artifact
+  observed, and walked through its parents.
+- **Four receiver obligations**: refuse a model identity built on a part not `loaded_by_us`; one verdict over an arm
+  carrying several model identities or a mix of with and without; a claim bound to a model identity applied to records
+  without it; and a comparison of model identities across collectors.
+- **Section 2.5 is replaced**: bf16 against int8, and option scores against generated text, are now two model identities.
+- New fixtures `spec/fixtures/model_identity.json`, reproduced by both reference implementations.
+
+## 0.1.x
 
 ### Protocol, `spec_version` 1
 

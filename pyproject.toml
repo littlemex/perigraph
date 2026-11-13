@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "perigraph"
-version = "0.1.0"
+version = "0.2.0"
 description = "A record of what surrounded the model: the harness, its per-part content digests, and what the record cannot see"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -38,4 +38,4 @@ artifacts = ["src/perigraph/py.typed", "src/perigraph/vocabularies.json"]
 [tool.hatch.build]
 # The spec travels with the package: a reader of an installed copy must be able to check it against the
 # vocabularies it was built from, and a package that left them behind would be unverifiable.
-include = ["src/perigraph", "spec/vocabularies.json", "spec/fixtures/identity.json"]
+include = ["src/perigraph", "spec/vocabularies.json", "spec/fixtures/identity.json", "spec/fixtures/model_identity.json"]
