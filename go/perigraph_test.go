@@ -32,7 +32,10 @@ func TestRequestInstructionAndAbsences(t *testing.T) {
 	if r.HarnessIdentity != want {
 		t.Fatalf("harness identity: got %s, want %s", r.HarnessIdentity, want)
 	}
-	if p := r.Parts["decoding"]; p.Boundary != "parsed" || p.Sourcing != "in_the_request" {
+	if p := r.Parts["decoding"]; p.Boundary != "canonical_value" ||
+		p.Sourcing != "in_the_request" ||
+		p.Digest != handSHA(`{"temperature":0}`) ||
+		p.Label != "temperature" {
 		t.Errorf("decoding: %+v", p)
 	}
 	if got := r.Absent["tool_schemas"]; got != (Absence{Reason: "not_provided"}) {
@@ -47,7 +50,8 @@ func TestRequestInstructionAndAbsences(t *testing.T) {
 	if r.Absent["tool_extension"].Reason != "not_observable" ||
 		r.Absent["tool_trace"].Reason != "not_provided" ||
 		r.Absent["context_partitioning"].Reason != "not_provided" ||
-		r.Absent["readout"].Reason != "not_provided" {
+		r.Absent["readout"].Reason != "not_provided" ||
+		r.Absent["generation_controls"].Reason != "not_provided" {
 		t.Fatal("absence reasons or their attribution changed")
 	}
 	if r.Model.ModelIdentity != "" || len(r.Model.Absent) != 4 {
@@ -58,7 +62,7 @@ func TestRequestInstructionAndAbsences(t *testing.T) {
 func TestPartialAndMalformedRequest(t *testing.T) {
 	empty := FromRequest(map[string]any{}, "shim", "1")
 	if empty.HarnessIdentity != "" || len(empty.Parts) != 0 ||
-		len(empty.Absent) != 11 || empty.Status != "complete" {
+		len(empty.Absent) != 12 || empty.Status != "complete" {
 		t.Fatalf("partial record not emitted: %+v", empty)
 	}
 	a := ToAttributes(empty)
@@ -70,8 +74,12 @@ func TestPartialAndMalformedRequest(t *testing.T) {
 			t.Errorf("emitted empty identity %s", name)
 		}
 	}
-	if a["perigraph.spec_version"] != 3 {
+	if a["perigraph.spec_version"] != 4 {
 		t.Fatal("wrong spec version")
+	}
+	if a["perigraph.request.unlisted"] != "" ||
+		a["perigraph.request.unlisted_omitted"] != 0 {
+		t.Fatal("empty object did not report an empty unlisted set")
 	}
 	bad := FromRequest(map[string]any{"messages": "unreadable"}, "shim", "1")
 	if a := bad.Absent["instruction"]; a.Reason != "extraction_failed" || a.Detail == "" {
@@ -189,15 +197,15 @@ func TestRequiredSenderRefusals(t *testing.T) {
 func TestVocabularyLists(t *testing.T) {
 	expected := map[string][]string{
 		"parts": {"instruction", "request_template", "tool_schemas", "tool_extension", "tool_trace",
-			"loop", "turn_budget", "retry_policy", "readout", "decoding", "context_partitioning"},
+			"loop", "turn_budget", "retry_policy", "readout", "generation_controls", "decoding", "context_partitioning"},
 		"model_parts":  {"checkpoint", "precision", "runtime", "answer_mode"},
 		"answer_modes": {"generated_text", "option_scores", "classifier_output"},
 		"sourcing": {"in_the_request", "loaded_by_us", "pulled_by_us",
 			"pushed_by_owner", "not_observable"},
-		"boundaries":                 {"transport", "parsed", "model_visible"},
+		"boundaries":                 {"transport", "parsed", "canonical_value", "model_visible"},
 		"never_identifying":          {"tool_trace"},
-		"refines_only":               {"request_template"},
-		"must_be_known_for_identity": {"instruction", "request_template"},
+		"refines_only":               {"request_template", "generation_controls"},
+		"must_be_known_for_identity": {"instruction", "request_template", "generation_controls"},
 		"absence_reasons":            {"not_provided", "not_reachable", "extraction_failed", "redacted", "not_observable"},
 		"status":                     {"complete", "aborted", "collector_failed"},
 		"context_crossings":          {"nothing", "briefs_and_results", "whole_history"},
@@ -212,7 +220,7 @@ func TestVocabularyLists(t *testing.T) {
 	if err := json.Unmarshal(data, &document); err != nil {
 		t.Fatal(err)
 	}
-	if document["spec_version"] != float64(3) || document["namespace"] != "perigraph" {
+	if document["spec_version"] != float64(4) || document["namespace"] != "perigraph" {
 		t.Fatal("wrong embedded vocabulary version or namespace")
 	}
 	for section, want := range expected {
@@ -230,12 +238,13 @@ func TestVocabularyLists(t *testing.T) {
 
 func TestWireManifestAndCollectorStatus(t *testing.T) {
 	r := FromRequest(map[string]any{}, "collector", "v1")
-	if !strings.Contains(strings.Join(r.CollectorReaches, ","), "request_template") {
-		t.Fatal("request template missing from static manifest")
+	if !strings.Contains(strings.Join(r.CollectorReaches, ","), "request_template") ||
+		!strings.Contains(strings.Join(r.CollectorReaches, ","), "generation_controls") {
+		t.Fatal("request template or generation controls missing from static manifest")
 	}
 	for _, name := range r.CollectorReaches {
-		if name == "tool_trace" {
-			t.Fatal("request collector claims to read a tool trace")
+		if name == "tool_trace" || name == "readout" {
+			t.Fatalf("request collector claims to read %s", name)
 		}
 	}
 	r.CollectorReaches = nil

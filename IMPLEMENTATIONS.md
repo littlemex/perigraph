@@ -6,7 +6,7 @@ Every implementation listed here passes `tools/conform.py` for the roles shown, 
 |---|---|---|---|---|
 | Python, `src/perigraph/` | collector, stamper, receiver | the specification's author | the specification, which it was developed alongside | `python tools/conform.py --adapter "python conformance/adapters/python_adapter.py"` |
 | TypeScript, `typescript/` | collector, stamper, receiver | the specification's author | `SPEC.md` and `spec/vocabularies.json`; writing it found the five ambiguities in `docs/ambiguities.md` | `python tools/conform.py --adapter "node conformance/adapters/typescript_adapter.mjs"` |
-| Go, `go/` | collector, stamper | OpenAI GPT-6 Sol | `SPEC.md` and `spec/vocabularies.json`, without the other implementations' sources, revised only from compiler, test and conformance output, which includes fixture results (`go/README.md`, `go/AMBIGUITIES.md`) | `python tools/conform.py --adapter "go -C go run ./cmd/conform"` |
+| Go, `go/` | collector, stamper | OpenAI GPT-6 Sol | `SPEC.md` and `spec/vocabularies.json`, without the other implementations' sources, revised only from compiler, test and conformance output, which includes fixture results (`go/README.md`, `go/AMBIGUITIES.md`). Each version change was written from the specification diff; the version 4 one was also given the new fixtures | `python tools/conform.py --adapter "go -C go run ./cmd/conform"` |
 
 **Still wanted: an implementation written by a person other than the specification's author, from the documents alone.** It is the one test none of the above can be. If yours disagrees with a fixture or a conformance case, the disagreement is the contribution: open an issue saying what you read the text to mean.
 

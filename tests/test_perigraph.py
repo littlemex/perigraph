@@ -6,6 +6,7 @@ is why the instruction is hashed raw and why a part nobody named is treated as a
 """
 from __future__ import annotations
 
+import dataclasses
 import json
 import sys
 from pathlib import Path
@@ -51,7 +52,7 @@ def test_every_absence_reason_is_blamed_and_every_determinism_licenses_something
 
 def test_the_identity_permissions_are_subsets_of_their_own_vocabularies():
     assert set(vocab.IDENTIFYING_SOURCING) <= set(vocab.SOURCING)
-    assert set(vocab.IDENTIFYING_BOUNDARIES) <= set(vocab.BOUNDARIES)
+    assert set(vocab.KEYING_BOUNDARY.values()) <= set(vocab.BOUNDARIES)
     assert set(vocab.NEVER_IDENTIFYING) <= set(vocab.PARTS)
     assert set(vocab.REFINES_ONLY) <= set(vocab.PARTS) and set(vocab.MUST_BE_KNOWN_FOR_IDENTITY) <= set(vocab.PARTS)
 
@@ -60,7 +61,7 @@ def test_conformance_names_what_a_second_implementation_has_to_reproduce():
     """Data rather than assertions, so an implementation in another language can compare its own tables against the same
     file without reimplementing this module's opinions."""
     c = pg.conformance()
-    assert c["namespace"] == "perigraph" and c["spec_version"] == 3
+    assert c["namespace"] == "perigraph" and c["spec_version"] == 4
     assert set(c) == {"spec_version", "namespace", "parts", "model_parts", "answer_modes", "lineage_methods",
                       "lineage_set_roles", "sourcing", "boundaries", "absence_reasons", "status", "context_crossings",
                       "tool_determinism", "billed_legs"}
@@ -98,17 +99,69 @@ def test_a_detail_is_refused_where_there_was_no_moment_to_describe():
 # --- only what the model provably read can identify -----------------------------------------------------------------------
 
 def test_a_harness_read_from_a_request_is_identified_by_its_instruction_and_nothing_else():
-    """The finding, not a limitation. A tools array, a response format and the sampler settings are protocol values the
-    provider renders however it likes, and the sender does not hold that rendering."""
+    """The finding, not a limitation. A tools array and the sampler settings are protocol values the provider renders
+    however it likes, and the sender does not hold that rendering. Without generation controls the instruction is the
+    only identifying part."""
     r = read()
     assert [p.kind for p in r.parts if p.identifying] == ["instruction"]
     assert {p.kind for p in r.parts if not p.identifying} == {"tool_schemas", "decoding"}
     assert collect.REQUEST_BOUNDARIES["instruction"] == "model_visible"
-    assert set(collect.REQUEST_BOUNDARIES.values()) - {"model_visible"} == {"parsed"}
+    assert collect.REQUEST_BOUNDARIES["tool_schemas"] == "parsed"
+    assert {collect.REQUEST_BOUNDARIES[k] for k in ("generation_controls", "decoding")} == {"canonical_value"}
+
+
+def test_generation_controls_key_beside_an_instruction_and_never_alone():
+    """R17b: max_tokens and enable_thinking were the whole difference between H0 and H3, and version 3 gave both one
+    identity. Beside an instruction they split it; without one they name no prompt text and establish nothing."""
+    h0 = read({**BODY, "max_tokens": 32, "chat_template_kwargs": {"enable_thinking": False}})
+    h3 = read({**BODY, "max_tokens": 256, "chat_template_kwargs": {"enable_thinking": True}})
+    assert h0.identity != h3.identity
+    assert sorted(p.kind for p in h3.parts if p.identifying) == ["generation_controls", "instruction"]
+    alone = read({"messages": [{"role": "user", "content": "x"}], "max_tokens": 32})
+    assert not alone.has_identity
+    respelled = read({**BODY, "max_tokens": 256.0, "chat_template_kwargs": {"enable_thinking": True}})
+    assert respelled.identity == h3.identity
+
+
+def test_a_declared_generation_control_does_not_stand_in_for_the_request():
+    r = read({**BODY, "max_tokens": 8})
+    pushed = rec.Record(manifest=r.manifest, model=r.model, absences=r.absences,
+                        parts=tuple(dataclasses.replace(p, sourcing="pushed_by_owner") if p.kind == "generation_controls"
+                                    else p for p in r.parts))
+    assert r.has_identity and not pushed.has_identity
+
+
+def test_an_unserialisable_generation_control_withdraws_the_identity_and_fails_nothing_else():
+    r = read({**BODY, "max_tokens": 2 ** 53 + 1, "temperature": 0.0})
+    a = pg.to_attributes(r)
+    assert a["perigraph.absent.generation_controls.reason"] == "extraction_failed"
+    assert a["perigraph.absent.generation_controls.detail"] == ("max_tokens holds an integer whose magnitude exceeds "
+                                                               "9007199254740991")
+    assert a["perigraph.part.decoding.sourcing"] == "in_the_request"
+    assert not r.has_identity
+
+
+def test_unlisted_members_are_named_and_never_valued():
+    r = read({**BODY, "guided_json": {"x": 1}, "vendor_switch": "secret", "a b": 1, "seed": 3, "z" * 65: None})
+    a = pg.to_attributes(r)
+    assert a["perigraph.request.unlisted"] == "vendor_switch"
+    assert a["perigraph.request.unlisted_omitted"] == 2
+    assert "secret" not in json.dumps(a)
+
+
+def test_one_verdict_over_an_arm_refuses_differing_declarations_and_never_lifts_one():
+    h3 = read({**BODY, "max_tokens": 256})
+    exact, first = pg.declare(h3, readout="exact"), pg.declare(h3, readout="first label")
+    assert pg.admit_arm([exact, exact]).outcome == "admitted"
+    assert pg.admit_arm([h3, h3]).outcome == "admitted"
+    assert pg.admit_arm([exact, first, exact]).outcome == "refused"
+    assert pg.admit_arm([h3, exact]).outcome == "refused"
+    assert pg.admit_arm([exact, pg.declare(h3, readout="exact", retry_policy="one retry")]).outcome == "refused"
 
 
 def test_a_parsed_digest_is_recorded_and_never_enters_the_hash():
-    no_template = (rec.Absence(kind="request_template", reason="not_provided"),)
+    no_template = (rec.Absence(kind="request_template", reason="not_provided"),
+                   rec.Absence(kind="generation_controls", reason="not_provided"))
     only_instruction = rec.Record(manifest=rec.Manifest(collector="t", version="1", reaches=()),
                                   parts=(part(),), absences=no_template)
     with_a_parsed_part = rec.Record(
@@ -299,7 +352,7 @@ def test_a_body_that_is_not_an_object_is_named_not_a_crash():
     finished; every manifest part says what was found."""
     a = pg.to_attributes(pg.observe(None))
     assert a["perigraph.status"] == "complete"
-    for k in ("instruction", "tool_schemas", "readout", "decoding"):
+    for k in ("instruction", "tool_schemas", "generation_controls", "decoding"):
         assert a[f"perigraph.absent.{k}.reason"] == "extraction_failed"
         assert a[f"perigraph.absent.{k}.detail"] == "the body is null, not an object"
 
@@ -404,7 +457,8 @@ def test_the_fixtures_hold_no_parsed_digest():
     """A `parsed` digest is collector-local by spec, and the two reference implementations legitimately disagree on one.
     Pinning one here would freeze an accident of a serialiser."""
     assert all("instruction_digest" in case
-               and set(case) <= {"name", "body", "identity", "instruction_digest", "request_template"}
+               and set(case) <= {"name", "body", "identity", "instruction_digest", "request_template",
+                                 "generation_controls", "unlisted"}
                for case in FIXTURES["cases"])
 
 
@@ -431,7 +485,7 @@ def test_every_receiver_obligation_appears_in_the_prose():
         "status is not complete": "status",
         "record with no harness identity": "no identifying part",
         "not_reachable": "not_reachable",
-        "not model_visible": "model_visible",
+        "not the one keying_boundary lists": "keying_boundary",
         "missing different facts": "missing different facts",
         "different turn counts": "turn count",
         "context_partitioning is unrecorded": "context_partitioning",
@@ -442,6 +496,8 @@ def test_every_receiver_obligation_appears_in_the_prose():
         "more than one model identity": "more than one model identity",
         "do not carry that model identity": "do not carry that model identity",
         "two model identities produced by different collectors": "artifact identity",
+        "for a part in uniform_within_arm": "uniform_within_arm",
+        "perigraph.request.unlisted sets": "perigraph.request.unlisted",
     }
     obligations = RAW_SPEC["receiver_obligations"]["must_refuse"]
     assert len(obligations) == len(markers), (
@@ -627,10 +683,10 @@ CERT = "c" * 64
 
 
 def test_lineage_is_closed_and_subtract_only():
-    root = lin.load({"spec_version": 3, "subject": ROOT_ID, "parent": "none", "method": "pretrained"})
-    child = lin.load({"spec_version": 3, "subject": CHILD_ID, "parent": ROOT_ID, "method": "sft",
+    root = lin.load({"spec_version": 4, "subject": ROOT_ID, "parent": "none", "method": "pretrained"})
+    child = lin.load({"spec_version": 4, "subject": CHILD_ID, "parent": ROOT_ID, "method": "sft",
                       "sets": [{"role": "trained_on", "digest": CERT}]})
-    grand = lin.load({"spec_version": 3, "subject": GRAND_ID, "parent": CHILD_ID, "method": "rl",
+    grand = lin.load({"spec_version": 4, "subject": GRAND_ID, "parent": CHILD_ID, "method": "rl",
                       "signal": {"digest": "d" * 64}})
     docs = {d.subject: d for d in (root, child, grand)}
     # a quantised or RL child lists no sets, and its parent trained on the certification set: the chain finds it
@@ -641,12 +697,12 @@ def test_lineage_is_closed_and_subtract_only():
     # a lineage about another artifact is read as absent
     assert lin.about(child, ROOT_ID) is None and lin.about(child, CHILD_ID) is child
     with pytest.raises(vocab.Unidentified, match="not one of"):
-        lin.load({"spec_version": 3, "subject": CHILD_ID, "parent": ROOT_ID, "method": "sft",
+        lin.load({"spec_version": 4, "subject": CHILD_ID, "parent": ROOT_ID, "method": "sft",
                   "sets": [{"role": "excluded", "digest": CERT}]})
     with pytest.raises(vocab.Unidentified, match="signal"):
-        lin.load({"spec_version": 3, "subject": CHILD_ID, "parent": ROOT_ID, "method": "distillation"})
+        lin.load({"spec_version": 4, "subject": CHILD_ID, "parent": ROOT_ID, "method": "distillation"})
     with pytest.raises(vocab.Unidentified, match="not lineage fields"):
-        lin.load({"spec_version": 3, "subject": CHILD_ID, "parent": ROOT_ID, "method": "sft", "excluded": []})
+        lin.load({"spec_version": 4, "subject": CHILD_ID, "parent": ROOT_ID, "method": "sft", "excluded": []})
 
 
 def test_a_dtype_named_auto_is_unresolved_as_a_value_of_auto_is():

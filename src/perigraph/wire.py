@@ -9,11 +9,13 @@ part, and every historical record then means something different. A part name do
 """
 from __future__ import annotations
 
+import math
 import re
 
 from perigraph.model import Model, ModelAbsence, ModelPart
 from perigraph.record import Absence, Manifest, Part, Record
-from perigraph.vocab import NAMESPACE, SPEC_VERSION, Unidentified
+from perigraph.vocab import (NAMESPACE, OPENAI_MEMBERS, SPEC_VERSION, UNLISTED_NAME_PATTERN, UNLISTED_NAMES_MAX,
+                            Unidentified)
 
 PREFIX = NAMESPACE
 
@@ -34,6 +36,9 @@ def to_attributes(record: Record) -> dict[str, str | int | float]:
     }
     if record.has_identity:
         out[f"{PREFIX}.harness_identity"] = record.identity
+    if record.unlisted is not None:
+        out[f"{PREFIX}.request.unlisted"] = ",".join(record.unlisted)
+        out[f"{PREFIX}.request.unlisted_omitted"] = record.unlisted_omitted
     m = record.model
     if m is not None:
         out[f"{PREFIX}.model_reaches"] = ",".join(m.reaches)
@@ -81,6 +86,7 @@ def _names(field: str) -> tuple[str, ...]:
 
 
 _HEX64 = re.compile(r"[0-9a-f]{64}")
+_UNLISTED_NAME = re.compile(UNLISTED_NAME_PATTERN)
 _HEX24 = re.compile(r"[0-9a-f]{24}")
 _REQUIRED = ("spec_version", "collector", "collector_version", "collector_reaches", "status")
 _TOP_STRINGS = ("collector", "collector_version", "collector_reaches", "status", "model_reaches",
@@ -100,6 +106,25 @@ def _check_shape(attrs: dict) -> None:
     for k in _TOP_STRINGS:
         if f"{PREFIX}.{k}" in attrs and not isinstance(attrs[f"{PREFIX}.{k}"], str):
             raise Unidentified(f"{PREFIX}.{k} is not a string")
+    unlisted, unnamed = f"{PREFIX}.request.unlisted", f"{PREFIX}.request.unlisted_omitted"
+    if (unlisted in attrs) != (unnamed in attrs):
+        raise Unidentified(f"one of {unlisted} and {unnamed} is present without the other")
+    if unlisted in attrs:
+        if not isinstance(attrs[unlisted], str):
+            raise Unidentified(f"{unlisted} is not a string")
+        n = attrs[unnamed]
+        if (isinstance(n, bool) or not isinstance(n, (int, float)) or not math.isfinite(n) or n != int(n)
+                or n < 0):
+            raise Unidentified(f"{unnamed} is not a non-negative integer")
+        names = _names(attrs[unlisted])
+        if len(names) > UNLISTED_NAMES_MAX:
+            raise Unidentified(f"{unlisted} names more than {UNLISTED_NAMES_MAX} members")
+        for name in names:
+            if not _UNLISTED_NAME.fullmatch(name):
+                raise Unidentified(f"{unlisted} has an entry outside the binding's name pattern")
+            if name in OPENAI_MEMBERS:
+                raise Unidentified(f"{unlisted} names {name}, which the binding reads, so a part read from it is "
+                                   f"incomplete")
     for k in ("harness_identity", "model_identity", "artifact_identity"):
         v = attrs.get(f"{PREFIX}.{k}")
         if v is not None and not _HEX24.fullmatch(v):
@@ -182,7 +207,10 @@ def from_attributes(attrs: dict) -> Record:
                                       version=str(attrs[f"{PREFIX}.collector_version"]),
                                       reaches=_names(reaches)),
                     status=str(attrs[f"{PREFIX}.status"]),
-                    parts=tuple(parts), absences=tuple(absences), model=model)
+                    parts=tuple(parts), absences=tuple(absences), model=model,
+                    unlisted=_names(str(attrs[f"{PREFIX}.request.unlisted"])) if f"{PREFIX}.request.unlisted" in attrs
+                    else None,
+                    unlisted_omitted=int(attrs.get(f"{PREFIX}.request.unlisted_omitted", 0)))
     # The identities on the wire are derived values. One that disagrees with the parts it claims to be over is a sender
     # that hashed something else, and reading it as given would key a comparison on bytes nobody can name.
     derived = {f"{PREFIX}.harness_identity": record.identity if record.has_identity else None,

@@ -38,6 +38,15 @@ def names_list_pattern(names: list[str]) -> str:
     return f"^(?:(?:{alt})?)(?:,(?:(?:{alt})?))*$"
 
 
+def unlisted_pattern() -> str:
+    """At most unlisted_names_max entries, each matching the binding's name pattern and not a member it reads."""
+    lim = VOCAB["unlisted_names"]
+    name = lim["pattern"].lstrip("^").rstrip("$")
+    read = "|".join(esc(m) for m in VOCAB["bindings"]["openai_chat_completions"]["members"])
+    entry = f"(?!(?:{read})(?:,|$)){name}"
+    return f"^(?:{entry}(?:,{entry}){{0,{lim['max'] - 1}}})?$"
+
+
 def part_rules(prefix: str, absent_prefix: str, names: list[str], sourcing: list[str], with_boundary: bool) -> tuple[dict, list]:
     props: dict = {}
     rules: list = []
@@ -100,6 +109,8 @@ def build() -> dict:
         f"{P}.harness_identity": {"type": "string", "pattern": HEX24},
         f"{P}.model_identity": {"type": "string", "pattern": HEX24},
         f"{P}.artifact_identity": {"type": "string", "pattern": HEX24},
+        f"{P}.request.unlisted": {"type": "string", "pattern": unlisted_pattern()},
+        f"{P}.request.unlisted_omitted": {"type": "integer", "minimum": 0},
     }
     hp, hr = part_rules("part", "absent", parts, harness_sourcing, True)
     mp, mr = part_rules("model", "model_absent", model_parts, model_sourcing, False)
@@ -123,6 +134,8 @@ def build() -> dict:
             f"^{esc(P)}\\.(?:part|absent)\\.(?!(?:{known_parts})\\.)": False,
             f"^{esc(P)}\\.(?:model|model_absent)\\.(?!(?:{known_model})\\.)": False,
         },
+        "dependentRequired": {f"{P}.request.unlisted": [f"{P}.request.unlisted_omitted"],
+                              f"{P}.request.unlisted_omitted": [f"{P}.request.unlisted"]},
         "allOf": hr + mr,
     }
 

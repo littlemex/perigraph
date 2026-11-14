@@ -29,6 +29,12 @@ interface SpecShape {
   never_identifying: Vocabulary;
   refines_only: Vocabulary;
   must_be_known_for_identity: Vocabulary & { known_when_absent_as: string };
+  keying_boundary: { parts: Record<string, string> };
+  uniform_within_arm: Vocabulary;
+  bindings: {
+    openai_chat_completions: { members: Record<string, string[]> };
+  };
+  unlisted_names: { pattern: string; max: number };
   absence_reasons: Vocabulary & { blames: Record<string, string>; detail_required_when_blames: string };
   status: Vocabulary & { admissible_to_a_verdict: string[] };
   context_crossings: Vocabulary;
@@ -52,11 +58,19 @@ export const SOURCING = SPEC.sourcing.values;
 export const IDENTIFYING_SOURCING = SPEC.sourcing.may_key_identity ?? [];
 export const IDENTIFYING_MODEL_SOURCING = SPEC.sourcing.may_key_model_identity ?? [];
 export const BOUNDARIES = SPEC.boundaries.values;
-export const IDENTIFYING_BOUNDARIES = SPEC.boundaries.may_key_identity ?? [];
+/** The one boundary at which each part may key the harness identity (`keying_boundary`). A part not listed never keys. */
+export const KEYING_BOUNDARY: Record<string, string> = SPEC.keying_boundary.parts;
 export const NEVER_IDENTIFYING = SPEC.never_identifying.values;
 export const REFINES_ONLY = SPEC.refines_only.values;
 export const MUST_BE_KNOWN_FOR_IDENTITY = SPEC.must_be_known_for_identity.values;
 export const KNOWN_WHEN_ABSENT_AS = SPEC.must_be_known_for_identity.known_when_absent_as;
+export const UNIFORM_WITHIN_ARM = SPEC.uniform_within_arm.values;
+/** The OpenAI Chat Completions binding's closed list of the request members it reads: member -> parts, empty for none. */
+export const OPENAI_MEMBERS: Record<string, string[]> = Object.fromEntries(
+  Object.entries(SPEC.bindings.openai_chat_completions.members).map(([k, v]) => [k, [...v]]),
+);
+export const UNLISTED_NAME_PATTERN = SPEC.unlisted_names.pattern;
+export const UNLISTED_NAMES_MAX = SPEC.unlisted_names.max;
 export const ABSENCE_REASONS = SPEC.absence_reasons.values;
 export const ABSENCE_BLAMES = SPEC.absence_reasons.blames;
 export const DETAIL_REQUIRED_WHEN_BLAMES = SPEC.absence_reasons.detail_required_when_blames;
@@ -133,8 +147,11 @@ export function checkSpecIsTotal(): void {
     ["sourcing.may_key_model_identity", IDENTIFYING_MODEL_SOURCING, SOURCING],
     ["model_parts.comparable_across_collectors", MODEL_COMPARABLE_ACROSS_COLLECTORS, MODEL_PARTS],
     ["sourcing", IDENTIFYING_SOURCING, SOURCING],
-    ["boundaries", IDENTIFYING_BOUNDARIES, BOUNDARIES],
+    ["keying_boundary", Object.values(KEYING_BOUNDARY), BOUNDARIES],
+    ["keying_boundary", Object.keys(KEYING_BOUNDARY), PARTS],
     ["never_identifying", NEVER_IDENTIFYING, PARTS],
+    ["uniform_within_arm", UNIFORM_WITHIN_ARM, PARTS],
+    ["bindings.openai_chat_completions.members", Object.values(OPENAI_MEMBERS).flat(), PARTS],
   ] as const) {
     const extra = subset.filter((v) => !whole.includes(v));
     if (extra.length > 0) {

@@ -20,7 +20,6 @@ func templateFailure(check int, where string) *Absence {
 }
 
 func scalarString(s string) bool {
-	// A valid UTF-8 string cannot contain an encoded surrogate.
 	return utf8.ValidString(s)
 }
 
@@ -43,8 +42,6 @@ func templateMatches(content string, fixed []string) bool {
 	return len(content)-len(suffix) >= at && strings.HasSuffix(content, suffix)
 }
 
-// templatePayload implements digest.request_template_serialisation. String
-// lengths are UTF-8 byte lengths; untemplated entries have zero fixed strings.
 func templatePayload(entries []templateEntry) string {
 	var b strings.Builder
 	b.WriteString(strconv.Itoa(len(entries)))
@@ -160,8 +157,6 @@ func readRequestTemplate(body map[string]any) (Part, *Absence) {
 		}
 		read = append(read, result)
 	}
-	// Validate the entire declaration against the request before deciding
-	// whether its fixed strings make it an empty request field.
 	if !nonempty {
 		return Part{}, &Absence{Reason: "not_provided"}
 	}
@@ -171,8 +166,6 @@ func readRequestTemplate(body map[string]any) (Part, *Absence) {
 	}, nil
 }
 
-// harnessIdentity applies the vocabulary's requirements and refinements before
-// using the shared, sorted identity serialisation.
 func harnessIdentity(r Record) string {
 	required, err := vocabularyValues("must_be_known_for_identity")
 	if err != nil {
@@ -190,9 +183,14 @@ func harnessIdentity(r Record) string {
 	if !ok {
 		return ""
 	}
+	keying, _ := vocabulary["keying_boundary"].(map[string]any)
+	boundaries, _ := keying["parts"].(map[string]any)
 	for _, name := range required {
-		// Any sourcing of a held part establishes that its state is known.
-		if _, held := r.Parts[name]; held {
+		if held, ok := r.Parts[name]; ok {
+			if boundary, listed := boundaries[name].(string); !listed ||
+				held.Sourcing != "in_the_request" || held.Boundary != boundary {
+				return ""
+			}
 			continue
 		}
 		if absent, found := r.Absent[name]; !found || absent.Reason != knownAbsentAs {
@@ -212,7 +210,8 @@ func harnessIdentity(r Record) string {
 	identifying := make(map[string]string)
 	established := false
 	for name, part := range r.Parts {
-		if part.Sourcing != "in_the_request" || part.Boundary != "model_visible" ||
+		boundary, listed := boundaries[name].(string)
+		if !listed || part.Sourcing != "in_the_request" || part.Boundary != boundary ||
 			inVocabulary("never_identifying", name) {
 			continue
 		}

@@ -4,47 +4,56 @@ No network and no tracer: a shim installed into a sender's process should not be
 not need moved. It takes the dict a client is about to send.
 
 **What it can and cannot reach, and why that is the finding rather than a limitation.** Only the instruction is text the
-model provably read. A `tools` array, a `response_format` and the sampler settings are protocol values: the provider
-renders them into the prompt however it likes, or not at all, and the sender does not hold that rendering. So they are
-recorded with a `parsed` boundary and cannot key an identity -- which means **a harness read from a request body is
-identified by its instruction and nothing else.**
+model provably read, so only the instruction establishes a harness identity. A `tools` array is a protocol value the
+provider renders however it likes, and stays `parsed`. The generation controls -- what the engine is told to render,
+what form the output may take, how long it may run -- are protocol values too, and they key the identity beside an
+instruction at `canonical_value`, a serialisation every implementation computes alike: R17b's base body and its
+reasoning-before-answer body differed only there, and version 3 gave them one identity. They never establish one,
+because on their own they name none of the text the model read (SPEC section 2).
 
-That is the same fact the measurement found from the other side: one sentence of the instruction moved accuracy 12.04
-points, and it is also the only part of a request whose exact bytes we can prove the model read.
+Every top-level member the binding does not list is named, never valued, in `Record.unlisted`: a member nobody reads is
+a change nobody records, and dropping it silently would make its absence look clean.
 """
 from __future__ import annotations
 
+import hashlib
+import re
+
+from perigraph.canonical import NotCanonical, canonical_digest, serialise
 from perigraph.model import Model, ModelAbsence
 from perigraph.record import Absence, Manifest, Part, Record, blank, digest
-from perigraph.vocab import MODEL_PARTS, PARTS
+from perigraph.vocab import MODEL_PARTS, OPENAI_MEMBERS, PARTS, UNLISTED_NAME_PATTERN, UNLISTED_NAMES_MAX, Unidentified
 
 #: What this collector claims it can reach from a request body, and nothing more. **Static per version on purpose:** a
 #: manifest that adapted to what it happened to find could never contradict a record, which is the one thing it is for.
-FROM_A_REQUEST = ("instruction", "request_template", "tool_schemas", "readout", "decoding")
+FROM_A_REQUEST = ("instruction", "request_template", "tool_schemas", "generation_controls", "decoding")
 
 #: Which boundary each of those digests is actually over. This table is the finding; see the module docstring.
 REQUEST_BOUNDARIES = {
     "instruction": "model_visible",
     "request_template": "model_visible",
     "tool_schemas": "parsed",
-    "readout": "parsed",
-    "decoding": "parsed",
+    "generation_controls": "canonical_value",
+    "decoding": "canonical_value",
 }
 
-#: Sampler settings read from a body, in a fixed order. Fixed rather than sorted at use, so that adding a knob is a
-#: visible edit here instead of a silent change to every digest ever computed.
-DECODING_KEYS = ("temperature", "top_p", "top_k", "seed")
+#: The request members read into each canonical part, from the binding's closed list in `spec/vocabularies.json`.
+#: The list is the binding's and frozen per spec version: adding a member changes what the part's digest is over.
+GENERATION_CONTROL_MEMBERS = tuple(k for k, v in OPENAI_MEMBERS.items() if v == ("generation_controls",))
+DECODING_MEMBERS = tuple(k for k, v in OPENAI_MEMBERS.items() if v == ("decoding",))
 
 #: Parts a request body has no place to put. Their absence is the SENDER's -- the shim did not fail to find them, there
 #: is nowhere in a request for them to be -- and saying so is the difference the absence vocabulary exists for.
-PUSHED_PARTS = ("loop", "turn_budget", "retry_policy", "context_partitioning")
+#: `readout` is here from version 4: the caller's rule for taking the answer out of the reply is not in any request,
+#: and a `response_format` is a generation control, read once.
+PUSHED_PARTS = ("loop", "turn_budget", "retry_policy", "readout", "context_partitioning")
+
+_UNLISTED_NAME = re.compile(UNLISTED_NAME_PATTERN)
 
 
 def _scalars(pairs: list[tuple[str, object]]) -> str:
-    """Render protocol scalars for hashing, in the order given.
-
-    Canonicalising **is** allowed here, and the rule that forbids it for the instruction says why: a machine reads these,
-    so two spellings of the same setting behave identically. The instruction is the opposite case and is hashed raw.
+    """Render the `tools` shapes for the `parsed` `tool_schemas` digest, in the order given. Collector-local (SPEC 2.3):
+    it never keys anything, so it is not the `canonical_value` serialisation and need not agree with any other collector.
     """
     return ";".join(f"{k}={v!r}" for k, v in pairs)
 
@@ -102,27 +111,17 @@ def from_request(body: dict, *, collector: str, version: str) -> Record:
     else:
         absences.append(Absence(kind="tool_schemas", reason="not_provided"))
 
-    fmt = body.get("response_format")
-    bad_fmt = f"response_format is {_json_type(fmt)}, not an object" if fmt is not None and not isinstance(fmt, dict) \
-        else ""
-    if bad_fmt:
-        absences.append(Absence(kind="readout", reason="extraction_failed", detail=bad_fmt))
-    elif fmt:
-        hold("readout", _scalars([("response_format", fmt)]),
-             label=str(fmt.get("type", "")) if isinstance(fmt, dict) else "")
-    else:
-        # Not our failure. Without a declared format the answer is read out of prose by a convention on the caller's
-        # side, and a mis-set convention has been measured to put 1,822 of 2,364 answers on one option.
-        absences.append(Absence(kind="readout", reason="not_provided"))
-
-    # A response_format constrains the grammar of the output, so it is decoding as well as readout (section 1).
-    knobs = [(k, body[k]) for k in DECODING_KEYS if body.get(k) is not None] + ([("response_format", fmt)] if fmt else [])
-    if bad_fmt:
-        absences.append(Absence(kind="decoding", reason="extraction_failed", detail=bad_fmt))
-    elif knobs:
-        hold("decoding", _scalars(knobs), label=",".join(k for k, _ in knobs))
-    else:
-        absences.append(Absence(kind="decoding", reason="not_provided"))
+    for kind, members in (("generation_controls", GENERATION_CONTROL_MEMBERS), ("decoding", DECODING_MEMBERS)):
+        held, failed = _canonical(body, members)
+        if failed:
+            absences.append(Absence(kind=kind, reason="extraction_failed", detail=failed))
+        elif held is not None:
+            payload, names = held
+            parts.append(Part(kind=kind, sourcing="in_the_request", label=",".join(names),
+                              content_digest=hashlib.sha256(payload.encode("utf-8")).hexdigest(),
+                              boundary=REQUEST_BOUNDARIES[kind]))
+        else:
+            absences.append(Absence(kind=kind, reason="not_provided"))
 
     for kind in PUSHED_PARTS:
         absences.append(Absence(kind=kind, reason="not_provided"))
@@ -130,15 +129,42 @@ def from_request(body: dict, *, collector: str, version: str) -> Record:
     # At request time the calls have not happened, so there is nothing the sender could have supplied.
     absences.append(Absence(kind="tool_trace", reason="not_provided"))
 
-    return _record(collector, version, parts, absences)
+    return _record(collector, version, parts, absences, unlisted=_unlisted(body))
 
 
-def _record(collector: str, version: str, parts, absences) -> Record:
+def _canonical(body: dict, members: tuple[str, ...]) -> tuple[tuple[str, list[str]] | None, str]:
+    """The canonical text and member names of a part read from `members`, None when none is present and not null, or
+    the reason it cannot be serialised. No type check and no emptiness rule: a value is digested as sent, so
+    `"chat_template_kwargs": {}` is held and differs from absent, and splitting is the safe direction."""
+    present = {k: body[k] for k in members if k in body and body[k] is not None}
+    if not present:
+        return None, ""
+    for k in sorted(present):
+        try:
+            serialise(present[k])
+        except NotCanonical as e:
+            # Names the member and the cause, never the value (SPEC 12.3).
+            return None, f"{k} holds {e}"
+    return (serialise(present), sorted(present)), ""
+
+
+def _unlisted(body: dict) -> tuple[tuple[str, ...], int]:
+    """The top-level members the binding does not list, by name: at most UNLISTED_NAMES_MAX of those that match the
+    binding's name pattern, sorted; the rest counted. A name is requester-controlled text, so one that does not match is
+    counted and never written (SPEC 12.3)."""
+    names = [k for k in body if k not in OPENAI_MEMBERS]
+    ok = sorted(k for k in names if isinstance(k, str) and _UNLISTED_NAME.fullmatch(k))
+    written = tuple(ok[:UNLISTED_NAMES_MAX])
+    return written, len(names) - len(written)
+
+
+def _record(collector: str, version: str, parts, absences, unlisted=None) -> Record:
     """A request collector did not load the model, so it says so for each model part (section 6) rather than leaving
     the model half out, which would be a hole nobody named."""
     record = Record(manifest=Manifest(collector=collector, version=version, reaches=FROM_A_REQUEST),
                     status="complete", parts=tuple(parts), absences=tuple(absences),
-                    model=Model(absences=tuple(ModelAbsence(kind=k, reason="not_observable") for k in MODEL_PARTS)))
+                    model=Model(absences=tuple(ModelAbsence(kind=k, reason="not_observable") for k in MODEL_PARTS)),
+                    unlisted=None if unlisted is None else unlisted[0], unlisted_omitted=0 if unlisted is None else unlisted[1])
     assert not record.unaccounted, f"the collector left {record.unaccounted} unaccounted for"
     return record
 
@@ -280,15 +306,22 @@ def declare(record: Record, **pushed: str) -> Record:
     """Attach what the owner says about the parts a request cannot carry, replacing their `not_provided` absences.
 
     Separate from `from_request` because the two are different kinds of fact and the record has to keep them apart. What
-    a caller declares about its own loop is a claim we cannot check, so it enters as `pushed_by_owner` and can never key
-    an identity however true it happens to be.
+    a caller declares about its own loop or readout is a claim we cannot check, so it enters as `pushed_by_owner` and can
+    never key an identity however true it happens to be. It is digested at `canonical_value`, as the JSON string it is,
+    so two collectors' declarations of one string compare, which is what the arm rule of SPEC section 4 reads.
     """
     unknown = sorted(set(pushed) - set(PUSHED_PARTS))
     if unknown:
         raise ValueError(f"{unknown} are not parts a request body fails to carry; a declaration about something we can "
                          f"read from the request would be a claim standing in front of the evidence")
+    for k, v in pushed.items():
+        if not isinstance(v, str) or blank(v):
+            raise Unidentified(f"the declaration of {k} is empty or not a string; a part that is genuinely empty is a "
+                               f"part that was not applied, and that is a different record")
     kept = tuple(a for a in record.absences if a.kind not in pushed)
-    declared = tuple(Part(kind=k, sourcing="pushed_by_owner", label=v, content_digest=digest(v), boundary="parsed")
+    declared = tuple(Part(kind=k, sourcing="pushed_by_owner", label=v, content_digest=canonical_digest(v),
+                          boundary="canonical_value")
                      for k, v in sorted(pushed.items()))
-    return Record(manifest=record.manifest, status=record.status,
-                  parts=record.parts + declared, absences=kept)
+    return Record(manifest=record.manifest, status=record.status, model=record.model,
+                  parts=record.parts + declared, absences=kept, unlisted=record.unlisted,
+                  unlisted_omitted=record.unlisted_omitted)

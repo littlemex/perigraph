@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from perigraph.vocab import (ABSENCE_BLAMES, ABSENCE_REASONS, ADMISSIBLE_STATUS, BOUNDARIES,
-                            DETAIL_REQUIRED_WHEN_BLAMES, IDENTIFYING_BOUNDARIES, IDENTIFYING_SOURCING,
+                            DETAIL_REQUIRED_WHEN_BLAMES, KEYING_BOUNDARY, IDENTIFYING_SOURCING,
                             KNOWN_WHEN_ABSENT_AS, NEVER_IDENTIFYING, PARTS, MUST_BE_KNOWN_FOR_IDENTITY, REFINES_ONLY,
                             SOURCING, STATUS,
                             Unidentified)
@@ -100,7 +100,9 @@ class Part:
             return False
         if not self.content_digest:
             return False
-        if self.boundary not in IDENTIFYING_BOUNDARIES:
+        # Per part, not per boundary (keying_boundary): a boundary that may key one part must not let every part held at
+        # it key, or tool_schemas at canonical_value would establish an identity on its own.
+        if KEYING_BOUNDARY.get(self.kind) != self.boundary:
             return False
         return self.sourcing in IDENTIFYING_SOURCING
 
@@ -202,8 +204,18 @@ class Record:
     #: What answered (spec section 9), present only when a collector in the loading process -- or a relay forwarding its
     #: stamp verbatim -- recorded it. `None` is not "the model is unknown to be different"; it is "nothing was said".
     model: "Model | None" = None
+    #: The request members the collector saw and its binding does not read (`perigraph.request.unlisted`), by name only.
+    #: `None` is "nothing was said", which is unknown; an empty tuple is "the collector looked and there were none".
+    unlisted: "tuple[str, ...] | None" = None
+    #: How many unlisted members were counted and not named (`perigraph.request.unlisted_omitted`).
+    unlisted_omitted: int = 0
 
     def __post_init__(self) -> None:
+        if self.unlisted is None and self.unlisted_omitted:
+            raise Unidentified("a count of unnamed unlisted members without the unlisted list says the collector looked "
+                               "and also that it said nothing")
+        if self.unlisted_omitted < 0:
+            raise Unidentified("an unlisted count below zero")
         if self.status not in STATUS:
             raise Unidentified(f"{self.status!r} is not one of {STATUS}")
         held = [p.kind for p in self.parts]
@@ -223,15 +235,16 @@ class Record:
         """Whether an identity can be derived (SPEC section 2). Three conditions:
 
         * some part is identifying;
-        * one of them is not `refines_only` -- a part whose split between fixed text and item is the requester's word
-          may split an identity a held instruction establishes and may never establish one;
-        * every `must_be_known_for_identity` part is held or absent `not_provided`. A part the collector failed to read, could
-          not reach, or did not mention might have been there, and an identity computed without it joins runs that
-          differ in it."""
+        * one of them is not `refines_only`. A template's split between fixed text and item is the requester's word, and
+          generation controls name none of the text the model read: each may split an identity a held instruction
+          establishes and may never establish one;
+        * every `must_be_known_for_identity` part is held in the request at its `keying_boundary` boundary, or absent
+          `not_provided`. A part the collector failed to read, could not reach, or did not mention might have been
+          there, and a declaration in its place would lift that refusal on the owner's word."""
         identifying = [p for p in self.parts if p.identifying]
         if not any(p.kind not in REFINES_ONLY for p in identifying):
             return False
-        held = {p.kind for p in self.parts}
+        held = {p.kind for p in self.parts if p.sourcing == "in_the_request" and KEYING_BOUNDARY.get(p.kind) == p.boundary}
         kept = {a.kind for a in self.absences if a.reason == KNOWN_WHEN_ABSENT_AS}
         return all(k in held or k in kept for k in MUST_BE_KNOWN_FOR_IDENTITY)
 

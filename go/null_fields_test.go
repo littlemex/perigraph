@@ -26,7 +26,7 @@ func TestNullOptionalFieldsConformanceVector(t *testing.T) {
 	if r.Status != "complete" {
 		t.Errorf("status = %q", r.Status)
 	}
-	for _, name := range []string{"tool_schemas", "readout", "decoding"} {
+	for _, name := range []string{"tool_schemas", "readout", "generation_controls", "decoding"} {
 		if got := r.Absent[name]; got != (Absence{Reason: "not_provided"}) {
 			t.Errorf("%s absence = %+v", name, got)
 		}
@@ -64,10 +64,11 @@ func TestNullFieldsDoNotMaskOtherFields(t *testing.T) {
 		t.Errorf("instruction did not identify the harness: %q", r.HarnessIdentity)
 	}
 	if r.Absent["tool_schemas"].Reason != "not_provided" ||
-		r.Absent["readout"].Reason != "not_provided" {
+		r.Absent["readout"].Reason != "not_provided" ||
+		r.Absent["generation_controls"].Reason != "not_provided" {
 		t.Fatal("null fields were not marked not_provided")
 	}
-	if p := r.Parts["decoding"]; p.Boundary != "parsed" ||
+	if p := r.Parts["decoding"]; p.Boundary != "canonical_value" ||
 		p.Digest != handSHA(`{"temperature":0}`) {
 		t.Errorf("present temperature not recorded: %+v", p)
 	}
@@ -83,7 +84,6 @@ func TestNestedNullAndWrongTypesRemainExtractionFailures(t *testing.T) {
 		{`{"messages":[null]}`, "instruction", "messages[0]", "null"},
 		{`{"messages":[{"role":"system","content":null}]}`, "instruction", "messages[0].content", "null"},
 		{`{"tools":[null]}`, "tool_schemas", "tools[0]", "null"},
-		{`{"response_format":[]}`, "readout", "response_format", "array"},
 	} {
 		r := FromRequest(decodeRequest(t, tc.body), "shim", "1")
 		a := r.Absent[tc.part]
@@ -95,5 +95,12 @@ func TestNestedNullAndWrongTypesRemainExtractionFailures(t *testing.T) {
 		if r.Status != "complete" {
 			t.Errorf("%s: status = %q", tc.body, r.Status)
 		}
+	}
+	// Version 4 removes the response_format object type check and readout binding.
+	r := FromRequest(decodeRequest(t, `{"response_format":[]}`), "shim", "1")
+	if r.Absent["readout"] != (Absence{Reason: "not_provided"}) ||
+		r.Parts["generation_controls"].Digest != handSHA(`{"response_format":[]}`) ||
+		r.Status != "complete" {
+		t.Errorf("array response_format: %+v", r)
 	}
 }

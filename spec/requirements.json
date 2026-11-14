@@ -26,7 +26,9 @@
         "receiver/admit-foreign-attributes",
         "receiver/admit-identity-omitted",
         "receiver/admit-instruction-and-template",
-        "receiver/admit-template-pushed-by-owner"
+        "receiver/admit-generation-controls",
+        "receiver/admit-unlisted-names",
+        "receiver/admit-tool-schemas-at-canonical-value"
       ]
     },
     {
@@ -128,16 +130,20 @@
         "receiver"
       ],
       "text": "**A receiver MAY let any claim it cannot check, whether a pushed part or a declaration that travels beside the record, trigger a refusal, and MUST NOT let one lift a refusal.** A forwarded model stamp is the one exception, and section 12.1 states the trust it requires.",
-      "cases": []
+      "cases": [
+        "arm/arm-refuse-retry-beside-none",
+        "receiver/refuse-template-pushed-by-owner",
+        "receiver/refuse-generation-controls-pushed"
+      ]
     },
     {
-      "id": "PG-080",
+      "id": "PG-090",
       "section": "1.2",
       "level": "MUST",
       "roles": [
         "collector"
       ],
-      "text": "A collector MUST emit each of the eleven parts and each of the four model parts as held or as absent.",
+      "text": "A collector MUST emit each of the twelve parts and each of the four model parts as held or as absent.",
       "cases": []
     },
     {
@@ -190,6 +196,16 @@
       "cases": []
     },
     {
+      "id": "PG-100",
+      "section": "1.2",
+      "level": "MUST",
+      "roles": [
+        "collector"
+      ],
+      "text": "A collector MUST NOT let a member outside the list, or one the list records nowhere, change any part, digest or identity, and MUST emit `perigraph.request.unlisted` and `perigraph.request.unlisted_omitted` (section 6) on every record of a request body that is a JSON object: a member nobody reads is a change nobody records, and dropping it silently would make its absence look clean.",
+      "cases": []
+    },
+    {
       "id": "PG-014",
       "section": "1.3",
       "level": "MUST",
@@ -215,16 +231,6 @@
       ]
     },
     {
-      "id": "PG-087",
-      "section": "2",
-      "level": "MAY",
-      "roles": [
-        "receiver"
-      ],
-      "text": "A part held with another sourcing satisfies this and keys nothing, which gives the identity a record without it would have; a receiver MAY refuse on it as on any claim it cannot check (section 1.1a).",
-      "cases": []
-    },
-    {
       "id": "PG-016",
       "section": "2",
       "level": "MUST",
@@ -233,12 +239,20 @@
       ],
       "text": "It is an error to ask such a record for an identity, and a receiver MUST refuse a verdict over one, because an identity constant across every possible harness groups things that have nothing in common.",
       "cases": [
+        "arm/arm-refuse-no-identity",
         "receiver/refuse-no-identity",
         "receiver/refuse-template-alone",
         "receiver/refuse-failed-template",
         "receiver/refuse-template-unmentioned",
         "receiver/refuse-template-redacted",
-        "receiver/refuse-template-beside-unreadable-instruction"
+        "receiver/refuse-template-beside-unreadable-instruction",
+        "receiver/refuse-template-pushed-by-owner",
+        "receiver/admit-generation-controls",
+        "receiver/refuse-generation-controls-alone",
+        "receiver/refuse-generation-controls-pushed",
+        "receiver/refuse-generation-controls-wrong-boundary",
+        "receiver/refuse-generation-controls-failed",
+        "receiver/admit-tool-schemas-at-canonical-value"
       ]
     },
     {
@@ -273,6 +287,17 @@
       "cases": []
     },
     {
+      "id": "PG-101",
+      "section": "2.3",
+      "level": "MUST",
+      "roles": [
+        "any",
+        "collector"
+      ],
+      "text": "A `pushed_by_owner` declaration MUST be a string, and a collector MUST digest it at `canonical_value` as that JSON string, quotes included, so two collectors' declarations of one string compare too.",
+      "cases": []
+    },
+    {
       "id": "PG-071",
       "section": "2.4",
       "level": "MUST",
@@ -290,6 +315,26 @@
         "collector"
       ],
       "text": "A collector MAY canonicalise a `parsed` payload.",
+      "cases": []
+    },
+    {
+      "id": "PG-102",
+      "section": "2.4",
+      "level": "MUST",
+      "roles": [
+        "collector"
+      ],
+      "text": "A collector MUST serialise a `canonical_value` payload exactly as `digest.canonical_value_serialisation` says.",
+      "cases": []
+    },
+    {
+      "id": "PG-103",
+      "section": "2.4",
+      "level": "MUST",
+      "roles": [
+        "collector"
+      ],
+      "text": "A collector handed a decoded value rather than text, such as an in-process shim handed the dictionary a client will serialise, MUST be handed the value after every merge the client performs (an `extra_body` included), and MUST treat it by the JSON data model: an object with string names, an array, a string, a finite number, `true`, `false` or `null`, where a language's sequence or mapping types that its JSON serialiser writes as an array or an object are those.",
       "cases": []
     },
     {
@@ -371,7 +416,10 @@
         "any"
       ],
       "text": "**Records grouped as one arm MUST NOT be given one verdict when the distinct harness identities derived from them number more than one, or number one while some record has none.** The identities are the ones a receiver derives (section 6), not the ones a record states.",
-      "cases": []
+      "cases": [
+        "arm/arm-refuse-two-identities",
+        "arm/arm-refuse-no-identity"
+      ]
     },
     {
       "id": "PG-082",
@@ -381,6 +429,64 @@
         "receiver"
       ],
       "text": "A receiver that gives a verdict over the records of one identity within the arm MUST say how many records of the arm it left out.",
+      "cases": []
+    },
+    {
+      "id": "PG-104",
+      "section": "4",
+      "level": "MUST",
+      "roles": [
+        "receiver"
+      ],
+      "text": "**A receiver MUST refuse one verdict over records grouped as one arm when, for a part in `uniform_within_arm`, two records hold it at `canonical_value` with different digests, or one holds it there and another has it absent as `not_provided`.** The parts are the pushed parts and `decoding`, which never key the identity and still change what is scored: R17b's H3, H4 and H6 sent one request body and differed in the caller's readout and in a declared retry.",
+      "cases": [
+        "arm/arm-admit-same",
+        "arm/arm-admit-all-undeclared",
+        "arm/arm-refuse-readout-differs-last",
+        "arm/arm-refuse-readout-differs-middle",
+        "arm/arm-refuse-retry-beside-none",
+        "arm/arm-refuse-readout-beside-none",
+        "arm/arm-refuse-decoding-differs",
+        "arm/arm-unknown-readout-unknown",
+        "arm/arm-refuse-differs-and-unknown",
+        "arm/arm-refuse-empty"
+      ]
+    },
+    {
+      "id": "PG-105",
+      "section": "4",
+      "level": "MUST",
+      "roles": [
+        "receiver"
+      ],
+      "text": "When no record pair refuses and some record is unknown, a receiver MUST report `unknown` and MUST NOT report the arm admitted.",
+      "cases": [
+        "arm/arm-unknown-readout-unknown",
+        "arm/arm-refuse-differs-and-unknown"
+      ]
+    },
+    {
+      "id": "PG-106",
+      "section": "4",
+      "level": "MUST",
+      "roles": [
+        "receiver"
+      ],
+      "text": "**A receiver MUST refuse one verdict over records grouped as one arm when their `perigraph.request.unlisted` sets or `perigraph.request.unlisted_omitted` counts differ, or when some records carry them and some do not.** Records that all lack the pair refuse nothing by this rule.",
+      "cases": [
+        "arm/arm-refuse-unlisted-differs",
+        "arm/arm-refuse-unlisted-some-without",
+        "arm/arm-admit-all-without-unlisted"
+      ]
+    },
+    {
+      "id": "PG-107",
+      "section": "4",
+      "level": "SHOULD",
+      "roles": [
+        "receiver"
+      ],
+      "text": "A receiver MAY widen a verdict over a record whose unlisted set is not empty, or whose omitted count is not zero, to `unknown`, and SHOULD state the unlisted names with any verdict it gives over such records.",
       "cases": []
     },
     {
@@ -449,7 +555,8 @@
       ],
       "text": "A receiver MUST reject attributes whose `perigraph.spec_version` it does not implement, rather than parsing what it recognises.",
       "cases": [
-        "receiver/reject-spec-version"
+        "receiver/reject-spec-version",
+        "receiver/reject-spec-version-3"
       ]
     },
     {
@@ -492,7 +599,14 @@
         "receiver/reject-padded-manifest-name",
         "receiver/reject-identity-over-template-alone",
         "receiver/reject-identity-beside-failed-template",
-        "receiver/reject-instruction-only-identity-beside-template"
+        "receiver/reject-instruction-only-identity-beside-template",
+        "receiver/reject-unlisted-without-count",
+        "receiver/reject-unlisted-count-without-list",
+        "receiver/reject-unlisted-negative-count",
+        "receiver/reject-unlisted-bad-name",
+        "receiver/reject-unlisted-names-a-read-member",
+        "receiver/reject-unlisted-too-many",
+        "receiver/reject-identity-omits-generation-controls"
       ]
     },
     {
@@ -532,6 +646,36 @@
       "cases": [
         "receiver/admit-repeated-manifest-name"
       ]
+    },
+    {
+      "id": "PG-108",
+      "section": "6",
+      "level": "MUST",
+      "roles": [
+        "collector"
+      ],
+      "text": "A member name is requester-controlled text, so a collector MUST write only names matching `unlisted_names.pattern`, MUST write at most `unlisted_names.max` of them, the first in ascending order of code units, and MUST count every other unlisted member in `perigraph.request.unlisted_omitted`.",
+      "cases": []
+    },
+    {
+      "id": "PG-109",
+      "section": "6",
+      "level": "MUST",
+      "roles": [
+        "collector"
+      ],
+      "text": "A collector MUST write both attributes or neither: a body that is not a JSON object has every manifest part `extraction_failed` and carries neither.",
+      "cases": []
+    },
+    {
+      "id": "PG-110",
+      "section": "6",
+      "level": "MUST",
+      "roles": [
+        "receiver"
+      ],
+      "text": "A receiver MUST read a missing pair as unknown, never as empty.",
+      "cases": []
     },
     {
       "id": "PG-038",
@@ -600,14 +744,14 @@
       "cases": []
     },
     {
-      "id": "PG-078",
+      "id": "PG-096",
       "section": "8",
       "level": "MUST",
       "roles": [
         "collector",
         "stamper"
       ],
-      "text": "**A collector MUST reproduce `spec/fixtures/identity.json`, and a stamper MUST reproduce `spec/fixtures/model_identity.json`.** It is the only part of conformance that a second implementation cannot pass by agreeing with itself.",
+      "text": "**A collector MUST reproduce `spec/fixtures/identity.json` and `spec/fixtures/canonical_value.json`, and a stamper MUST reproduce `spec/fixtures/model_identity.json`.** It is the only part of conformance that a second implementation cannot pass by agreeing with itself.",
       "cases": []
     },
     {
@@ -682,6 +826,18 @@
       ],
       "text": "A collector MUST NOT put request content or secrets in one.",
       "cases": []
+    },
+    {
+      "id": "PG-111",
+      "section": "12.3",
+      "level": "MUST",
+      "roles": [
+        "collector"
+      ],
+      "text": "A collector MUST NOT write a member name in `perigraph.request.unlisted` that does not match `unlisted_names.pattern`, and MUST NOT write any value.",
+      "cases": [
+        "receiver/admit-unlisted-names"
+      ]
     },
     {
       "id": "PG-052",
@@ -797,16 +953,6 @@
       "cases": []
     },
     {
-      "id": "PG-060",
-      "section": "bindings/openai-chat-completions",
-      "level": "MUST",
-      "roles": [
-        "receiver"
-      ],
-      "text": "Every other field of the request is outside the record, and a receiver MUST NOT read the record as saying anything about it.",
-      "cases": []
-    },
-    {
       "id": "PG-061",
       "section": "bindings/openai-chat-completions",
       "level": "SHOULD",
@@ -859,9 +1005,21 @@
     "PG-043",
     "PG-044",
     "PG-045",
+    "PG-060",
     "PG-068",
+    "PG-078",
+    "PG-080",
     "PG-084",
     "PG-085",
-    "PG-086"
+    "PG-086",
+    "PG-087",
+    "PG-091",
+    "PG-092",
+    "PG-093",
+    "PG-094",
+    "PG-095",
+    "PG-097",
+    "PG-098",
+    "PG-099"
   ]
 }

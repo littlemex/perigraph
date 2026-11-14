@@ -29,7 +29,8 @@ MODEL_CASES = json.loads((ROOT / "spec" / "fixtures" / "model_identity.json").re
 NODE_SCRIPT = """
 import { fromRequest } from "%(dist)s/src/collect.js";
 import { toAttributes } from "%(dist)s/src/wire.js";
-const cases = %(cases)s;
+// Parsed from JSON text, as a collector receives a body: an object literal would read "__proto__" as the prototype.
+const cases = JSON.parse(%(cases)s);
 console.log(JSON.stringify(cases.map((c) => toAttributes(fromRequest(c, { collector: "x", version: "1" })))));
 """
 
@@ -38,7 +39,7 @@ def typescript_attributes(bodies: list[dict]) -> list[dict]:
     dist = ROOT / "typescript" / "dist"
     if not dist.exists():
         raise SystemExit("typescript/dist is missing: run `npm run build` in typescript/ first")
-    script = NODE_SCRIPT % {"dist": dist.as_posix(), "cases": json.dumps(bodies)}
+    script = NODE_SCRIPT % {"dist": dist.as_posix(), "cases": json.dumps(json.dumps(bodies))}
     out = subprocess.run([  # noqa: S603
         "node", "--input-type=module", "-e", script], capture_output=True, text=True, check=False)
     if out.returncode != 0:
@@ -104,9 +105,13 @@ def go_failures() -> list[str]:
             failures.append(f"{name}: Go identity {ga.get('perigraph.harness_identity')} and the fixture says "
                             f"{case['identity']}")
         for key in pa:
-            if key.endswith(".digest") and pa.get(key.replace(".digest", ".boundary")) == "model_visible" \
+            if key.endswith(".digest") and pa.get(key.replace(".digest", ".boundary")) in ("model_visible",
+                                                                                          "canonical_value") \
                     and pa[key] != ga.get(key):
-                failures.append(f"{name}: {key} is model_visible and Go differs")
+                failures.append(f"{name}: {key} is {pa.get(key.replace('.digest', '.boundary'))} and Go differs")
+        for key in ("perigraph.request.unlisted", "perigraph.request.unlisted_omitted"):
+            if pa.get(key) != ga.get(key):
+                failures.append(f"{name}: {key} is {pa.get(key)!r} against Go's {ga.get(key)!r}")
         both = set(pa["perigraph.collector_reaches"].split(",")) & set(
             p for p in str(ga.get("perigraph.collector_reaches", "")).split(",") if p)
         for part in sorted(both):
@@ -151,8 +156,8 @@ def main() -> int:
                 continue
             boundary = py_attrs.get(key.replace(".digest", ".boundary"))
             same = py_attrs.get(key) == ts_attrs.get(key)
-            if boundary == "model_visible" and not same:
-                failures.append(f"{name}: {key} is model_visible and differs")
+            if boundary in ("model_visible", "canonical_value") and not same:
+                failures.append(f"{name}: {key} is {boundary} and differs")
             if boundary == "parsed" and same:
                 parsed_agreements.append(f"{name}: {key}")
 
@@ -179,7 +184,8 @@ def main() -> int:
     for f in failures:
         print(f"FAIL {f}")
     if not failures:
-        print("identities and every model_visible digest agree; parsed digests differ as the spec says they may")
+        print("identities, every model_visible and canonical_value digest and the unlisted members agree; parsed digests "
+              "differ as the spec says they may")
     return 1 if failures else 0
 
 

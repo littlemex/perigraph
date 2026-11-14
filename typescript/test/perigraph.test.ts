@@ -31,7 +31,7 @@ test("the spec's classifications are total", () => {
 
 test("the identity permissions are subsets of their own vocabularies", () => {
   for (const v of vocab.IDENTIFYING_SOURCING) assert.ok(vocab.SOURCING.includes(v));
-  for (const v of vocab.IDENTIFYING_BOUNDARIES) assert.ok(vocab.BOUNDARIES.includes(v));
+  for (const v of Object.values(vocab.KEYING_BOUNDARY)) assert.ok(vocab.BOUNDARIES.includes(v));
   for (const v of vocab.NEVER_IDENTIFYING) assert.ok(vocab.PARTS.includes(v));
 });
 
@@ -54,7 +54,7 @@ test("the instruction is hashed raw down to case and whitespace", () => {
 
 test("a parsed digest is recorded and never enters the hash", () => {
   const m = new Manifest("t", "1", []);
-  const noTemplate = [new Absence("request_template", "not_provided")];
+  const noTemplate = [new Absence("request_template", "not_provided"), new Absence("generation_controls", "not_provided")];
   const onlyInstruction = new Record_(m, "complete", [part()], noTemplate);
   const withParsed = new Record_(m, "complete", [
     part(),
@@ -321,7 +321,7 @@ test("the model half round-trips over the wire and a forged identity is refused"
 test("a body that is not an object is named, not a crash (SPEC 1.2)", () => {
   const a = toAttributes(read(null));
   assert.equal(a["perigraph.status"], "complete");
-  for (const k of ["instruction", "tool_schemas", "readout", "decoding"]) {
+  for (const k of ["instruction", "tool_schemas", "generation_controls", "decoding"]) {
     assert.equal(a[`perigraph.absent.${k}.reason`], "extraction_failed");
     assert.equal(a[`perigraph.absent.${k}.detail`], "the body is null, not an object");
   }
@@ -402,4 +402,46 @@ test("the white-space set is the one the vocabulary lists", async () => {
   for (let c = 0; c < 0x3001; c++) {
     if (!spec.white_space.code_points.includes(c)) assert.equal(blank(String.fromCodePoint(c)), false, c.toString(16));
   }
+});
+
+test("generation controls key beside an instruction and never alone (R17b H0 and H3)", () => {
+  const sys = { role: "system", content: "Reply with one intent." };
+  const usr = { role: "user", content: "Message: x" };
+  const h0 = read({ messages: [sys, usr], max_tokens: 32, chat_template_kwargs: { enable_thinking: false } });
+  const h3 = read({ messages: [sys, usr], max_tokens: 256, chat_template_kwargs: { enable_thinking: true } });
+  assert.notEqual(h0.identity, h3.identity);
+  assert.equal(read({ messages: [usr], max_tokens: 32 }).hasIdentity, false);
+  const h3b = read({ chat_template_kwargs: { enable_thinking: true }, max_tokens: 256.0, messages: [sys, usr] });
+  assert.equal(h3b.identity, h3.identity);
+});
+
+test("an unsafe integer in a generation control withdraws the identity and fails nothing else", () => {
+  const a = toAttributes(read({ messages: [{ role: "system", content: "x" }], max_tokens: 2 ** 53 + 2, temperature: 0 }));
+  assert.equal(a["perigraph.absent.generation_controls.reason"], "extraction_failed");
+  assert.equal(a["perigraph.absent.generation_controls.detail"], "max_tokens holds an integer whose magnitude exceeds 9007199254740991");
+  assert.equal(a["perigraph.part.decoding.sourcing"], "in_the_request");
+  assert.equal(a["perigraph.harness_identity"], undefined);
+});
+
+test("unlisted members are named and never valued", () => {
+  const a = toAttributes(read({ messages: [], vendor_switch: "secret", "a b": 1, seed: 3 }));
+  assert.equal(a["perigraph.request.unlisted"], "vendor_switch");
+  assert.equal(a["perigraph.request.unlisted_omitted"], 1);
+  assert.ok(!JSON.stringify(a).includes("secret"));
+});
+
+test("one verdict over an arm refuses differing declarations and never lifts one", () => {
+  const h3 = read({ messages: [{ role: "system", content: "x" }], max_tokens: 256 });
+  const exact = pg.declare(h3, { readout: "exact" });
+  const first = pg.declare(h3, { readout: "first label" });
+  assert.equal(pg.admitArm([exact, exact]).outcome, "admitted");
+  assert.equal(pg.admitArm([h3, h3]).outcome, "admitted");
+  assert.equal(pg.admitArm([exact, first, exact]).outcome, "refused");
+  assert.equal(pg.admitArm([h3, exact]).outcome, "refused");
+});
+
+test("the canonical serialisation is RFC 8785 with the three restrictions", () => {
+  assert.equal(pg.canonicalSerialise({ b: [1, 2.0, null], a: "\u2028<>" }), '{"a":"\u2028<>","b":[1,2,null]}');
+  assert.throws(() => pg.canonicalSerialise("\ud800"), pg.NotCanonical);
+  assert.throws(() => pg.canonicalSerialise(2 ** 53), pg.NotCanonical);
 });

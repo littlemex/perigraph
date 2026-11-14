@@ -5,6 +5,37 @@ Versions here are the **package** version. The **protocol** version is `spec_ver
 
 ## Unreleased
 
+### Specification version 4
+
+`spec_version` 4. Breaking: a version 3 receiver rejects every version 4 record. A record whose request carries no
+member read into `generation_controls`, and whose `request_template` is held in the request or absent as
+`not_provided`, has the same harness identity as in version 3; 44 of the 46 version 3 identity fixtures carry over, and
+the two that change carry a `response_format` ([proposal 0003](docs/proposals/0003-generation-controls.md)).
+
+- **New part `generation_controls`**: the request members, other than the messages and the tools, that select what the
+  engine renders into the prompt, exclude outputs by their form, or bound the output's length (`max_tokens`, `stop`,
+  `response_format`, `chat_template_kwargs`, reasoning switches and the rest of the binding's list). `in_the_request`,
+  digested at the new boundary `canonical_value`. It keys the harness identity beside an instruction and never on its
+  own (`refines_only`, on the ground that its value is the same whatever messages are sent), and is in
+  `must_be_known_for_identity`.
+- **New boundary `canonical_value`** and `digest.canonical_value_serialisation`: RFC 8785 with one restriction (an
+  integer outside plus or minus 2^53-1 fails the part) and one relaxation (a repeated member name takes its last value),
+  so Python, TypeScript and Go compute the same bytes; `spec/fixtures/canonical_value.json` checks it.
+- **`keying_boundary`** replaces `boundaries.may_key_identity`: the one boundary at which each part may key.
+- **`decoding`** is read from the binding's list (sampler settings, penalties, `logit_bias`, `n`, `logprobs`) at
+  `canonical_value` and never keys; `seed` is recorded nowhere. **`readout`** is no longer read from `response_format`;
+  it is the caller's rule and is declared. A pushed declaration is digested at `canonical_value`.
+- **Unlisted request members**: `perigraph.request.unlisted` names, never values, the top-level members the binding's
+  closed list does not name, and `perigraph.request.unlisted_omitted` counts the ones not written.
+- **Two arm refusals** in `must_refuse`: records of one arm that differ in a part of `uniform_within_arm` (the pushed
+  parts and `decoding`), or one declares it beside none; and records whose unlisted members differ. Cases in
+  `conformance/cases/arm.json`, run through the new adapter op `admit_arm`; the adapter op `canonical` runs the
+  canonical fixture.
+- **Withdrawn**: a record whose `request_template` is held with a sourcing other than `in_the_request` has no identity.
+  A declaration no longer stands in for a part `must_be_known_for_identity` names.
+- Python, TypeScript and Go senders implement it; the Go change was written by GPT-6 Sol from the specification diff
+  and the new fixtures.
+
 ### Specification version 3
 
 `spec_version` 3. Breaking: a version 2 receiver rejects every version 3 record. A request that declares no template has

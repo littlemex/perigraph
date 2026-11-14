@@ -35,11 +35,18 @@ SOURCING: tuple[str, ...] = tuple(_SPEC["sourcing"]["values"])
 IDENTIFYING_SOURCING: tuple[str, ...] = tuple(_SPEC["sourcing"]["may_key_identity"])
 IDENTIFYING_MODEL_SOURCING: tuple[str, ...] = tuple(_SPEC["sourcing"]["may_key_model_identity"])
 BOUNDARIES: tuple[str, ...] = tuple(_SPEC["boundaries"]["values"])
-IDENTIFYING_BOUNDARIES: tuple[str, ...] = tuple(_SPEC["boundaries"]["may_key_identity"])
+#: The one boundary at which each part may key the harness identity (`keying_boundary`). A part not listed never keys it.
+KEYING_BOUNDARY: dict[str, str] = dict(_SPEC["keying_boundary"]["parts"])
 NEVER_IDENTIFYING: tuple[str, ...] = tuple(_SPEC["never_identifying"]["values"])
 REFINES_ONLY: tuple[str, ...] = tuple(_SPEC["refines_only"]["values"])
 MUST_BE_KNOWN_FOR_IDENTITY: tuple[str, ...] = tuple(_SPEC["must_be_known_for_identity"]["values"])
 KNOWN_WHEN_ABSENT_AS: str = _SPEC["must_be_known_for_identity"]["known_when_absent_as"]
+UNIFORM_WITHIN_ARM: tuple[str, ...] = tuple(_SPEC["uniform_within_arm"]["values"])
+#: The OpenAI Chat Completions binding's closed list of the request members it reads, member -> part names or "none".
+OPENAI_MEMBERS: dict[str, tuple[str, ...]] = {
+    k: tuple(v) for k, v in _SPEC["bindings"]["openai_chat_completions"]["members"].items()}
+UNLISTED_NAME_PATTERN: str = _SPEC["unlisted_names"]["pattern"]
+UNLISTED_NAMES_MAX: int = _SPEC["unlisted_names"]["max"]
 ABSENCE_REASONS: tuple[str, ...] = tuple(_SPEC["absence_reasons"]["values"])
 ABSENCE_BLAMES: dict[str, str] = dict(_SPEC["absence_reasons"]["blames"])
 DETAIL_REQUIRED_WHEN_BLAMES: str = _SPEC["absence_reasons"]["detail_required_when_blames"]
@@ -110,15 +117,22 @@ def check_spec_is_total() -> None:
                            "not carry weights, and a loader does not hold what the model read")
     for name, subset, whole in (("sourcing.may_key_model_identity", IDENTIFYING_MODEL_SOURCING, SOURCING),
                                 ("sourcing", IDENTIFYING_SOURCING, SOURCING),
-                                ("boundaries", IDENTIFYING_BOUNDARIES, BOUNDARIES)):
+                                ("keying_boundary", tuple(KEYING_BOUNDARY.values()), BOUNDARIES)):
         extra = set(subset) - set(whole)
         if extra:
             raise Unidentified(f"{name}.may_key_identity names {sorted(extra)}, which is not in its own vocabulary")
     for name, listed in (("never_identifying", NEVER_IDENTIFYING), ("refines_only", REFINES_ONLY),
-                         ("must_be_known_for_identity", MUST_BE_KNOWN_FOR_IDENTITY)):
+                         ("must_be_known_for_identity", MUST_BE_KNOWN_FOR_IDENTITY), ("keying_boundary", KEYING_BOUNDARY),
+                         ("uniform_within_arm", UNIFORM_WITHIN_ARM),
+                         ("bindings.openai_chat_completions.members",
+                          {p for ps in OPENAI_MEMBERS.values() for p in ps})):
         extra_parts = set(listed) - set(PARTS)
         if extra_parts:
             raise Unidentified(f"{name} names {sorted(extra_parts)}, which are not parts")
+    if set(MUST_BE_KNOWN_FOR_IDENTITY) - set(KEYING_BOUNDARY):
+        raise Unidentified("must_be_known_for_identity names a part keying_boundary gives no boundary")
+    if set(UNIFORM_WITHIN_ARM) & set(KEYING_BOUNDARY):
+        raise Unidentified("uniform_within_arm names a part that keys the identity; the arm rule on identities covers it")
     if KNOWN_WHEN_ABSENT_AS not in ABSENCE_REASONS:
         raise Unidentified("must_be_known_for_identity.known_when_absent_as is not an absence reason")
 

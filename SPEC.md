@@ -1,4 +1,4 @@
-# perigraph, version 3
+# perigraph, version 4
 
 perigraph is a record attached to one model call. It says what surrounded the model (the harness parts), what answered
 (the model parts), how each fact reached the record, and which facts the record cannot see. Its purpose is to let a
@@ -28,6 +28,11 @@ Where two sources disagree, they rank as follows, and the lower-ranked one is th
 
 The ranking exists because a prose copy of a list is how two implementations drift, and the files are what every
 implementation reads.
+
+Normative references: RFC 8259 (JSON), RFC 8785 (JSON Canonicalization Scheme), RFC 3629 (UTF-8) and BCP 14. A request
+body is JSON when it is RFC 8259 JSON text encoded as well-formed UTF-8; anything else is not valid JSON in the sense of
+section 1.2. A body with a byte order mark, with `NaN` or `Infinity` tokens, or with ill-formed UTF-8 anywhere is not
+valid JSON.
 
 ### 0.3 Roles
 
@@ -79,8 +84,8 @@ holds no part at all, with every part absent, is still a record.
 ### 1.0 The parts
 
 Closed. A receiver MUST reject a record that names a part outside this list. **Rationale**: a part nobody named is a part
-that can change without anybody's record saying so. Of the named parts, only `instruction` and `request_template` key
-the harness identity in practice, and `request_template` only beside another identifying part (section 2), so naming a part
+that can change without anybody's record saying so. Of the named parts, only `instruction`, `request_template` and
+`generation_controls` key the harness identity, and the last two only beside an instruction (section 2), so naming a part
 is what makes its change recordable, not what makes it identifying.
 
 | part | what it is | usual sourcing |
@@ -93,8 +98,9 @@ is what makes its change recordable, not what makes it identifying.
 | `loop` | the scaffold: how calls are sequenced, what ends the run | `pushed_by_owner` |
 | `turn_budget` | how many turns it may take | `pushed_by_owner` |
 | `retry_policy` | what it retries and how often | `pushed_by_owner` |
-| `readout` | how the final answer is taken out of the reply | `in_the_request` |
-| `decoding` | temperature, top-p, and whether output is grammar-constrained | `in_the_request` |
+| `readout` | how the final answer is taken out of the reply | `pushed_by_owner` |
+| `generation_controls` | the request members, other than the messages and the tools, that select what the engine renders into the prompt, constrain the form of the output, or bound its length | `in_the_request` |
+| `decoding` | the settings applied to the model's scores when a token is chosen, and what is reported about the choice | `in_the_request` |
 | `context_partitioning` | how many contexts exist and what crosses between them | `pushed_by_owner` |
 
 **Rationale: why `request_template` is a part.** On one byte-identical checkpoint with no system message, wrapping
@@ -109,11 +115,21 @@ measured, get two identities.
 **Rationale: why `readout` and `decoding` are parts rather than details.** A mis-set readout convention has been measured to put
 **1,822 of 2,364** answers on one option, every one well formed -- a record that did not name the readout would report
 that as the model's behaviour. And the sampler settings decide whether the same input can give the same output at all.
+Neither keys the identity; section 4 refuses one verdict over an arm whose records disagree on either.
 
-**Rationale: why the four pushed parts are here despite being unverifiable.** A request body has no place to put them, so their
+**Rationale: why `generation_controls` is a part.** R17b sent a base body (`max_tokens` 32, `chat_template_kwargs`
+`{"enable_thinking": false}`) and a reasoning-before-the-answer body (`max_tokens` 256, `enable_thinking` true) under
+one system message, and version 3 gave both, and every other part, one harness identity. Version 3 read neither member.
+Whether the change moves accuracy was not measured; the one adjacent measurement, R17a's reasoning-before-the-answer
+against base on 1,200 items, did not move it (0.0 points, 95% interval -0.42 to 0.42), and no measurement exists for
+`stop`, the top-level reasoning switches or `max_completion_tokens`. They are in the part because they are the same kind
+as the two observed members, so that the key cannot be evaded by spelling one engine's switch another way.
+
+**Rationale: why the pushed parts are here despite being unverifiable.** A request body has no place to put them, so their
 absence is the **sender's** rather than the collector's, and saying which is the whole point of section 1.2. Recording an
 unverifiable claim and marking it unverifiable is worth more than omitting it: `context_partitioning` in particular
-carries a published 39.2% saving (section 5), and the other ten parts cannot express it.
+carries a published 39.2% saving (section 5), and the other eleven parts cannot express it. `readout` is the fifth
+from version 4: the caller's rule for taking the answer out of the reply is in no request.
 
 ### 1.1 The two refusals are about different objects
 
@@ -170,7 +186,7 @@ exception, and section 12.1 states the trust it requires.
 
 ### 1.2 Every absence names whose it is
 
-A collector MUST emit each of the eleven parts and each of the four model parts as held or as absent. A receiver reads a part
+A collector MUST emit each of the twelve parts and each of the four model parts as held or as absent. A receiver reads a part
 that a record does not mention as unknown, and stores the record (`receiver_obligations.must_not_refuse`).
 
 Every absence MUST carry one of the reasons below, and the reason MUST name whose absence it is. **Rationale**: the case this
@@ -189,8 +205,8 @@ the rest of this paragraph and the next are for a request in the OpenAI Chat Com
 maps its fields to parts, and other request shapes need their own binding. When the body
 is not valid JSON, or is JSON that is not an object, a collector MUST give every manifest part read from the request body
 as `extraction_failed`. When a field a part is read from is present but not of the JSON type the collector expects -- for
-example `messages` or `tools` that is not an array, an entry of either that is not an object, a message whose `role` is
-missing or is not a string, or a `response_format` that is not an object -- every manifest part read from the top-level
+example `messages` or `tools` that is not an array, an entry of either that is not an object, or a message whose `role`
+is missing or is not a string -- every manifest part read from the top-level
 field holding the defect is `extraction_failed`, even if the entries it needs are readable, because the unreadable entry
 might have been one of them. A system message's `content` is narrower: it fails `instruction` only (section 2.2). A
 top-level field that is missing or `null` is not this case: the request carries none, which is what a client that
@@ -201,12 +217,20 @@ collector that did not finish, and this one finished and named what it could not
 
 **An empty request field is a missing one.** For a request template the test is applied only after the template has
 passed every check of its binding, so an empty template the request contradicts is still `extraction_failed`. An `instruction` that is empty after removing leading and trailing white
-space, a `tools` array with no entries, a `response_format` object with no members and a request template none of whose
+space, a `tools` array with no entries and a request template none of whose
 fixed strings contain a character that is not white space are each treated as not sent; a part is `not_provided` only when
 everything it is read from is missing or empty. The white-space removal is for this
-test only: a non-empty instruction is digested as section 2.2 says. The rule covers these four and nothing else; an
-empty `precision` value is `extraction_failed` (section 9). A `response_format` is read by both `readout` and
-`decoding`: it says how the answer is taken out, and it constrains the grammar of the output. **White space**, here and
+test only: a non-empty instruction is digested as section 2.2 says. The rule covers these three and nothing else; an
+empty `precision` value is `extraction_failed` (section 9), and a part digested at `canonical_value` has no emptiness
+rule and no type check: `"chat_template_kwargs": {}` is held, and differs from a request without it.
+
+**Each request member read at `canonical_value` is read into exactly one part**; `messages` is read into
+`instruction` and `request_template`. The binding's closed list (`bindings.<binding>.members` in
+`spec/vocabularies.json`) names each top-level member it recognises and the parts it is read into, or the empty list
+for a member it recognises and records nowhere. A collector MUST NOT let a member outside the list, or one the list
+records nowhere, change any part, digest or identity, and MUST emit `perigraph.request.unlisted` and
+`perigraph.request.unlisted_omitted` (section 6) on every record of a request body that is a JSON object: a member
+nobody reads is a change nobody records, and dropping it silently would make its absence look clean. **White space**, here and
 in section 9, is the Unicode `White_Space` property: U+0009-U+000D, U+0020, U+0085, U+00A0, U+1680, U+2000-U+200A,
 U+2028, U+2029, U+202F, U+205F and U+3000, listed in `white_space.code_points`. It is named because the default
 trim of each language tried strips a different set (U+001F and U+FEFF among the differences), and this test decides
@@ -229,46 +253,69 @@ record can be read at face value.
 
 ## 2. Identity
 
-A record's **harness identity** (`perigraph.harness_identity`, called `perigraph.identity` in version 1 and computed
-exactly as before) is a digest over its identifying parts, sorted by part name. Section 9 adds a model identity and an
+A record's **harness identity** (`perigraph.harness_identity`, called `perigraph.identity` in version 1, computed as in
+version 3 for a record whose `generation_controls` is absent as `not_provided` and whose `request_template` is held
+`in_the_request` or absent as `not_provided`) is a digest over its identifying parts,
+sorted by part name. Section 9 adds a model identity and an
 artifact identity beside it; "identity" alone in sections 2 to 6 means the harness identity. A part is identifying only when **all
 three** hold:
 
 1. its sourcing is `in_the_request` — the bytes are held, so the fact *is* what was sent;
-2. its boundary is `model_visible` — the text the requester supplied for the model to read, as opposed to a protocol value.
-   It is the text before any chat template the server applies and before any prompt a provider adds, which the requester
-   does not hold;
+2. its boundary is the one `keying_boundary` lists for that part: `model_visible` for `instruction` and
+   `request_template`, which is the text the requester supplied for the model to read, before any chat template the server
+   applies and before any prompt a provider adds; `canonical_value` for `generation_controls`, which is a protocol value
+   the collector holds, serialised by `digest.canonical_value_serialisation`, and is not the messages. A part
+   `keying_boundary` does not list is never identifying, and a listed part held at another boundary keys nothing;
 3. its part name is not in `never_identifying`.
 
 A record **has no identity** when any of these holds:
 
 - it has no identifying part;
-- every identifying part it has is in `refines_only`. Such a part names text whose division from the item is the
-  requester's declaration, which nobody can check. Beside another identifying part it can only split runs that part
-  would join; alone it would give an identity to runs version 2 gave none, on the requester's word, and section 1.1a
-  forbids an unverifiable claim to lift a refusal;
-- a part in `must_be_known_for_identity` is neither held, in any sourcing, nor absent with the reason in
-  `known_when_absent_as`, which is `not_provided`. A part the collector failed to read, could not reach, withheld as
-  `redacted`, or did not mention might have been there, and an identity computed without it would join runs that differ
-  in it. A part held with another sourcing satisfies this and keys nothing, which gives the identity a record without
-  it would have; a receiver MAY refuse on it as on any claim it cannot check (section 1.1a).
+- every identifying part it has is in `refines_only`. A part in that list splits runs another identifying part would
+  join and never establishes an identity, however many such parts a record holds. `refines_only.rationale` states the
+  ground for each, and there are two:
+  - *declared division* (`request_template`): the part names text whose division from the item is the requester's
+    declaration, which nobody can check. Alone it would give an identity on the requester's word, and section 1.1a
+    forbids an unverifiable claim to lift a refusal;
+  - *independent of the messages* (`generation_controls`): the collector holds the value, so the part is verifiable,
+    but the value is the same whatever messages are sent. An identity built on it alone is the same for every prompt
+    sent with those settings: it
+    would join a run with no instruction to a run with the instruction in the user message, which differed by 4.58 points
+    on one checkpoint (section 1.0). That is the identity constant across every possible harness that the last paragraph
+    of this section refuses;
+- a part in `must_be_known_for_identity` is neither held `in_the_request` at the boundary `keying_boundary` lists for it,
+  nor absent with the reason in `known_when_absent_as`, which is `not_provided`. A part the collector failed to read,
+  could not reach, withheld as `redacted`, did not mention, or held at another boundary might have been anything, and an
+  identity computed without it would join runs that differ in it. A part held with another sourcing does not satisfy
+  this either: a declaration in its place would lift that refusal on the owner's word, which section 1.1a forbids.
 
-In the OpenAI Chat Completions binding only `instruction` and `request_template` can be identifying, so a request with
-no system message whose content is a string has no harness identity whatever template it declares, and a receiver
-refuses a verdict over its record (below). This is the cost of keying only on bytes the requester holds. This is not an error in the record: parts that identify nothing
+In the OpenAI Chat Completions binding `instruction`, `request_template` and `generation_controls` can be identifying,
+and only `instruction` establishes an identity, so a request with no system message whose content is a string has no
+harness identity whatever template or generation controls it carries, and a receiver refuses a verdict over its record
+(below). Two records with no harness identity are not thereby alike: the attribute is omitted (section 6), each is
+refused a verdict, and their held digests still differ where the requests did. A `generation_controls` digest compares
+across collectors (section 2.3). This is the cost of keying only on bytes the requester holds. This is not an error in the record: parts that identify nothing
 are still facts worth keeping. It is an error to ask such a record for an identity, and a receiver MUST refuse a verdict
 over one, because an identity constant across every possible harness groups things that have nothing in common.
 
-### 2.1 The three boundaries, and why the middle one is the trap
+### 2.1 The four boundaries, and why `parsed` is the trap
 
 | boundary | keying an identity on it |
 |---|---|
 | `transport` | **splits runs that were identical** — two client versions serialise differently and decode to the same text |
-| `parsed` | **merges runs that were not** — two strings that canonicalise to one value can behave differently embedded verbatim in a prompt |
+| `parsed` | **merges runs that were not** — two strings that canonicalise to one value can behave differently embedded verbatim in a prompt -- and, serialised by each collector its own way, is not even comparable across collectors (section 2.3) |
+| `canonical_value` | **merges two spellings of one JSON value**, `1` and `1.0`, or members in another order, which is right when an engine reads the value and wrong when a template prints it. It keys only `generation_controls`, and only beside an instruction (section 2) |
 | `model_visible` | correct |
 
 The two mistakes run in **opposite directions**, so neither is fixed by being careful. A digest MUST declare its
 boundary.
+
+**The merges `canonical_value` makes, stated so that no collector "fixes" them locally and splits:** a number in
+`chat_template_kwargs` sent as `1` and as `1.0`, which a Jinja template on a Python server prints differently; two JSON
+schemas in `response_format` differing only in property order, which some constrained decoders generate in schema
+order; and a member name repeated in the body, of which the parsers keep the last value while a server may keep the
+first. Each is in the unsafe direction. They are accepted because a JavaScript or Go collector cannot see the
+difference after parsing, and `spec/fixtures/identity.json` pins the first.
 
 A `request_template` digest is `model_visible`: it is over text the requester supplied for the model to read, raw,
 framed by `digest.request_template_serialisation`, which adds the entry count, each entry's role and the lengths. Because
@@ -306,10 +353,15 @@ including `null`, and a message with no `content` at all. The detail names the f
 `messages` and the JSON type found, or `missing`, and never quotes the content. The text a model reads from an array of
 parts is decided by a chat template the request does not carry, so no rendering of the array is the model-visible bytes.
 
-### 2.3 A `parsed` digest is collector-local
+### 2.3 A `parsed` digest is collector-local, and a `canonical_value` digest is not
 
 **A `parsed` digest is comparable only against another digest from the same collector at the same version.** A receiver
 MUST refuse a comparison across collectors or versions.
+
+**A `canonical_value` digest compares across collectors.** Its serialisation is `digest.canonical_value_serialisation`,
+which every collector computes byte for byte alike; `spec/fixtures/canonical_value.json` is how that is checked. A
+`pushed_by_owner` declaration MUST be a string, and a collector MUST digest it at `canonical_value` as that JSON string,
+quotes included, so two collectors' declarations of one string compare too.
 
 **Rationale**: this is stated rather than legislated because there is nothing neutral to legislate. Two reference senders disagree:
 Python's `repr` renders `0.0` as `0.0` and JavaScript's `JSON.stringify` renders it as `0`, and picking either is
@@ -326,6 +378,19 @@ one sentence's wording moved measured accuracy by 12.04 points.
 
 A collector MAY canonicalise a `parsed` payload. **The difference is who reads them:** a machine reading a sampler setting
 cannot tell two spellings apart.
+
+A collector MUST serialise a `canonical_value` payload exactly as `digest.canonical_value_serialisation` says. The
+payload is the JSON object whose members are the request members read into the part that are present and not `null` at
+the top level. It is defined over the JSON text sent. A collector handed a decoded value rather than text, such as an
+in-process shim handed the dictionary a client will serialise, MUST be handed the value after every merge the client
+performs (an `extra_body` included), and MUST treat it by the JSON data model: an object with string names, an array, a
+string, a finite number, `true`, `false` or `null`, where a language's sequence or mapping types that its JSON serialiser
+writes as an array or an object are those. Anything else makes the part `extraction_failed`. Such a collector holding a
+non-finite number fails the part that reads it, where a collector reading the text finds the body not valid JSON; the two
+records differ, in the safe direction. A failure to serialise a member, for any of the causes the
+definition lists, makes the part `extraction_failed`, with a detail that names the member and the cause and never the
+value (section 12.3). It never fails the body or another part: a member read into no part, item text included, cannot
+withdraw an identity by being unserialisable.
 
 A collector MUST NOT digest a payload after transmission. That hashes something other than what was sent.
 
@@ -348,6 +413,15 @@ does when the requester declares the wrapper as a `request_template`. It still c
 inside a hole: fixed text concatenated into the item before the template is applied is read as item. And a request with
 no system message has no harness identity in any version, so the same instruction in the user message against no
 instruction at all is two refused records, not two identities.
+
+Version 3's harness identity also could not tell apart two runs under one system message that differed in what the
+engine was told to render or how long the output could be. Version 4 does, through `generation_controls`, and only
+under a system message: without one, the controls are recorded and the record has no identity. It still cannot tell
+apart a switch put where the binding does not look -- in the model name, a header, a server's launch flag or default
+template arguments, or a soft switch such as `/no_think` in the item text -- and two values under one unlisted member
+name merge (section 6). A request with a `seed` and one without are not told apart. `readout` and `retry_policy` separate H3 from H4 and H6 of R17b only through the arm rule of
+section 4, and only when the caller declares them; a stable name over changed code defeats that, since a declaration
+names content as its owner wrote it.
 
 **Where several messages carry a template**, the serialisation is defined in `digest.request_template_serialisation`:
 the number of entries, then each entry's role and fixed strings, every string length-prefixed in utf-8 bytes in decimal
@@ -399,7 +473,7 @@ miss into a false licence.
 
 ## 4. What a receiver may compare
 
-The refusals in sections 1 to 3 are about one record. These are about two. Several of them read facts that the version 3
+The refusals in sections 1 to 3 are about one record. These are about two. Several of them read facts that the version 4
 wire record does not carry (section 6.1); a receiver applies them to the data it holds about the arms.
 
 **A receiver MUST refuse a comparison of two arms whose decisions were missing different facts.** Missingness is not a nuisance term: a
@@ -435,6 +509,23 @@ two identities under one name is the case two wrappers under one system message 
 verdict over the records of one identity within the arm MUST say how many records of the arm it left out. The rule
 refuses every arm whose records were collected on both sides of a hop that removes a template (binding), and every arm
 of conversations whose template grows with the turn count; both are the safe direction.
+
+**A receiver MUST refuse one verdict over records grouped as one arm when, for a part in `uniform_within_arm`, two
+records hold it at `canonical_value` with different digests, or one holds it there and another has it absent as
+`not_provided`.** The parts are the pushed parts and `decoding`, which never key the identity and still change what is
+scored: R17b's H3, H4 and H6 sent one request body and differed in the caller's readout and in a declared retry. A record is in one of
+three states for each such part: held at `canonical_value` with a digest; absent as `not_provided`; or anything else --
+absent for another reason, not mentioned, or held at another boundary -- which is unknown. When no record pair refuses
+and some record is unknown, a receiver MUST report `unknown` and MUST NOT report the arm admitted. An arm of no records
+is refused. Every record absent as `not_provided` refuses nothing, which is
+the precedent of two arms that both recorded nothing, and so does every record holding one digest: a declaration can
+cause a refusal and never lift one (section 1.1a).
+
+**A receiver MUST refuse one verdict over records grouped as one arm when their `perigraph.request.unlisted` sets or
+`perigraph.request.unlisted_omitted` counts differ, or when some records carry them and some do not.** Records that all
+lack the pair refuse nothing by this rule. A receiver MAY widen a verdict over a record whose unlisted set is not empty,
+or whose omitted count is not zero, to `unknown`, and SHOULD state the unlisted names with any verdict it gives over
+such records. Two values under one unlisted name are not told apart.
 
 **Two arms grouped under one name that carry more than one model identity, or some with one and some without, MUST NOT
 be given one verdict.** A retrain from the same script and seed agreed with its predecessor on 93.4% of labels; pooled,
@@ -496,7 +587,11 @@ A receiver MUST reject attributes that do not form a record of this version. Tha
 - a digest is not 64, or an identity not 24, lowercase hexadecimal characters, or an `answer_mode` digest is not the
   digest of its label;
 - an identity is present and is not the one derived from the parts the attributes carry, including when the parts derive
-  none (section 2).
+  none (section 2);
+- one of `perigraph.request.unlisted` and `perigraph.request.unlisted_omitted` is present without the other; the first is
+  not a string, or the second is not a non-negative integer-valued number; or `perigraph.request.unlisted` has an entry
+  outside `unlisted_names.pattern`, more than `unlisted_names.max` distinct entries, or an entry the binding's members
+  list names. Version 4 has one binding, so the list is the OpenAI Chat Completions binding's.
 
 A receiver derives each identity from the parts. An identity attribute is a check on that derivation, and a record that
 omits one its parts derive is read with the derived value. **Rationale**: an identity is a derived value, and one that disagrees with its parts is a sender
@@ -510,7 +605,19 @@ MUST drop empty entries: splitting `""` on `","` yields a single empty string in
 manifest claiming a part named empty-string, and that refuses the whole record.
 
 **The list is a set.** A collector MAY emit the names in any order and SHOULD NOT repeat one; a receiver MUST count a
-repeated name once and MUST compare two manifests as sets. `perigraph.model_reaches` is the same form for the model half.
+repeated name once and MUST compare two manifests as sets. `perigraph.model_reaches` is the same form for the model half,
+and `perigraph.request.unlisted` is the same form for request member names.
+
+**Unlisted request members are named, never valued.** `perigraph.request.unlisted` lists the top-level members of the
+request body that the binding's members list does not name, `null`-valued ones included, because the collector did not
+read what `null` means for them; the empty string means the collector looked and found none. A member name is
+requester-controlled text, so a collector MUST write only names matching `unlisted_names.pattern`, MUST write at most
+`unlisted_names.max` of them, the first in ascending order of code units, and MUST count every other unlisted member in
+`perigraph.request.unlisted_omitted`. A collector MUST write both attributes or neither: a body that is not a JSON object
+has every manifest part `extraction_failed` and carries neither. A receiver MUST read a missing pair as unknown, never
+as empty. Neither attribute keys anything. The character class excludes the list separator and everything a log or a
+query language could interpret; the two numbers are bounds on requester-controlled text, chosen and not measured, and two
+different omitted names are not told apart.
 
 **A collector that cannot observe the model says so.** A collector outside the process that loaded the model, with no
 stamp to forward or read back (section 9) -- a request adapter, or a router or gateway in front of an unstamped backend
@@ -523,9 +630,9 @@ not refused: it is a hole nobody named (section 1.2), indistinguishable from the
 model and lost the stamp; a receiver reads it as unknown, not as `not_observable`, and MUST NOT refuse the record for
 it.
 
-### 6.1 What the version 3 wire record does not carry
+### 6.1 What the version 4 wire record does not carry
 
-Some requirements in sections 1, 4 and 5 read facts that have no attribute in version 3. A receiver applies those
+Some requirements in sections 1, 4 and 5 read facts that have no attribute in version 4. A receiver applies those
 requirements to the data it holds about the runs, and a record alone cannot show that it did:
 
 | fact | read by |
@@ -575,6 +682,28 @@ known sender is built from this repository.
 **A receiver meeting an unknown version rejects the record** (section 6). It does not downgrade, and it does not parse
 what it recognises: the fields it would drop are the ones that say what the record cannot see.
 
+**Version 4** is breaking on five counts. (1) A new part, `generation_controls`, which a version 3 receiver rejects
+(section 1.0). (2) A new boundary, `canonical_value`, and `keying_boundary`, which says per part the one boundary at which
+it may key; `generation_controls` keys there, beside an instruction only, being in `refines_only` and
+`must_be_known_for_identity`. (3) Two parts change content, and the vocabulary file changes shape (`boundaries.may_key_identity` is replaced by
+`keying_boundary`; `uniform_within_arm`, `bindings` and `unlisted_names` are new): `response_format` is read into
+`generation_controls` alone,
+so `readout` is no longer read from a request and is declared by its owner, and `decoding` is read from the binding's
+list at `canonical_value`, with `seed` read into no part; a pushed declaration is digested at `canonical_value`. (4)
+Two new entries in `must_refuse` (uniformity within an arm of the parts in `uniform_within_arm`, and of the unlisted
+member names), and the entry about the boundary of identifying digests reworded to name `keying_boundary`. (5) Two new
+attributes, `perigraph.request.unlisted` and `perigraph.request.unlisted_omitted`, with their rejection grounds. The harness
+identity of a record whose `generation_controls` is absent as `not_provided`, and whose `request_template` is held
+`in_the_request` or absent as `not_provided`, is computed exactly as in version 3, so
+every version 3 identity fixture whose body carries none of the members the binding reads into `generation_controls`
+carries over; two did not, both carrying a `response_format`. A request that carries any member read into
+`generation_controls` gets an identity version 3 did not give it. A version 3 receiver rejects every version 4 record by its `spec_version`, and how mixed
+populations are read is a question of section 7.1. **Withdrawn**, under the exception above: a record in which
+`request_template` is held with a sourcing other than `in_the_request`, or at a boundary other than the one
+`keying_boundary` lists, has no identity. The
+measured motivation is R17b, where bodies differing in `max_tokens` and `chat_template_kwargs.enable_thinking` shared
+`6c22e7b8d0b63ca1f9281949`; no accuracy difference due to these members has been measured. Lineage documents are unchanged except for their `spec_version`.
+
 **Version 3** is breaking on three counts: a new part, `request_template`, which a version 2 receiver rejects
 (section 1.0); a new value that may key an identity, with the rules `refines_only` and `must_be_known_for_identity` that bound
 it; and a new entry in `must_refuse`, one harness identity per arm (section 4). The harness identity of a record with no
@@ -620,9 +749,9 @@ match `spec/vocabularies.json` exactly. **A stamper** additionally satisfies sec
 placement of read lags and details (sections 1.1a and 1.2), and, if it reads lineage documents, section 10. A receiver for which an obligation is **unreachable** -- it never performs the comparison the
 obligation is about -- MAY say so instead of implementing it, and MUST then **demonstrate** the unreachability in the material that claims conformance.
 Asserting it is a loophole. **Example**: a receiver that only ever compares harness identities can demonstrate that the
-`parsed`-digest obligation is unreachable for it, because identifying parts are `model_visible` by construction.
+`parsed`-digest obligation is unreachable for it, because no part keys an identity at `parsed` (`keying_boundary`).
 
-**A collector MUST reproduce `spec/fixtures/identity.json`, and a stamper MUST reproduce `spec/fixtures/model_identity.json`.** It is the only part of conformance that a second
+**A collector MUST reproduce `spec/fixtures/identity.json` and `spec/fixtures/canonical_value.json`, and a stamper MUST reproduce `spec/fixtures/model_identity.json`.** It is the only part of conformance that a second
 implementation cannot pass by agreeing with itself.
 
 **No implementation is conformant on the strength of this document alone.** The sections say what is required; the fixtures and
@@ -654,7 +783,7 @@ a lineage document (section 10) names it.
 **What may key them.** Only `loaded_by_us`, written by a stamper. A digest cached from an earlier load is `pulled_by_us`, with a lag equal to
 its age. A forwarder that relays a stamper's model half verbatim keeps its sourcing; one that reads the stamp back over a
 separate request has `pulled_by_us`, and the stamp it read may be another replica's. A receiver cannot check a relayed
-stamp, so accepting one is a statement of trust in the forwarder (section 12.1). Version 2 defines no carrier for the
+stamp, so accepting one is a statement of trust in the forwarder (section 12.1). Version 4 defines no carrier for the
 stamp between a stamper and a forwarder, and the forwarder's record carries the forwarder's own `perigraph.collector`
 and version, so the collector-local comparison of model identities (section 4) holds only within one deployment whose
 stampers and forwarders agree on what they relay. Attributing a relayed stamp to its stamper is on the roadmap.
@@ -676,7 +805,7 @@ trigger a refusal and may never lift one.
 
 | field | form |
 |---|---|
-| `spec_version` | `2` |
+| `spec_version` | `4` |
 | `subject` | the artifact identity this document is about |
 | `parent` | the parent's artifact identity, or `none` for a `pretrained` artifact |
 | `method` | one of `pretrained`, `sft`, `distillation`, `rl`, `merge`, `reserialisation` |
@@ -703,15 +832,17 @@ model parts; a vLLM backend is stamped by middleware in its own process (a wrapp
 is `pulled_by_us` and keys nothing); vLLM Semantic Router and the stratoclave gateway forward a backend's stamp verbatim
 and add their own decision as a label; a model behind a provider's API is `not_observable`. A receiver such as tierbook
 composes nothing from these attributes: it is handed opaque version strings that the emitters compose, recommended as
-`perigraph/2/model/<model identity>` for what answered and `perigraph/2/artifact/<artifact identity>` for what a trainer
-produced, and its own conformance test binds its refusals to `receiver_obligations`.
+`perigraph/2/model/<model identity>` for what answered, `perigraph/2/artifact/<artifact identity>` for what a trainer
+produced, and `perigraph/4/harness/<harness identity>` for what surrounded it. The number names the version whose
+derivation the identity follows, so a string changes only when its derivation does: the model and artifact identities
+are derived as in version 2, and the harness identity as in version 4, and its own conformance test binds its refusals to `receiver_obligations`.
 
 ## 12. Security and privacy considerations
 
 ### 12.1 Trust
 
 A receiver trusts the collector for every digest it did not compute itself. "Verifiable" in section 1.1a means
-verifiable by the collector, which held the bytes. Version 3 records and stamps are not authenticated: nothing in a
+verifiable by the collector, which held the bytes. Version 4 records and stamps are not authenticated: nothing in a
 record proves who wrote it, and an intermediary can alter or forge one. A receiver that accepts a relayed model stamp
 (section 9) is trusting the forwarder and every hop before it. Authentication belongs around a record rather than
 inside it; `SECURITY.md` names the shape (SCITT, RFC 9943).
@@ -734,20 +865,25 @@ and do not resist a party who chooses content to collide.
 - A `detail` MUST NOT quote request content, credentials, tokens or URLs carrying secrets. Section 1.2 already requires
   details about unreadable fields to name the field and its type without quoting the value; this applies to every
   detail, including the text of an exception.
-- A `label` is free text for a reader. A collector MUST NOT put request content or secrets in one.
+- A `label` is free text for a reader. A collector MUST NOT put request content or secrets in one. The label of a part
+  read at `canonical_value` from a request lists member names only.
+- A collector MUST NOT write a member name in `perigraph.request.unlisted` that does not match `unlisted_names.pattern`,
+  and MUST NOT write any value. The label of a canonical part lists its member names joined with U+002C.
 - A collector MUST NOT digest altered content and present the digest as `model_visible`. Content withheld on purpose is
   an absence with reason `redacted`, which carries no digest.
 
 ### 12.4 What a receiver handles
 
 - A harness identity correlates runs across tenants and deployments that used the same instruction and, from version 3,
-  the same request template, which is a finer key. A receiver that
+  the same request template, and from version 4 the same generation controls, each a finer key. A
+  `generation_controls` digest has a small value space and is guessable (section 12.2), and `perigraph.request.unlisted`
+  says which vendor extensions a tenant uses; member names are requester-controlled text. A receiver that
   stores records from several tenants SHOULD treat identities and lineage as data that links them, with the same access
   control as the runs themselves.
-- A receiver SHOULD bound the number of attributes and the length of strings it accepts. A record of version 3 with every
-  part and every model part present has about 63 `perigraph.*` attributes.
+- A receiver SHOULD bound the number of attributes and the length of strings it accepts. A record of version 4 with every
+  part and every model part present has about 70 `perigraph.*` attributes.
 
-### 12.5 Out of scope for version 3
+### 12.5 Out of scope for version 4
 
 Keyed or salted digests, signed stamps and signed lineage documents. They are on the roadmap in `README.md`.
 

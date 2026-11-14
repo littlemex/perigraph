@@ -19,6 +19,7 @@
     "never_identifying",
     "refines_only",
     "must_be_known_for_identity",
+    "uniform_within_arm",
     "absence_reasons",
     "status",
     "context_crossings",
@@ -145,6 +146,22 @@
       }
     },
     "must_be_known_for_identity": {
+      "type": "object",
+      "required": [
+        "values"
+      ],
+      "properties": {
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        }
+      }
+    },
+    "uniform_within_arm": {
       "type": "object",
       "required": [
         "values"

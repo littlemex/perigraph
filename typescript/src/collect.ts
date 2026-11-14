@@ -14,26 +14,69 @@
  * newline is what the first implementation did, and because the instruction digest KEYS THE IDENTITY, two collectors
  * choosing differently would give two identities for one request.
  */
+import { createHash } from "node:crypto";
+
+import { NotCanonical, canonicalDigest, serialise } from "./canonical.js";
 import { Model, ModelAbsence } from "./model.js";
 import { Absence, Manifest, Part, Record_, blank, digest } from "./record.js";
-import { MODEL_PARTS, PARTS } from "./vocab.js";
+import { MODEL_PARTS, OPENAI_MEMBERS, PARTS, UNLISTED_NAMES_MAX, UNLISTED_NAME_PATTERN, Unidentified } from "./vocab.js";
 
 /** Static per version: a manifest that adapted to what it found could never contradict a record. */
-export const FROM_A_REQUEST = ["instruction", "request_template", "tool_schemas", "readout", "decoding"] as const;
+export const FROM_A_REQUEST = ["instruction", "request_template", "tool_schemas", "generation_controls", "decoding"] as const;
 
-/** Only the instruction is text the model provably read; the rest are protocol values whose rendering we do not hold. */
+/**
+ * Only the instruction is text the model provably read, so only it establishes an identity. Generation controls and
+ * decoding are protocol values serialised at `canonical_value`, which every implementation computes alike; generation
+ * controls key beside an instruction, decoding never keys.
+ */
 export const REQUEST_BOUNDARIES: Record<string, string> = {
   instruction: "model_visible",
   request_template: "model_visible",
   tool_schemas: "parsed",
-  readout: "parsed",
-  decoding: "parsed",
+  generation_controls: "canonical_value",
+  decoding: "canonical_value",
 };
 
-export const DECODING_KEYS = ["temperature", "top_p", "top_k", "seed"] as const;
+/** The members read into each canonical part, from the binding's closed list (frozen per spec version). */
+export const GENERATION_CONTROL_MEMBERS = Object.keys(OPENAI_MEMBERS).filter(
+  (k) => OPENAI_MEMBERS[k]!.length === 1 && OPENAI_MEMBERS[k]![0] === "generation_controls",
+);
+export const DECODING_MEMBERS = Object.keys(OPENAI_MEMBERS).filter(
+  (k) => OPENAI_MEMBERS[k]!.length === 1 && OPENAI_MEMBERS[k]![0] === "decoding",
+);
 
-/** Parts a request body has no place to put. Their absence is the SENDER's. */
-export const PUSHED_PARTS = ["loop", "turn_budget", "retry_policy", "context_partitioning"] as const;
+/** Parts a request body has no place to put. Their absence is the SENDER's. `readout` is the caller's rule. */
+export const PUSHED_PARTS = ["loop", "turn_budget", "retry_policy", "readout", "context_partitioning"] as const;
+
+const UNLISTED_NAME = new RegExp(UNLISTED_NAME_PATTERN);
+
+/**
+ * A canonical part's text and member names, null when no member is present and not null, or the reason it cannot be
+ * serialised. No type check and no emptiness rule: a value is digested as sent.
+ */
+function canonicalOf(body: Body, members: readonly string[]): [[string, string[]] | null, string] {
+  const present: Record<string, unknown> = {};
+  for (const k of members) if (Object.hasOwn(body, k) && body[k] !== null && body[k] !== undefined) present[k] = body[k];
+  const names = Object.keys(present).sort();
+  if (names.length === 0) return [null, ""];
+  for (const k of names) {
+    try {
+      serialise(present[k]);
+    } catch (e) {
+      if (e instanceof NotCanonical) return [null, `${k} holds ${e.message}`];
+      throw e;
+    }
+  }
+  return [[serialise(present), names], ""];
+}
+
+/** Top-level members the binding does not list, by name; at most UNLISTED_NAMES_MAX matching ones, the rest counted. */
+function unlistedOf(body: Body): [string[], number] {
+  const names = Object.keys(body).filter((k) => !Object.hasOwn(OPENAI_MEMBERS, k)).sort();
+  const ok = names.filter((k) => UNLISTED_NAME.test(k));
+  const written = ok.slice(0, UNLISTED_NAMES_MAX);
+  return [written, names.length - written.length];
+}
 
 /** Collector-local rendering of protocol scalars. See AMBIGUITY 3. */
 function scalars(pairs: [string, unknown][]): string {
@@ -177,13 +220,20 @@ function templateOf(template: unknown, messages: unknown): [string | null, strin
 }
 
 /** A request collector did not load the model, so it names the four model parts absent (SPEC 6). */
-function finish(opts: { collector: string; version: string }, parts: Part[], absences: Absence[]): Record_ {
+function finish(
+  opts: { collector: string; version: string },
+  parts: Part[],
+  absences: Absence[],
+  unlisted: [string[], number] | null = null,
+): Record_ {
   const record = new Record_(
     new Manifest(opts.collector, opts.version, [...FROM_A_REQUEST]),
     "complete",
     parts,
     absences,
     new Model([], MODEL_PARTS.map((k) => new ModelAbsence(k, "not_observable"))),
+    unlisted === null ? null : unlisted[0],
+    unlisted === null ? 0 : unlisted[1],
   );
   if (record.unaccounted.length > 0) {
     throw new Error(`the collector left ${record.unaccounted} unaccounted for`);
@@ -265,29 +315,27 @@ export function fromRequest(body: Body, opts: { collector: string; version: stri
     absences.push(new Absence("tool_schemas", "not_provided"));
   }
 
-  const fmt = body.response_format;
-  const badFmt = fmt !== undefined && fmt !== null && (typeof fmt !== "object" || Array.isArray(fmt))
-    ? `response_format is ${jsonType(fmt)}, not an object` : "";
-  // An empty object is a format the sender did not choose, as an empty `tools` array is tools it did not offer.
-  const chosen = badFmt === "" && fmt !== undefined && fmt !== null && Object.keys(fmt).length > 0;
-  if (badFmt !== "") {
-    absences.push(new Absence("readout", "extraction_failed", badFmt));
-  } else if (chosen) {
-    const label = "type" in (fmt as object) ? String((fmt as { type: unknown }).type) : "";
-    hold("readout", scalars([["response_format", fmt]]), label);
-  } else {
-    absences.push(new Absence("readout", "not_provided"));
-  }
-
-  // A response_format constrains the grammar of the output, so it is decoding as well as readout (SPEC 1).
-  const knobs = DECODING_KEYS.filter((k) => body[k] !== undefined && body[k] !== null).map((k) => [k, body[k]] as [string, unknown]);
-  if (chosen) knobs.push(["response_format", fmt]);
-  if (badFmt !== "") {
-    absences.push(new Absence("decoding", "extraction_failed", badFmt));
-  } else if (knobs.length > 0) {
-    hold("decoding", scalars(knobs), knobs.map(([k]) => k).join(","));
-  } else {
-    absences.push(new Absence("decoding", "not_provided"));
+  for (const [kind, members] of [
+    ["generation_controls", GENERATION_CONTROL_MEMBERS],
+    ["decoding", DECODING_MEMBERS],
+  ] as const) {
+    const [held, failedPart] = canonicalOf(body, members);
+    if (failedPart !== "") {
+      absences.push(new Absence(kind, "extraction_failed", failedPart));
+    } else if (held !== null) {
+      const [text, names] = held;
+      parts.push(
+        new Part({
+          kind,
+          sourcing: "in_the_request",
+          label: names.join(","),
+          contentDigest: createHash("sha256").update(Buffer.from(text, "utf8")).digest("hex"),
+          boundary: REQUEST_BOUNDARIES[kind] as string,
+        }),
+      );
+    } else {
+      absences.push(new Absence(kind, "not_provided"));
+    }
   }
 
   for (const kind of PUSHED_PARTS) absences.push(new Absence(kind, "not_provided"));
@@ -295,7 +343,7 @@ export function fromRequest(body: Body, opts: { collector: string; version: stri
   // At request time the calls have not happened, so there is nothing the sender could have supplied.
   absences.push(new Absence("tool_trace", "not_provided"));
 
-  return finish(opts, parts, absences);
+  return finish(opts, parts, absences, unlistedOf(body));
 }
 
 /** Attach what the owner says about the parts a request cannot carry, replacing their `not_provided` absences. */
@@ -307,7 +355,13 @@ export function declare(record: Record_, pushed: Partial<Record<(typeof PUSHED_P
         `request would be a claim standing in front of the evidence`,
     );
   }
+  for (const [k, v] of Object.entries(pushed)) {
+    if (typeof v !== "string" || blank(v)) {
+      throw new Unidentified(`the declaration of ${k} is empty or not a string`);
+    }
+  }
   const kept = record.absences.filter((a) => !(a.kind in pushed));
+  // Digested at canonical_value as the JSON string it is, so two collectors' declarations of one string compare.
   const declared = Object.entries(pushed)
     .sort(([a], [b]) => (a < b ? -1 : 1))
     .map(
@@ -316,11 +370,12 @@ export function declare(record: Record_, pushed: Partial<Record<(typeof PUSHED_P
           kind,
           sourcing: "pushed_by_owner",
           label: value as string,
-          contentDigest: digest(value as string),
-          boundary: "parsed",
+          contentDigest: canonicalDigest(value as string),
+          boundary: "canonical_value",
         }),
     );
-  return new Record_(record.manifest, record.status, [...record.parts, ...declared], kept);
+  return new Record_(record.manifest, record.status, [...record.parts, ...declared], kept, record.model, record.unlisted,
+    record.unlistedOmitted);
 }
 
 export { PARTS };

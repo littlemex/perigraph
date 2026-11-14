@@ -29,10 +29,10 @@ func TestTemplateRefinesInstructionIdentity(t *testing.T) {
 		t.Fatalf("identity = %q, want %q", held.HarnessIdentity, want)
 	}
 	attributes := ToAttributes(held)
-	if attributes["perigraph.spec_version"] != 3 ||
+	if attributes["perigraph.spec_version"] != 4 ||
 		attributes["perigraph.part.request_template.digest"] != templateDigest ||
 		!strings.Contains(attributes["perigraph.collector_reaches"].(string), "request_template") {
-		t.Fatal("template absent from version-3 wire record or manifest")
+		t.Fatal("template absent from version-4 wire record or manifest")
 	}
 
 	delete(body, "perigraph_template")
@@ -234,10 +234,9 @@ func TestKnownIdentityPartWithOtherSourcing(t *testing.T) {
 	r.Parts["request_template"] = Part{
 		Sourcing: "pushed_by_owner", Boundary: "model_visible", Digest: handSHA("claim"),
 	}
-	if got, want := harnessIdentity(r), identity(map[string]string{
-		"instruction": r.Parts["instruction"].Digest,
-	}); got != want {
-		t.Fatalf("other sourcing: got %q, want %q", got, want)
+	// Version 4 withdraws identity when a required part is held with other sourcing.
+	if got := harnessIdentity(r); got != "" {
+		t.Fatalf("pushed required part gave identity %q", got)
 	}
 	delete(r.Parts, "request_template")
 	if got := harnessIdentity(r); got != "" {

@@ -7,11 +7,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"path"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
+	"unicode/utf8"
 )
 
 //go:embed spec/vocabularies.json
@@ -74,8 +77,30 @@ func inVocabulary(section, value string) bool {
 	return false
 }
 
+func bindingMembers() map[string][]string {
+	vocabularyOnce.Do(loadVocabulary)
+	result := make(map[string][]string)
+	if vocabularyErr != nil {
+		return result
+	}
+	bindings, _ := vocabulary["bindings"].(map[string]any)
+	binding, _ := bindings["openai_chat_completions"].(map[string]any)
+	members, _ := binding["members"].(map[string]any)
+	for name, raw := range members {
+		list, _ := raw.([]any)
+		for _, part := range list {
+			if s, ok := part.(string); ok {
+				result[name] = append(result[name], s)
+			}
+		}
+		if _, ok := result[name]; !ok {
+			result[name] = nil
+		}
+	}
+	return result
+}
+
 // Part is a held harness fact. Digest is the full lowercase SHA-256 hex digest.
-// ReadLagSeconds must be set exactly when Sourcing is pulled_by_us.
 type Part struct {
 	Sourcing       string
 	Boundary       string
@@ -92,8 +117,7 @@ type ModelPart struct {
 	ReadLagSeconds *float64
 }
 
-// Absence describes a missing part. Detail is required for not_reachable and
-// extraction_failed, and forbidden for all other reasons.
+// Absence describes a missing part.
 type Absence struct {
 	Reason string
 	Detail string
@@ -107,8 +131,8 @@ type ModelHalf struct {
 	ArtifactIdentity string
 }
 
-// Record describes one run. CollectorReaches is the collector-version's static
-// manifest, not a list inferred from the parts found in this particular run.
+// Record describes one call. HasUnlisted distinguishes a non-object body from
+// an object with no unlisted members.
 type Record struct {
 	SpecVersion      int
 	Collector        string
@@ -119,6 +143,9 @@ type Record struct {
 	Absent           map[string]Absence
 	HarnessIdentity  string
 	Model            ModelHalf
+	HasUnlisted      bool
+	Unlisted         []string
+	UnlistedOmitted  int
 }
 
 func digest(data []byte) string {
@@ -145,9 +172,6 @@ func identity(digests map[string]string) string {
 	return digest([]byte(b.String()))[:24]
 }
 
-// specWhiteSpace implements the Unicode White_Space code points in the
-// vocabulary's top-level white_space.code_points list. It is used only for
-// existence and unresolved-value tests; digests retain the original bytes.
 func specWhiteSpace(r rune) bool {
 	vocabularyOnce.Do(loadVocabulary)
 	if vocabularyErr != nil {
@@ -174,8 +198,7 @@ func trimSpecWhiteSpace(s string) string {
 }
 
 func parsed(value any) (Part, error) {
-	// Parsed digests are collector-local. JSON encoding is this Go
-	// collector's convention, not a model-visible rendering.
+	// A parsed digest is collector-local.
 	data, err := json.Marshal(value)
 	if err != nil {
 		return Part{}, err
@@ -219,10 +242,10 @@ func failed(where string) Absence {
 
 func requestRecord(collector, version string) Record {
 	r := Record{
-		SpecVersion:      3,
+		SpecVersion:      4,
 		Collector:        collector,
 		CollectorVersion: version,
-		CollectorReaches: []string{"instruction", "request_template", "tool_schemas", "readout", "decoding"},
+		CollectorReaches: []string{"instruction", "request_template", "tool_schemas", "generation_controls", "decoding"},
 		Status:           "complete",
 		Parts:            make(map[string]Part),
 		Absent:           make(map[string]Absence),
@@ -234,25 +257,134 @@ func requestRecord(collector, version string) Record {
 	for _, name := range []string{"checkpoint", "precision", "runtime", "answer_mode"} {
 		r.Model.Absent[name] = Absence{Reason: "not_observable"}
 	}
-	for _, name := range []string{"loop", "turn_budget", "retry_policy", "context_partitioning", "tool_trace"} {
+	for _, name := range []string{"loop", "turn_budget", "retry_policy", "readout", "context_partitioning", "tool_trace"} {
 		r.Absent[name] = Absence{Reason: "not_provided"}
 	}
 	r.Absent["tool_extension"] = Absence{Reason: "not_observable"}
 	return r
 }
 
-// FromRequest observes an already-decoded JSON object. Pass an allocated
-// empty map for {}. A nil map represents JSON null, not an empty object.
-// For other non-object bodies, use FromRequestValue.
+// FromRequest observes an already-decoded JSON object. A nil map represents
+// JSON null. Use FromRequestJSON when the original JSON text is available.
 func FromRequest(body map[string]any, collector, version string) Record {
 	return FromRequestValue(body, collector, version)
 }
 
-// FromRequestValue also accepts malformed top-level bodies. It emits a record
-// rather than refusing one, marking every manifest part extraction_failed when
-// the body is not a JSON object (including nil and a nil map). Neither errors
-// nor details quote request content.
+// FromRequestValue observes a decoded value. Unlike FromRequestJSON it cannot
+// detect an unpaired surrogate escape already replaced by the JSON decoder.
 func FromRequestValue(body any, collector, version string) Record {
+	return collectRequest(body, nil, collector, version)
+}
+
+// FromRequestJSON observes JSON text. Top-level members are decoded as raw
+// messages so a canonical member's failure cannot fail another part. The last
+// occurrence of a duplicate top-level member wins.
+func FromRequestJSON(raw []byte, collector, version string) Record {
+	bad := func() Record {
+		r := requestRecord(collector, version)
+		for _, name := range r.CollectorReaches {
+			r.Absent[name] = Absence{Reason: "extraction_failed", Detail: "request body: invalid JSON"}
+		}
+		return r
+	}
+	if !utf8.Valid(raw) || len(raw) >= 3 && string(raw[:3]) == "\xef\xbb\xbf" {
+		return bad()
+	}
+	decoder := json.NewDecoder(strings.NewReader(string(raw)))
+	decoder.UseNumber()
+	var body any
+	if err := decoder.Decode(&body); err != nil {
+		return bad()
+	}
+	var extra any
+	if err := decoder.Decode(&extra); err != io.EOF {
+		return bad()
+	}
+	if _, ok := body.(map[string]any); !ok {
+		return collectRequest(body, nil, collector, version)
+	}
+	var members map[string]json.RawMessage
+	other := json.NewDecoder(strings.NewReader(string(raw)))
+	other.UseNumber()
+	if err := other.Decode(&members); err != nil {
+		return bad()
+	}
+	return collectRequest(body, members, collector, version)
+}
+
+func unlistedNames(object map[string]any, r *Record) {
+	r.HasUnlisted = true
+	members := bindingMembers()
+	vocabularyOnce.Do(loadVocabulary)
+	rule, _ := vocabulary["unlisted_names"].(map[string]any)
+	pattern, _ := rule["pattern"].(string)
+	maximum, _ := rule["max"].(float64)
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return
+	}
+	names := make([]string, 0)
+	for name := range object {
+		if _, recognised := members[name]; !recognised {
+			names = append(names, name)
+		}
+	}
+	sort.Slice(names, func(i, j int) bool { return utf16Less(names[i], names[j]) })
+	for _, name := range names {
+		if re.MatchString(name) && len(r.Unlisted) < int(maximum) {
+			r.Unlisted = append(r.Unlisted, name)
+		} else {
+			r.UnlistedOmitted++
+		}
+	}
+}
+
+func canonicalRequestPart(object map[string]any, raw map[string]json.RawMessage, name string) (Part, *Absence) {
+	payload := make(map[string]any)
+	labels := make([]string, 0)
+	for member, parts := range bindingMembers() {
+		reads := false
+		for _, part := range parts {
+			if part == name {
+				reads = true
+			}
+		}
+		value, present := object[member]
+		if !reads || !present || value == nil {
+			continue
+		}
+		var text string
+		var err error
+		if raw != nil {
+			text, err = CanonicalJSON(raw[member])
+		} else {
+			text, err = canonicalValue(value)
+		}
+		if err != nil {
+			a := Absence{Reason: "extraction_failed", Detail: member + " holds " + err.Error()}
+			return Part{}, &a
+		}
+		// RawMessage preserves the canonical rendering while the containing
+		// object is sorted and serialized by the same canonical writer.
+		payload[member] = canonicalFragment(text)
+		labels = append(labels, member)
+	}
+	if len(labels) == 0 {
+		return Part{}, &Absence{Reason: "not_provided"}
+	}
+	sort.Strings(labels)
+	text, err := canonicalValue(payload)
+	if err != nil {
+		a := Absence{Reason: "extraction_failed", Detail: "canonical object holds " + err.Error()}
+		return Part{}, &a
+	}
+	return Part{
+		Sourcing: "in_the_request", Boundary: "canonical_value",
+		Digest: digest([]byte(text)), Label: strings.Join(labels, ","),
+	}, nil
+}
+
+func collectRequest(body any, raw map[string]json.RawMessage, collector, version string) Record {
 	r := requestRecord(collector, version)
 	object, ok := body.(map[string]any)
 	if !ok || object == nil {
@@ -261,6 +393,7 @@ func FromRequestValue(body any, collector, version string) Record {
 		}
 		return r
 	}
+	unlistedNames(object, &r)
 
 	if part, absence := readRequestTemplate(object); absence != nil {
 		r.Absent["request_template"] = *absence
@@ -268,12 +401,10 @@ func FromRequestValue(body any, collector, version string) Record {
 		r.Parts["request_template"] = part
 	}
 
-	if raw := object["messages"]; raw == nil {
+	if value := object["messages"]; value == nil {
 		r.Absent["instruction"] = Absence{Reason: "not_provided"}
-	} else if messages, ok := raw.([]any); !ok {
-		a := wrongType("messages", raw, "array")
-		r.Absent["instruction"] = a
-		r.Absent["tool_trace"] = a
+	} else if messages, ok := value.([]any); !ok {
+		r.Absent["instruction"] = wrongType("messages", value, "array")
 	} else {
 		var structural *Absence
 		for i, item := range messages {
@@ -298,10 +429,9 @@ func FromRequestValue(body any, collector, version string) Record {
 		}
 		if structural != nil {
 			r.Absent["instruction"] = *structural
-			r.Absent["tool_trace"] = *structural
 		} else {
 			var systems []string
-			var instructionFailure *Absence
+			var failure *Absence
 			for i, item := range messages {
 				m := item.(map[string]any)
 				if m["role"].(string) != "system" {
@@ -310,19 +440,19 @@ func FromRequestValue(body any, collector, version string) Record {
 				where := fmt.Sprintf("messages[%d]", i)
 				content, exists := m["content"]
 				if !exists {
-					if instructionFailure == nil {
+					if failure == nil {
 						a := Absence{"extraction_failed", where + ".content: missing; expected string"}
-						instructionFailure = &a
+						failure = &a
 					}
 				} else if text, ok := content.(string); ok {
 					systems = append(systems, text)
-				} else if instructionFailure == nil {
+				} else if failure == nil {
 					a := wrongType(where+".content", content, "string")
-					instructionFailure = &a
+					failure = &a
 				}
 			}
-			if instructionFailure != nil {
-				r.Absent["instruction"] = *instructionFailure
+			if failure != nil {
+				r.Absent["instruction"] = *failure
 			} else if len(systems) == 0 {
 				r.Absent["instruction"] = Absence{Reason: "not_provided"}
 			} else {
@@ -339,22 +469,22 @@ func FromRequestValue(body any, collector, version string) Record {
 		}
 	}
 
-	if raw := object["tools"]; raw == nil {
+	if value := object["tools"]; value == nil {
 		r.Absent["tool_schemas"] = Absence{Reason: "not_provided"}
-	} else if tools, ok := raw.([]any); !ok {
-		r.Absent["tool_schemas"] = wrongType("tools", raw, "array")
+	} else if tools, ok := value.([]any); !ok {
+		r.Absent["tool_schemas"] = wrongType("tools", value, "array")
 	} else {
 		var failure *Absence
 		for i, item := range tools {
 			where := fmt.Sprintf("tools[%d]", i)
 			tool, ok := item.(map[string]any)
-			if !ok {
+			if !ok || tool == nil {
 				a := wrongType(where, item, "object")
 				failure = &a
 				break
 			}
 			if function, exists := tool["function"]; exists {
-				if _, ok := function.(map[string]any); !ok {
+				if f, ok := function.(map[string]any); !ok || f == nil {
 					a := wrongType(where+".function", function, "object")
 					failure = &a
 					break
@@ -372,49 +502,21 @@ func FromRequestValue(body any, collector, version string) Record {
 		}
 	}
 
-	format := object["response_format"]
-	hasFormat := format != nil
-	if !hasFormat {
-		r.Absent["readout"] = Absence{Reason: "not_provided"}
-	} else if formatObject, ok := format.(map[string]any); !ok {
-		r.Absent["readout"] = wrongType("response_format", format, "object")
-	} else if len(formatObject) == 0 {
-		r.Absent["readout"] = Absence{Reason: "not_provided"}
-		hasFormat = false
-	} else if p, err := parsed(format); err != nil {
-		r.Absent["readout"] = failed("response_format")
-	} else {
-		r.Parts["readout"] = p
-	}
-
-	sampler := make(map[string]any)
-	for _, key := range []string{"temperature", "top_p", "top_k", "seed"} {
-		if value := object[key]; value != nil {
-			sampler[key] = value
+	for _, name := range []string{"generation_controls", "decoding"} {
+		if part, absence := canonicalRequestPart(object, raw, name); absence != nil {
+			r.Absent[name] = *absence
+		} else {
+			r.Parts[name] = part
 		}
 	}
-	if hasFormat {
-		sampler["response_format"] = format
-	}
-	if hasFormat && r.Absent["readout"].Reason == "extraction_failed" {
-		r.Absent["decoding"] = r.Absent["readout"]
-	} else if len(sampler) == 0 {
-		r.Absent["decoding"] = Absence{Reason: "not_provided"}
-	} else if p, err := parsed(sampler); err != nil {
-		r.Absent["decoding"] = failed("decoding fields")
-	} else {
-		r.Parts["decoding"] = p
-	}
-
 	r.HarnessIdentity = harnessIdentity(r)
 	return r
 }
 
-// ToAttributes encodes the flat, scalar-valued version-3 wire form.
-// Identity keys are omitted, rather than emitted as empty strings, when absent.
+// ToAttributes encodes the flat, scalar-valued version-4 wire form.
 func ToAttributes(r Record) map[string]any {
 	a := map[string]any{
-		"perigraph.spec_version":      3,
+		"perigraph.spec_version":      4,
 		"perigraph.collector":         r.Collector,
 		"perigraph.collector_version": r.CollectorVersion,
 		"perigraph.status":            r.Status,
@@ -422,6 +524,10 @@ func ToAttributes(r Record) map[string]any {
 	reaches := append([]string(nil), r.CollectorReaches...)
 	sort.Strings(reaches)
 	a["perigraph.collector_reaches"] = strings.Join(reaches, ",")
+	if r.HasUnlisted {
+		a["perigraph.request.unlisted"] = strings.Join(r.Unlisted, ",")
+		a["perigraph.request.unlisted_omitted"] = r.UnlistedOmitted
+	}
 	if r.HarnessIdentity != "" {
 		a["perigraph.harness_identity"] = r.HarnessIdentity
 	}
@@ -505,10 +611,7 @@ func CheckpointDigest(files [][2]string) (string, error) {
 	return digest([]byte(b.String())), nil
 }
 
-// PrecisionDigest hashes the transform observed after loading. Fields must
-// include device, quantisation, and at least one dtype.<name> parameter count.
-// An unresolved field is returned as an error; a collector recording that
-// observation must report the precision part as extraction_failed.
+// PrecisionDigest hashes the transform observed after loading.
 func PrecisionDigest(fields map[string]string) (string, error) {
 	if fields["device"] == "" || fields["quantisation"] == "" {
 		return "", errors.New("precision requires device and quantisation")
@@ -572,8 +675,7 @@ func RuntimeDigest(packages map[string]string) (string, error) {
 	return digest([]byte(b.String())), nil
 }
 
-// Loaded stamps all four model parts as loaded_by_us. It must only be called
-// in the process that loaded and observed the model during this load.
+// Loaded stamps all four model parts as loaded_by_us.
 func Loaded(checkpointDigest, precisionDigest, runtimeDigest, answerMode string) (ModelHalf, error) {
 	for name, value := range map[string]string{
 		"checkpoint": checkpointDigest, "precision": precisionDigest, "runtime": runtimeDigest,

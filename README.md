@@ -8,7 +8,7 @@ perigraph is an open specification for one record attached to one model call. Th
 
 | | |
 |---|---|
-| specification | `spec_version` 3, provisional: a formal versioning and compatibility policy is planned and not yet in place ([Versioning](#versioning)) |
+| specification | `spec_version` 4, provisional: a formal versioning and compatibility policy is planned and not yet in place ([Versioning](#versioning)) |
 | normative files | [`SPEC.md`](SPEC.md), [`spec/vocabularies.json`](spec/vocabularies.json), [`spec/bindings/`](spec/bindings), with generated JSON Schemas in [`spec/schema/`](spec/schema) |
 | conformance | [`tools/conform.py`](tools/conform.py) with fixtures and receiver cases, runnable against an implementation in any language |
 | implementations | Python, TypeScript and Go in this repository. None yet by a person other than the specification's author |
@@ -34,21 +34,24 @@ A record is a set of flat attributes under the prefix `perigraph.`, so it can ri
 
 ```json
 {
-  "perigraph.spec_version": 3,
+  "perigraph.spec_version": 4,
   "perigraph.collector": "quickstart",
   "perigraph.collector_version": "1",
-  "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
+  "perigraph.collector_reaches": "instruction,request_template,tool_schemas,generation_controls,decoding",
   "perigraph.status": "complete",
   "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+  "perigraph.request.unlisted": "",
+  "perigraph.request.unlisted_omitted": 0,
   "perigraph.part.instruction.sourcing": "in_the_request",
   "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
   "perigraph.part.instruction.boundary": "model_visible",
   "perigraph.part.decoding.sourcing": "in_the_request",
-  "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
-  "perigraph.part.decoding.boundary": "parsed",
+  "perigraph.part.decoding.digest": "e4ff491169b8a9ea78518a7972422b5a24d5e3790e0d9a9e5cbfb384d9b621e0",
+  "perigraph.part.decoding.boundary": "canonical_value",
   "perigraph.part.decoding.label": "temperature",
   "perigraph.absent.request_template.reason": "not_provided",
   "perigraph.absent.tool_schemas.reason": "not_provided",
+  "perigraph.absent.generation_controls.reason": "not_provided",
   "perigraph.absent.tool_extension.reason": "not_observable",
   "perigraph.model_absent.checkpoint.reason": "not_observable"
 }
@@ -66,17 +69,19 @@ A name is a label its owner controls: a prompt can stay `v3` while its text chan
 
 Alternatives weighed: a name and version per component, which is what every convention surveyed carries and which the incidents above defeat; one digest over the whole prompt, as OpenLLMetry's `traceloop.prompt.version_hash` does, which says that something changed but not which part, and so cannot tell a changed tool list from a changed instruction.
 
-### 2. Every digest says which boundary it is over, and only text the model reads can key the harness identity
+### 2. Every digest says which boundary it is over, and only the instruction establishes the harness identity
 
-The same request can be digested at three places: the bytes on the wire, the values after parsing, or the text the model reads. A `tools` array or a sampler setting is in the request, but the provider renders it into the prompt however it likes, so its digest does not prove what the model saw. Each digest therefore names its boundary (`transport`, `parsed` or `model_visible`), and only a `model_visible` digest can key the harness identity ([SPEC 2.1](SPEC.md#21-the-three-boundaries-and-why-the-middle-one-is-the-trap)). For a request in the OpenAI Chat Completions shape this means the identity is the instruction's, refined by the request template when the requester declares one. That is a real limit, and the record says so rather than claiming more ([`spec/bindings/openai-chat-completions.md`](spec/bindings/openai-chat-completions.md)).
+The same request can be digested at four places: the bytes on the wire, the values after parsing, the same values under one serialisation every implementation computes alike, or the text the model reads. A `tools` array is in the request, but the provider renders it into the prompt however it likes, so its digest does not prove what the model saw. Each digest therefore names its boundary (`transport`, `parsed`, `canonical_value` or `model_visible`), and each part may key the harness identity at one boundary only (`keying_boundary`, [SPEC 2](SPEC.md#2-identity)). For a request in the OpenAI Chat Completions shape the identity is the instruction's, refined by the request template when the requester declares one and by the generation controls the request carries. That is a real limit, and the record says so rather than claiming more ([`spec/bindings/openai-chat-completions.md`](spec/bindings/openai-chat-completions.md)).
+
+The generation controls are the request members, other than the messages and the tools, that select what the engine renders into the prompt, constrain the form of the output, or bound its length: `max_tokens`, `stop`, `response_format`, `chat_template_kwargs`, reasoning switches such as `enable_thinking` and `reasoning_effort`, and the rest of the binding's list. In one study a base request and a reasoning-before-the-answer request sent the same system message and differed only in `max_tokens` (32 against 256) and `chat_template_kwargs.enable_thinking`. Version 3 read neither and gave both one identity, so their records could be pooled as one arm. Version 4 digests them at `canonical_value`, which is RFC 8785 JSON canonicalisation with one restriction (integers outside ±2⁵³−1 fail), so `256` and `256.0` agree and Python, TypeScript and Go compute the same bytes ([`spec/fixtures/canonical_value.json`](spec/fixtures/canonical_value.json)). They key the identity only beside an instruction. On their own they would give every prompt sent with the same settings one identity, so a request with no system message still has none. The sampler settings (`temperature`, `top_p`, penalties, `logit_bias`, `n`, `logprobs`) are `decoding`, digested the same way and never keyed, so that a temperature sweep stays one harness. Every top-level member the binding does not list is named, without its value, in `perigraph.request.unlisted`. Alternatives weighed: keying `decoding` as well, which makes every sampler sweep many harnesses; letting the controls key on their own, which joins different prompts; raw transport bytes, which split `0` from `0.0`.
 
 The text around each item in the user message is part of the harness too: on one checkpoint with no system message, wrapping each item in an instruction instead of sending it alone moved accuracy by 4.58 points. Digesting the whole user message would make every item its own harness, so the requester may declare a `perigraph_template` beside `messages`: for each message, the fixed strings, with the holes where the item goes. The collector checks that the content is those strings with the holes filled, possibly with nothing, and digests the strings with the number and roles of the messages ([SPEC 2](SPEC.md#2-identity)). Which text is fixed and which is the item is still the requester's word, so the template may split an identity that a held instruction establishes and never establishes one by itself, and a template the request contradicts withdraws the identity. A request with no system message therefore still has no harness identity: the measured case above is recorded, and is not given one. Alternatives weighed: a template digest declared by the owner, which by the rule below could never key anything; reading the whole user message; inferring the template from many records, which is a statistical guess rather than a fact about one run.
 
-The `model_visible` text is hashed raw, without canonicalising case, white space or Unicode form, because a model reads a string and not its meaning; `parsed` values may be canonicalised because a machine reads them ([SPEC 2.4](SPEC.md#24-canonicalisation)). Alternatives weighed: digesting everything and keying on all of it, which gives an identity that changes when a gateway re-serialises JSON and stays the same when the provider changes how it renders tools; canonical JSON for everything, which makes two instructions that differ only in white space look identical even though such differences change model behaviour.
+The `model_visible` text is hashed raw, without canonicalising case, white space or Unicode form, because a model reads a string and not its meaning; protocol values are canonicalised because a machine reads them ([SPEC 2.4](SPEC.md#24-canonicalisation)). Alternatives weighed: digesting everything and keying on all of it, which gives an identity that changes when a gateway re-serialises JSON and stays the same when the provider changes how it renders tools; canonical JSON for everything, which makes two instructions that differ only in white space look identical even though such differences change model behaviour.
 
 ### 3. Every fact says how it reached the record, and a claim nobody can check can only subtract
 
-A part was in the request, loaded by the collector itself, pulled from somewhere else at some earlier moment, pushed by its owner as a declaration, or not observable at all. The record says which, per part (`sourcing`, [SPEC 1.1a](SPEC.md#11a-how-a-fact-reached-the-record)). A pulled fact carries its read lag in seconds, because it was read at a different moment from the request. A pushed fact may make a receiver refuse a verdict and may never make it accept one, because nobody downstream can check it. A relayed model stamp is the one exception, and SPEC 12.1 states the trust it requires.
+A part was in the request, loaded by the collector itself, pulled from somewhere else at some earlier moment, pushed by its owner as a declaration, or not observable at all. The record says which, per part (`sourcing`, [SPEC 1.1a](SPEC.md#11a-how-a-fact-reached-the-record)). A pulled fact carries its read lag in seconds, because it was read at a different moment from the request. A pushed fact may make a receiver refuse a verdict and may never make it accept one, because nobody downstream can check it. A relayed model stamp is the one exception, and SPEC 12.1 states the trust it requires. The caller's readout rule and its retry policy are pushed facts: they never key the identity, and a receiver refuses one verdict over an arm whose records declare them differently, or declare one beside none, as it does for differing sampler settings ([SPEC 4](SPEC.md#4-what-a-receiver-may-compare)).
 
 Alternatives weighed: trusting declared metadata as other conventions do, which lets an owner's statement stand in for an observation; refusing pushed facts outright, which throws away the only source for parts a request cannot carry, such as an agent's retry policy.
 
@@ -126,7 +131,7 @@ perigraph is not a telemetry convention and does not compete with one. It adds t
 | OpenInference | [`715e299`](https://github.com/Arize-ai/openinference/tree/715e299), 2026-11-11 | a `DECISION` span kind, `llm.cost.*` in USD, `evaluation.*` | a content digest per part, a sourcing mode per part |
 | OpenLLMetry | [`e3d651a`](https://github.com/traceloop/openllmetry/tree/e3d651a), 2026-11-05 | `traceloop.prompt.version_hash`, one digest over a whole prompt version | a digest per part, a sourcing mode per part |
 
-[`spec/bindings/otel.md`](spec/bindings/otel.md) maps four parts (instruction, tool_schemas, decoding and checkpoint) to the nearest attributes of the first two and says how a span's attribute limits can drop part of a record.
+[`spec/bindings/otel.md`](spec/bindings/otel.md) maps five parts (instruction, tool_schemas, generation_controls, decoding and checkpoint) to the nearest attributes of the first two and says how a span's attribute limits can drop part of a record.
 
 ## Quickstart
 
@@ -184,11 +189,11 @@ python tools/conform.py --adapter "python conformance/adapters/python_adapter.py
 
 | role | what is checked |
 |---|---|
-| collector | every body in [`spec/fixtures/identity.json`](spec/fixtures/identity.json) gives the fixture's identity, instruction digest and, where the case names it, request-template digest or absence reason, and a record that validates against [`spec/schema/record.schema.json`](spec/schema/record.schema.json) |
+| collector | every body in [`spec/fixtures/identity.json`](spec/fixtures/identity.json) gives the fixture's identity, instruction digest and, where the case names them, request-template and generation-controls digest or absence reason and the unlisted member names, and a record that validates against [`spec/schema/record.schema.json`](spec/schema/record.schema.json); every case in [`spec/fixtures/canonical_value.json`](spec/fixtures/canonical_value.json) gives the canonical text or fails |
 | stamper | every case in [`spec/fixtures/model_identity.json`](spec/fixtures/model_identity.json) gives the fixture's digests and identities, and unresolved precisions are refused |
-| receiver | every case in [`conformance/cases/receiver.json`](conformance/cases/receiver.json) is rejected, or stored with the expected verdict |
+| receiver | every case in [`conformance/cases/receiver.json`](conformance/cases/receiver.json) is rejected, or stored with the expected verdict; every case in [`conformance/cases/arm.json`](conformance/cases/arm.json) gets the expected outcome for one verdict over its records as one arm |
 
-Every requirement sentence in the specification has an identifier in [`spec/requirements.json`](spec/requirements.json), and each receiver case names the requirements it checks. `python tools/requirements.py --report` lists the requirements that no portable case checks yet. Chief among them are the obligations about comparing two records, which rest on facts the version 3 wire record does not carry ([SPEC 6.1](SPEC.md#61-what-the-version-3-wire-record-does-not-carry)).
+Every requirement sentence in the specification has an identifier in [`spec/requirements.json`](spec/requirements.json), and each receiver case names the requirements it checks. `python tools/requirements.py --report` lists the requirements that no portable case checks yet. Chief among them are the obligations about comparing two arms, which rest on facts the version 4 wire record does not carry ([SPEC 6.1](SPEC.md#61-what-the-version-4-wire-record-does-not-carry)).
 
 ## Implementations
 
@@ -202,21 +207,23 @@ All three pass the conformance runner in CI, and `tools/cross_check.py` compares
 
 ## Versioning
 
-The specification is at `spec_version` 3, a single integer with no minor version. Today's policy is in [SPEC section 7](SPEC.md#7-versioning). Removing or renaming a vocabulary value, changing what a value means or how an identity is computed, and adding a receiver obligation are each breaking and need a new `spec_version`. Adding a value whose meaning is a refusal a receiver already performs, and adding an optional attribute a receiver may ignore, are not. A change that only withdraws an identity is not breaking: after it, an input has either no identity or the one it had before, and never a different one. That exception holds only while every known sender is built from this repository. A receiver that meets a `spec_version` it does not implement rejects the record.
+The specification is at `spec_version` 4, a single integer with no minor version. Today's policy is in [SPEC section 7](SPEC.md#7-versioning). Removing or renaming a vocabulary value, changing what a value means or how an identity is computed, and adding a receiver obligation are each breaking and need a new `spec_version`. Adding a value whose meaning is a refusal a receiver already performs, and adding an optional attribute a receiver may ignore, are not. A change that only withdraws an identity is not breaking: after it, an input has either no identity or the one it had before, and never a different one. That exception holds only while every known sender is built from this repository. A receiver that meets a `spec_version` it does not implement rejects the record.
 
-**A formal versioning and compatibility policy for the interface is planned and not yet in place.** [SPEC section 7.1](SPEC.md#71-planned-the-versioning-and-compatibility-policy) lists the questions it has to settle. Until it exists, version 3 should be treated as provisional.
+**A formal versioning and compatibility policy for the interface is planned and not yet in place.** [SPEC section 7.1](SPEC.md#71-planned-the-versioning-and-compatibility-policy) lists the questions it has to settle. Until it exists, version 4 should be treated as provisional.
+
+Version 4 added the `generation_controls` part and the `canonical_value` boundary, moved `response_format` into the generation controls and made `readout` a declared part, named the request members the binding does not read in `perigraph.request.unlisted`, and added two arm refusals: records that differ in a part that never keys the identity (the pushed parts and `decoding`), and records whose unlisted members differ. A record whose request carries no generation control has the same harness identity as in version 3 ([SPEC 7](SPEC.md#7-versioning), [proposal 0003](docs/proposals/0003-generation-controls.md)).
 
 Version 3 added the `request_template` part and the refusal of an arm whose records carry more than one harness identity. Both are breaking changes under SPEC 7, which is why the integer changed, and a version 2 receiver rejects every version 3 record by its `spec_version`. A request that declares no template has the same harness identity in both versions from a collector that reads the template member, and every version 2 identity fixture is unchanged ([SPEC 7](SPEC.md#7-versioning), [proposal 0001](docs/proposals/0001-request-template.md), [proposal 0002](docs/proposals/0002-one-harness-identity-per-arm.md)).
 
 ## What it does not cover
 
 - **Whether a claim is true.** A record says what surrounded a run and what answered it, and a conforming receiver refuses the comparisons the records cannot support. Neither judges accuracy, and it does not decide which model should answer ([SPEC 11](SPEC.md#11-switching-not-normative)).
-- **Authenticity.** Version 3 records are not signed. A receiver trusts the collector for every digest it did not compute, and trusts a forwarder for every stamp it relays ([SPEC 12.1](SPEC.md#121-trust)).
+- **Authenticity.** Version 4 records are not signed. A receiver trusts the collector for every digest it did not compute, and trusts a forwarder for every stamp it relays ([SPEC 12.1](SPEC.md#121-trust)).
 - **Secrecy.** A digest is not a redaction. Short or predictable content, such as an instruction drawn from a few templates or a runtime package list, can be recovered by guessing ([SPEC 12.2](SPEC.md#122-what-a-digest-does-not-hide)).
-- **What a provider renders.** For a request read from its body, only the instruction and a declared request template key the identity, because the request does not carry how tools and settings were rendered into the prompt ([SPEC 2](SPEC.md#2-identity)).
+- **What a provider renders.** For a request read from its body, only the instruction, a declared request template and the generation controls key the identity, because the request does not carry how tools and settings were rendered into the prompt. A switch carried in the model name, a header or a server's defaults is not seen ([SPEC 2](SPEC.md#2-identity), [SPEC 2.5](SPEC.md#25-what-the-harness-identity-cannot-tell-apart-and-what-now-does)).
 - **Fixed text inside a hole.** A request template names the strings around the item and not what fills the holes, so an instruction concatenated into the item before the template is applied is read as item ([binding](spec/bindings/openai-chat-completions.md#the-request-template)).
 - **Nondeterminism.** Batch-dependent kernels and other run-to-run variation are not separated by any identity here ([SPEC 9](SPEC.md#9-what-answered-the-model-parts)).
-- **Comparisons across records, checked portably.** The comparison obligations need data about runs that the version 3 record does not carry ([SPEC 6.1](SPEC.md#61-what-the-version-3-wire-record-does-not-carry)), so no portable conformance case checks them yet.
+- **Comparisons across arms, checked portably.** The comparison obligations need data about runs that the version 4 record does not carry ([SPEC 6.1](SPEC.md#61-what-the-version-4-wire-record-does-not-carry)), so no portable conformance case checks them yet. The rules over the records of one arm have cases ([`conformance/cases/arm.json`](conformance/cases/arm.json)).
 
 ## Roadmap
 
@@ -228,10 +235,10 @@ Planned and not started. None of these has a date.
 | signed records, stamps and lineage documents | a forwarder can alter or forge a stamp today (SPEC 12.1) |
 | keyed or salted digests | predictable content can be recovered from its digest (SPEC 12.2) |
 | a carrier for a stamp between a stamper and a forwarder, and attribution of a relayed stamp | model identities from forwarders are comparable only within one deployment today (SPEC 9) |
-| attributes for the facts the comparison obligations read, and conformance cases for them | lost-record counts, turn counts and missingness have no attribute in version 3 (SPEC 6.1) |
+| attributes for the facts the comparison obligations read, and conformance cases for them | lost-record counts, turn counts and missingness have no attribute in version 4 (SPEC 6.1) |
 | bindings for more request shapes, such as the Anthropic Messages API | a collector reading another shape is not conformant for it today ([binding](spec/bindings/openai-chat-completions.md)) |
-| reading `developer` messages, `tool_choice` and the remaining Chat Completions fields | each would change existing digests, so each is a version change |
-| a group operation in the conformance adapter, with cases for the comparison obligations a pair of records can trigger and for the one-identity-per-arm refusals | the suite checks single records only today |
+| reading `developer` messages and the request members that are unlisted today | each would change existing digests, so each is a version change |
+| cases for the comparison obligations a pair of arms can trigger | the suite checks single records and the records of one arm today |
 | an attribute naming the stamper behind a relayed model stamp | a forwarder's own collector name is what the collector-local comparison keys on today (SPEC 9) |
 | a registry for vendor names under `perigraph.ext.` | a vendor name is self-chosen today (SPEC 13.2) |
 | more than one maintainer | decisions are made by one person today ([GOVERNANCE.md](GOVERNANCE.md)) |

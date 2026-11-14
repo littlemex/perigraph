@@ -38,4 +38,4 @@ artifacts = ["src/perigraph/py.typed", "src/perigraph/vocabularies.json"]
 [tool.hatch.build]
 # The spec travels with the package: a reader of an installed copy must be able to check it against the
 # vocabularies it was built from, and a package that left them behind would be unverifiable.
-include = ["src/perigraph", "spec/vocabularies.json", "spec/fixtures/identity.json", "spec/fixtures/model_identity.json"]
+include = ["src/perigraph", "spec/vocabularies.json", "spec/fixtures/identity.json", "spec/fixtures/model_identity.json", "spec/fixtures/canonical_value.json"]

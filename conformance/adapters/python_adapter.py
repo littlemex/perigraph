@@ -13,7 +13,7 @@ import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "src"))
 
-from perigraph import collect, wire, model as pm  # noqa: E402
+from perigraph import arm, canonical, collect, wire, model as pm  # noqa: E402
 from perigraph.vocab import Unidentified  # noqa: E402
 
 
@@ -46,7 +46,29 @@ def receive(req):
     return {"outcome": "stored", "verdict": "admitted" if r.admissible_to_a_verdict() else "refused"}
 
 
-OPS = {"describe": describe, "collect": collect_, "stamp": stamp, "receive": receive}
+def _not_json(token):
+    raise ValueError(f"{token} is not JSON (RFC 8259)")
+
+
+def canonical_(req):
+    try:
+        value = json.loads(req["json"], parse_constant=_not_json)
+        return {"canonical": canonical.serialise(value)}
+    except canonical.NotCanonical as e:
+        return {"fails": str(e)}
+
+
+def admit_arm(req):
+    try:
+        records = [wire.from_attributes(a) for a in req["records"]]
+    except (Unidentified, KeyError, TypeError, ValueError) as e:
+        return {"outcome": "rejected", "why": str(e)}
+    v = arm.admit_arm(records)
+    return {"outcome": v.outcome, "why": "; ".join(v.reasons)}
+
+
+OPS = {"describe": describe, "collect": collect_, "stamp": stamp, "receive": receive, "canonical": canonical_,
+       "admit_arm": admit_arm}
 
 for line in sys.stdin:
     req = json.loads(line)

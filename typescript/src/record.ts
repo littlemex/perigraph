@@ -15,7 +15,7 @@ import {
   BOUNDARIES,
   DETAIL_REQUIRED_WHEN_BLAMES,
   DIGEST,
-  IDENTIFYING_BOUNDARIES,
+  KEYING_BOUNDARY,
   IDENTIFYING_SOURCING,
   NEVER_IDENTIFYING,
   PARTS,
@@ -121,7 +121,8 @@ export class Part {
   get identifying(): boolean {
     if (NEVER_IDENTIFYING.includes(this.kind)) return false;
     if (this.contentDigest === "") return false;
-    if (!IDENTIFYING_BOUNDARIES.includes(this.boundary)) return false;
+    // Per part, not per boundary (keying_boundary): tool_schemas at canonical_value must not establish an identity.
+    if (KEYING_BOUNDARY[this.kind] !== this.boundary) return false;
     return IDENTIFYING_SOURCING.includes(this.sourcing);
   }
 
@@ -223,6 +224,10 @@ export class Record_ {
   readonly absences: readonly Absence[];
   /** What answered (spec section 9). `null` is "nothing was said", never "known to be the same". */
   readonly model: ModelHalf | null;
+  /** Request members seen and not read (`perigraph.request.unlisted`). `null` is "nothing was said", which is unknown. */
+  readonly unlisted: readonly string[] | null;
+  /** Unlisted members counted and not named (`perigraph.request.unlisted_omitted`). */
+  readonly unlistedOmitted: number;
 
   constructor(
     manifest: Manifest,
@@ -230,12 +235,20 @@ export class Record_ {
     parts: readonly Part[] = [],
     absences: readonly Absence[] = [],
     model: ModelHalf | null = null,
+    unlisted: readonly string[] | null = null,
+    unlistedOmitted = 0,
   ) {
     this.manifest = manifest;
     this.status = status;
     this.parts = parts;
     this.absences = absences;
     this.model = model;
+    this.unlisted = unlisted;
+    this.unlistedOmitted = unlistedOmitted;
+    if (unlisted === null && unlistedOmitted !== 0) {
+      throw new Unidentified("a count of unnamed unlisted members without the unlisted list");
+    }
+    if (!Number.isInteger(unlistedOmitted) || unlistedOmitted < 0) throw new Unidentified("an unlisted count below zero");
     if (!STATUS.includes(status)) throw new Unidentified(`${status} is not one of ${STATUS}`);
     const held = parts.map((p) => p.kind);
     if (new Set(held).size !== held.length) {
@@ -266,7 +279,11 @@ export class Record_ {
    */
   get hasIdentity(): boolean {
     if (!this.parts.some((p) => p.identifying && !REFINES_ONLY.includes(p.kind))) return false;
-    const held = new Set(this.parts.map((p) => p.kind));
+    // Held in the request at its keying_boundary boundary: a declaration in its place would lift the refusal on the
+    // owner's word (SPEC 1.1a), and a part at another boundary might have been anything.
+    const held = new Set(
+      this.parts.filter((p) => p.sourcing === "in_the_request" && KEYING_BOUNDARY[p.kind] === p.boundary).map((p) => p.kind),
+    );
     const kept = new Set(this.absences.filter((a) => a.reason === KNOWN_WHEN_ABSENT_AS).map((a) => a.kind));
     return MUST_BE_KNOWN_FOR_IDENTITY.every((k) => held.has(k) || kept.has(k));
   }

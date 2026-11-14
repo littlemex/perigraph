@@ -9,7 +9,7 @@
  */
 import { Model, ModelAbsence, ModelPart } from "./model.js";
 import { Absence, Manifest, Part, Record_ } from "./record.js";
-import { NAMESPACE, SPEC_VERSION, Unidentified } from "./vocab.js";
+import { NAMESPACE, OPENAI_MEMBERS, SPEC_VERSION, UNLISTED_NAMES_MAX, UNLISTED_NAME_PATTERN, Unidentified } from "./vocab.js";
 
 export const PREFIX = NAMESPACE;
 
@@ -26,6 +26,10 @@ export function toAttributes(record: Record_): Attributes {
   // Omitted rather than empty: an empty identity compares equal to another empty identity, which would group every
   // unidentifiable run together -- the failure the identity rules exist to prevent, reintroduced by the transport.
   if (record.hasIdentity) out[`${PREFIX}.harness_identity`] = record.identity;
+  if (record.unlisted !== null) {
+    out[`${PREFIX}.request.unlisted`] = record.unlisted.join(",");
+    out[`${PREFIX}.request.unlisted_omitted`] = record.unlistedOmitted;
+  }
   const m = record.model;
   if (m instanceof Model) {
     out[`${PREFIX}.model_reaches`] = m.reaches.join(",");
@@ -68,6 +72,7 @@ function names(field: string): string[] {
 
 const HEX64 = /^[0-9a-f]{64}$/;
 const HEX24 = /^[0-9a-f]{24}$/;
+const UNLISTED_NAME = new RegExp(UNLISTED_NAME_PATTERN);
 const REQUIRED = ["spec_version", "collector", "collector_version", "collector_reaches", "status"];
 const TOP_STRINGS = ["collector", "collector_version", "collector_reaches", "status", "model_reaches",
   "harness_identity", "model_identity", "artifact_identity"];
@@ -86,6 +91,20 @@ function checkShape(attrs: Attributes): void {
   for (const k of TOP_STRINGS) {
     const key = `${PREFIX}.${k}`;
     if (key in attrs && typeof attrs[key] !== "string") throw new Unidentified(`${key} is not a string`);
+  }
+  const unlisted = `${PREFIX}.request.unlisted`;
+  const unnamed = `${PREFIX}.request.unlisted_omitted`;
+  if (unlisted in attrs !== unnamed in attrs) throw new Unidentified(`one of ${unlisted} and ${unnamed} is present without the other`);
+  if (unlisted in attrs) {
+    if (typeof attrs[unlisted] !== "string") throw new Unidentified(`${unlisted} is not a string`);
+    const n = attrs[unnamed];
+    if (typeof n !== "number" || !Number.isInteger(n) || n < 0) throw new Unidentified(`${unnamed} is not a non-negative integer`);
+    const listed = names(attrs[unlisted] as string);
+    if (listed.length > UNLISTED_NAMES_MAX) throw new Unidentified(`${unlisted} names more than ${UNLISTED_NAMES_MAX} members`);
+    for (const name of listed) {
+      if (!UNLISTED_NAME.test(name)) throw new Unidentified(`${unlisted} has an entry outside the binding's name pattern`);
+      if (Object.hasOwn(OPENAI_MEMBERS, name)) throw new Unidentified(`${unlisted} names ${name}, which the binding reads`);
+    }
   }
   for (const k of ["harness_identity", "model_identity", "artifact_identity"]) {
     const v = attrs[`${PREFIX}.${k}`];
@@ -117,6 +136,7 @@ function checkShape(attrs: Attributes): void {
 }
 
 export function fromAttributes(attrs: Attributes): Record_ {
+  const unlisted = `${PREFIX}.request.unlisted`;
   const got = attrs[`${PREFIX}.spec_version`];
   if (got !== SPEC_VERSION) {
     throw new Unidentified(
@@ -183,6 +203,8 @@ export function fromAttributes(attrs: Attributes): Record_ {
     parts,
     absences,
     model,
+    unlisted in attrs ? names(String(attrs[unlisted])) : null,
+    unlisted in attrs ? Number(attrs[`${PREFIX}.request.unlisted_omitted`]) : 0,
   );
   const checks: [string, boolean, () => string][] = [
     [`${PREFIX}.harness_identity`, record.hasIdentity, () => record.identity],

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/littlemex/perigraph/blob/main/spec/schema/record.schema.json",
-  "title": "perigraph record, spec_version 3 (generated from spec/vocabularies.json)",
+  "title": "perigraph record, spec_version 4 (generated from spec/vocabularies.json)",
   "description": "The perigraph.* attributes of one record. Attributes outside the perigraph. prefix are not constrained, because a record rides on a span that carries others. This schema checks shape only; identity recomputation and manifest contradiction are conformance cases.",
   "type": "object",
   "required": [
@@ -13,7 +13,7 @@
   ],
   "properties": {
     "perigraph.spec_version": {
-      "const": 3
+      "const": 4
     },
     "perigraph.collector": {
       "type": "string",
@@ -25,7 +25,7 @@
     },
     "perigraph.collector_reaches": {
       "type": "string",
-      "pattern": "^(?:(?:instruction|request_template|tool_schemas|tool_extension|tool_trace|loop|turn_budget|retry_policy|readout|decoding|context_partitioning)?)(?:,(?:(?:instruction|request_template|tool_schemas|tool_extension|tool_trace|loop|turn_budget|retry_policy|readout|decoding|context_partitioning)?))*$"
+      "pattern": "^(?:(?:instruction|request_template|tool_schemas|tool_extension|tool_trace|loop|turn_budget|retry_policy|readout|generation_controls|decoding|context_partitioning)?)(?:,(?:(?:instruction|request_template|tool_schemas|tool_extension|tool_trace|loop|turn_budget|retry_policy|readout|generation_controls|decoding|context_partitioning)?))*$"
     },
     "perigraph.model_reaches": {
       "type": "string",
@@ -50,6 +50,14 @@
       "type": "string",
       "pattern": "^[0-9a-f]{24}$"
     },
+    "perigraph.request.unlisted": {
+      "type": "string",
+      "pattern": "^(?:(?!(?:messages|perigraph_template|tools|chat_template_kwargs|reasoning_effort|reasoning|thinking|enable_thinking|max_tokens|max_completion_tokens|stop|response_format|tool_choice|parallel_tool_calls|chat_template|add_generation_prompt|continue_final_message|guided_json|guided_regex|guided_choice|guided_grammar|structured_outputs|min_tokens|stop_token_ids|temperature|top_p|top_k|min_p|presence_penalty|frequency_penalty|repetition_penalty|logit_bias|n|logprobs|top_logprobs|model|seed|stream|stream_options|user|metadata|store|service_tier)(?:,|$))[A-Za-z0-9_.-]{1,64}(?:,(?!(?:messages|perigraph_template|tools|chat_template_kwargs|reasoning_effort|reasoning|thinking|enable_thinking|max_tokens|max_completion_tokens|stop|response_format|tool_choice|parallel_tool_calls|chat_template|add_generation_prompt|continue_final_message|guided_json|guided_regex|guided_choice|guided_grammar|structured_outputs|min_tokens|stop_token_ids|temperature|top_p|top_k|min_p|presence_penalty|frequency_penalty|repetition_penalty|logit_bias|n|logprobs|top_logprobs|model|seed|stream|stream_options|user|metadata|store|service_tier)(?:,|$))[A-Za-z0-9_.-]{1,64}){0,31})?$"
+    },
+    "perigraph.request.unlisted_omitted": {
+      "type": "integer",
+      "minimum": 0
+    },
     "perigraph.part.instruction.sourcing": {
       "enum": [
         "in_the_request",
@@ -73,6 +81,7 @@
       "enum": [
         "transport",
         "parsed",
+        "canonical_value",
         "model_visible"
       ]
     },
@@ -112,6 +121,7 @@
       "enum": [
         "transport",
         "parsed",
+        "canonical_value",
         "model_visible"
       ]
     },
@@ -151,6 +161,7 @@
       "enum": [
         "transport",
         "parsed",
+        "canonical_value",
         "model_visible"
       ]
     },
@@ -190,6 +201,7 @@
       "enum": [
         "transport",
         "parsed",
+        "canonical_value",
         "model_visible"
       ]
     },
@@ -229,6 +241,7 @@
       "enum": [
         "transport",
         "parsed",
+        "canonical_value",
         "model_visible"
       ]
     },
@@ -268,6 +281,7 @@
       "enum": [
         "transport",
         "parsed",
+        "canonical_value",
         "model_visible"
       ]
     },
@@ -307,6 +321,7 @@
       "enum": [
         "transport",
         "parsed",
+        "canonical_value",
         "model_visible"
       ]
     },
@@ -346,6 +361,7 @@
       "enum": [
         "transport",
         "parsed",
+        "canonical_value",
         "model_visible"
       ]
     },
@@ -385,6 +401,7 @@
       "enum": [
         "transport",
         "parsed",
+        "canonical_value",
         "model_visible"
       ]
     },
@@ -398,6 +415,46 @@
       ]
     },
     "perigraph.absent.readout.detail": {
+      "type": "string",
+      "minLength": 1
+    },
+    "perigraph.part.generation_controls.sourcing": {
+      "enum": [
+        "in_the_request",
+        "pulled_by_us",
+        "pushed_by_owner",
+        "not_observable"
+      ]
+    },
+    "perigraph.part.generation_controls.digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "perigraph.part.generation_controls.label": {
+      "type": "string"
+    },
+    "perigraph.part.generation_controls.read_lag_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "perigraph.part.generation_controls.boundary": {
+      "enum": [
+        "transport",
+        "parsed",
+        "canonical_value",
+        "model_visible"
+      ]
+    },
+    "perigraph.absent.generation_controls.reason": {
+      "enum": [
+        "not_provided",
+        "not_reachable",
+        "extraction_failed",
+        "redacted",
+        "not_observable"
+      ]
+    },
+    "perigraph.absent.generation_controls.detail": {
       "type": "string",
       "minLength": 1
     },
@@ -424,6 +481,7 @@
       "enum": [
         "transport",
         "parsed",
+        "canonical_value",
         "model_visible"
       ]
     },
@@ -463,6 +521,7 @@
       "enum": [
         "transport",
         "parsed",
+        "canonical_value",
         "model_visible"
       ]
     },
@@ -616,8 +675,16 @@
         "boolean"
       ]
     },
-    "^perigraph\\.(?:part|absent)\\.(?!(?:instruction|request_template|tool_schemas|tool_extension|tool_trace|loop|turn_budget|retry_policy|readout|decoding|context_partitioning)\\.)": false,
+    "^perigraph\\.(?:part|absent)\\.(?!(?:instruction|request_template|tool_schemas|tool_extension|tool_trace|loop|turn_budget|retry_policy|readout|generation_controls|decoding|context_partitioning)\\.)": false,
     "^perigraph\\.(?:model|model_absent)\\.(?!(?:checkpoint|precision|runtime|answer_mode)\\.)": false
+  },
+  "dependentRequired": {
+    "perigraph.request.unlisted": [
+      "perigraph.request.unlisted_omitted"
+    ],
+    "perigraph.request.unlisted_omitted": [
+      "perigraph.request.unlisted"
+    ]
   },
   "allOf": [
     {
@@ -1813,6 +1880,139 @@
         "not": {
           "required": [
             "perigraph.absent.readout.detail"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "generation_controls: a part is held or absent, never both",
+      "not": {
+        "required": [
+          "perigraph.part.generation_controls.sourcing",
+          "perigraph.absent.generation_controls.reason"
+        ]
+      }
+    },
+    {
+      "$comment": "generation_controls: a read lag exactly when pulled_by_us",
+      "if": {
+        "required": [
+          "perigraph.part.generation_controls.sourcing"
+        ],
+        "properties": {
+          "perigraph.part.generation_controls.sourcing": {
+            "const": "pulled_by_us"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.part.generation_controls.read_lag_seconds"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.part.generation_controls.read_lag_seconds"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "generation_controls: digest, label and lag belong to a held part",
+      "if": {
+        "not": {
+          "required": [
+            "perigraph.part.generation_controls.sourcing"
+          ]
+        }
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "perigraph.part.generation_controls.digest"
+              ]
+            },
+            {
+              "required": [
+                "perigraph.part.generation_controls.label"
+              ]
+            },
+            {
+              "required": [
+                "perigraph.part.generation_controls.boundary"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "generation_controls: a part that is not observable has no bytes, so it has no digest",
+      "if": {
+        "required": [
+          "perigraph.part.generation_controls.sourcing"
+        ],
+        "properties": {
+          "perigraph.part.generation_controls.sourcing": {
+            "const": "not_observable"
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "perigraph.part.generation_controls.digest"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "generation_controls: a boundary exactly when there is a digest",
+      "if": {
+        "required": [
+          "perigraph.part.generation_controls.digest"
+        ]
+      },
+      "then": {
+        "required": [
+          "perigraph.part.generation_controls.boundary"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.part.generation_controls.boundary"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "generation_controls: a detail exactly when the absence blames the collector",
+      "if": {
+        "required": [
+          "perigraph.absent.generation_controls.reason"
+        ],
+        "properties": {
+          "perigraph.absent.generation_controls.reason": {
+            "enum": [
+              "not_reachable",
+              "extraction_failed"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.absent.generation_controls.detail"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.absent.generation_controls.detail"
           ]
         }
       }

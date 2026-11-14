@@ -11,11 +11,13 @@ language is checked by the same cases and the same code.
 What is checked, per role (SPEC section 8):
 
 * collector: every body in spec/fixtures/identity.json gives the fixture's harness identity, instruction digest and,
-  where the case names it, request_template digest or absence reason, the
-  record validates against spec/schema/record.schema.json, and it carries a model half and the tool_extension absence;
+  where the case names them, request_template and generation_controls digest or absence reason and the unlisted member
+  names, the record validates against spec/schema/record.schema.json, and it carries a model half and the
+  tool_extension absence; and every case in spec/fixtures/canonical_value.json gives the canonical text or fails;
 * stamper: every case in spec/fixtures/model_identity.json gives the fixture's digests and identities, and every map in
   refused_precision is refused;
-* receiver: every case in conformance/cases/receiver.json gets the expected outcome and verdict.
+* receiver: every case in conformance/cases/receiver.json gets the expected outcome and verdict, and every case in
+  conformance/cases/arm.json gets the expected outcome over its records as one arm.
 
 Schema validation needs the `jsonschema` package. Without it the runner stops rather than reporting a pass it did not
 check; `--no-schema` skips those checks and says so in the summary.
@@ -95,12 +97,18 @@ def check_collector(a: Adapter, v) -> list[tuple[str, list[str], list[str]]]:
             got = attrs.get(key)
             if got != want:
                 errs.append(f"{key} is {got!r}, the fixture says {want!r}")
-        if "request_template" in case:
-            want = case["request_template"]
-            got = (attrs.get(P + "part.request_template.digest") if isinstance(want, str)
-                   else {"absent": attrs.get(P + "absent.request_template.reason")})
-            if got != want:
-                errs.append(f"request_template is {got!r}, the fixture says {want!r}")
+        for part in ("request_template", "generation_controls"):
+            if part in case:
+                want = case[part]
+                got = (attrs.get(P + f"part.{part}.digest") if isinstance(want, str)
+                       else {"absent": attrs.get(P + f"absent.{part}.reason")})
+                if got != want:
+                    errs.append(f"{part} is {got!r}, the fixture says {want!r}")
+        if "unlisted" in case:
+            got = sorted(n for n in str(attrs.get(P + "request.unlisted", "<missing>")).split(",") if n)
+            if P + "request.unlisted" not in attrs or got != case["unlisted"]:
+                errs.append(f"perigraph.request.unlisted is {attrs.get(P + 'request.unlisted')!r}, the fixture says "
+                            f"{case['unlisted']!r}")
         for part in PARTS:
             if P + f"part.{part}.sourcing" not in attrs and P + f"absent.{part}.reason" not in attrs:
                 errs.append(f"part {part} is neither held nor absent (every part is required, SPEC 1.2)")
@@ -110,6 +118,15 @@ def check_collector(a: Adapter, v) -> list[tuple[str, list[str], list[str]]]:
         if attrs.get(P + "absent.tool_extension.reason") != "not_observable":
             errs.append("tool_extension is not recorded as an absence with reason not_observable")
         out.append((f"collector/{case['name']}", ["PG-044"], errs))
+    for case in load("spec/fixtures/canonical_value.json")["cases"]:
+        r = a.ask("canonical", json=case["json"])
+        if "fails" in case:
+            errs = [] if "fails" in r else [f"serialised {r.get('canonical')!r}; the fixture says it fails "
+                                             f"({case['fails']})"]
+        else:
+            errs = [] if r.get("canonical") == case["canonical"] else [
+                f"got {r.get('canonical', r.get('fails', r.get('error')))!r}, the fixture says {case['canonical']!r}"]
+        out.append((f"canonical/{case['name']}", ["PG-102", "PG-096"], errs))
     return out
 
 
@@ -157,6 +174,17 @@ def check_receiver(a: Adapter, v) -> list[tuple[str, list[str], list[str]]]:
     return out
 
 
+def check_arm(a: Adapter, v) -> list[tuple[str, list[str], list[str]]]:
+    out = []
+    for case in load("conformance/cases/arm.json")["cases"]:
+        r = a.ask("admit_arm", records=case["records"])
+        got = r.get("outcome")
+        errs = [] if got == case["expect"] else [f"got {got!r}, expected {case['expect']!r}"
+                                                 + (f" ({r['why']})" if r.get("why") else "")]
+        out.append((f"arm/{case['id']}", case["requirements"], errs))
+    return out
+
+
 CHECKS = {"collector": check_collector, "stamper": check_stamper, "receiver": check_receiver}
 
 
@@ -178,6 +206,8 @@ def main() -> int:
     results = []
     for role in roles:
         results += CHECKS[role](a, v)
+        if role == "receiver":
+            results += check_arm(a, v)
     a.close()
     failed = [r for r in results if r[2]]
     for name, reqs, errs in results:

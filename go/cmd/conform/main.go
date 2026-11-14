@@ -1,6 +1,5 @@
-// Command conform is the Go implementation's conformance adapter (contract: conformance/README.md). It reads one
-// JSON request per line on stdin and answers one JSON line each. The Go implementation is a sender, so it declares the
-// collector and stamper roles and not the receiver role.
+// Command conform is the Go implementation's conformance adapter. It declares
+// the collector and stamper roles, not the receiver role.
 package main
 
 import (
@@ -16,7 +15,8 @@ import (
 type request struct {
 	ID         int               `json:"id"`
 	Op         string            `json:"op"`
-	Body       any               `json:"body"`
+	Body       json.RawMessage   `json:"body"`
+	JSON       string            `json:"json"`
 	Files      map[string]string `json:"files"`
 	Precision  map[string]string `json:"precision"`
 	Runtime    map[string]string `json:"runtime"`
@@ -28,7 +28,13 @@ func answer(r request) map[string]any {
 	case "describe":
 		return map[string]any{"name": "perigraph (Go)", "roles": []string{"collector", "stamper"}}
 	case "collect":
-		return map[string]any{"attributes": pg.ToAttributes(pg.FromRequestValue(r.Body, "conformance", "1"))}
+		return map[string]any{"attributes": pg.ToAttributes(pg.FromRequestJSON(r.Body, "conformance", "1"))}
+	case "canonical":
+		text, err := pg.CanonicalJSON([]byte(r.JSON))
+		if err != nil {
+			return map[string]any{"fails": err.Error()}
+		}
+		return map[string]any{"canonical": text}
 	case "stamp":
 		var files [][2]string
 		for p, t := range r.Files {

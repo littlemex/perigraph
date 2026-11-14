@@ -5,14 +5,14 @@
   ],
   "lineage": [
     {
-      "spec_version": 3,
+      "spec_version": 4,
       "subject": "76efdb11af6b4b87cbee5123",
       "parent": "none",
       "method": "pretrained",
       "trainer": "example-org"
     },
     {
-      "spec_version": 3,
+      "spec_version": 4,
       "subject": "ef6ebda094aa133b2d98def3",
       "parent": "76efdb11af6b4b87cbee5123",
       "method": "distillation",

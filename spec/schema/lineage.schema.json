@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/littlemex/perigraph/blob/main/spec/schema/lineage.schema.json",
-  "title": "perigraph lineage document, spec_version 3 (generated from spec/vocabularies.json)",
+  "title": "perigraph lineage document, spec_version 4 (generated from spec/vocabularies.json)",
   "description": "One trainer's account of how one artifact came to be (SPEC section 10). Shape only: that the parent differs from the subject, and what an incomplete chain means, are a receiver's rules.",
   "type": "object",
   "required": [
@@ -13,7 +13,7 @@
   "additionalProperties": false,
   "properties": {
     "spec_version": {
-      "const": 3
+      "const": 4
     },
     "subject": {
       "type": "string",

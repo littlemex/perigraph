@@ -102,12 +102,14 @@ func TestMalformedMessagesAndBody(t *testing.T) {
 			"messages": messages,
 			"tools":    []any{},
 		}, "shim", "1")
-		for _, name := range []string{"instruction", "tool_trace"} {
-			a := r.Absent[name]
-			if a.Reason != "extraction_failed" || a.Detail == "" ||
-				strings.Contains(a.Detail, "Terse.") {
-				t.Errorf("%s: incorrect absence %+v", name, a)
-			}
+		a := r.Absent["instruction"]
+		if a.Reason != "extraction_failed" || a.Detail == "" ||
+			strings.Contains(a.Detail, "Terse.") {
+			t.Errorf("instruction: incorrect absence %+v", a)
+		}
+		// Version 4 does not read tool_trace from messages.
+		if got := r.Absent["tool_trace"]; got != (Absence{Reason: "not_provided"}) {
+			t.Errorf("tool_trace: incorrect absence %+v", got)
 		}
 		if got := r.Absent["tool_schemas"]; got != (Absence{Reason: "not_provided"}) {
 			t.Errorf("malformed messages affected empty tools: %+v", got)
@@ -158,6 +160,9 @@ func TestMalformedMessagesAndBody(t *testing.T) {
 			if _, ok := r.Parts[name]; ok {
 				t.Errorf("%s: held %s", tc.name, name)
 			}
+		}
+		if _, present := ToAttributes(r)["perigraph.request.unlisted"]; present {
+			t.Errorf("%s: non-object body carried an unlisted set", tc.name)
 		}
 		if r.Status != "complete" {
 			t.Errorf("%s changed terminal status", tc.name)
@@ -212,8 +217,11 @@ func TestEmptyToolsAndResponseFormatConformanceVector(t *testing.T) {
 		t.Fatal(err)
 	}
 	r := FromRequest(body, "shim", "1")
-	if r.HarnessIdentity != "eeb813c17bed213fe02c7100" {
-		t.Errorf("harness identity = %q", r.HarnessIdentity)
+	controlsDigest := handSHA(`{"response_format":{}}`)
+	wantIdentity := handSHA("generation_controls=" + controlsDigest +
+		";instruction=" + handSHA("Answer with the option letter only. Do not explain.") + ";")[:24]
+	if r.HarnessIdentity != wantIdentity {
+		t.Errorf("harness identity = %q, want %q", r.HarnessIdentity, wantIdentity)
 	}
 	for _, name := range []string{"tool_schemas", "readout", "decoding"} {
 		if got := r.Absent[name]; got != (Absence{Reason: "not_provided"}) {
@@ -229,6 +237,11 @@ func TestEmptyToolsAndResponseFormatConformanceVector(t *testing.T) {
 		if _, present := a["perigraph.part."+name+".digest"]; present {
 			t.Errorf("emitted digest for empty %s", name)
 		}
+	}
+	// Version 4 has no emptiness rule for canonical_value: response_format:{} is held.
+	if p := r.Parts["generation_controls"]; p.Boundary != "canonical_value" ||
+		p.Digest != controlsDigest || p.Label != "response_format" {
+		t.Errorf("empty response_format control = %+v", p)
 	}
 }
 
@@ -279,15 +292,22 @@ func TestEmptyFormatDoesNotMaskSamplerOrMalformedFormat(t *testing.T) {
 	if got := r.Parts["decoding"].Digest; got != handSHA(`{"temperature":0}`) {
 		t.Errorf("decoding digest = %q, want sampler alone", got)
 	}
+	if got := r.Parts["generation_controls"].Digest; got != handSHA(`{"response_format":{}}`) {
+		t.Errorf("empty response_format control digest = %q", got)
+	}
 
 	r = FromRequest(map[string]any{
 		"response_format": []any{},
 		"temperature":     0.0,
 	}, "shim", "1")
-	for _, name := range []string{"readout", "decoding"} {
-		if got := r.Absent[name]; got.Reason != "extraction_failed" ||
-			!strings.Contains(got.Detail, "response_format") {
-			t.Errorf("malformed %s absence = %+v", name, got)
-		}
+	// Version 4 removes response_format type checks and reads it only into generation_controls.
+	if got := r.Absent["readout"]; got != (Absence{Reason: "not_provided"}) {
+		t.Errorf("readout absence = %+v", got)
+	}
+	if got := r.Parts["decoding"].Digest; got != handSHA(`{"temperature":0}`) {
+		t.Errorf("decoding digest = %q, want sampler alone", got)
+	}
+	if got := r.Parts["generation_controls"].Digest; got != handSHA(`{"response_format":[]}`) {
+		t.Errorf("array response_format control digest = %q", got)
 	}
 }

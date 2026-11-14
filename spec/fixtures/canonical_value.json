@@ -1,0 +1,260 @@
+{
+  "note": "digest.canonical_value_serialisation, case by case. Each input is JSON text, parsed by the implementation itself, then serialised; a JSON text with NaN or Infinity tokens is not JSON and is not a case; the expected output is the canonical text, its sha256, or fails. A collector MUST reproduce every case (SPEC section 8).",
+  "cases": [
+    {
+      "name": "zero",
+      "json": "0",
+      "canonical": "0",
+      "sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+    },
+    {
+      "name": "negative zero",
+      "json": "-0",
+      "canonical": "0",
+      "sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+    },
+    {
+      "name": "0.0",
+      "json": "0.0",
+      "canonical": "0",
+      "sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+    },
+    {
+      "name": "1.0",
+      "json": "1.0",
+      "canonical": "1",
+      "sha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+    },
+    {
+      "name": "1e0",
+      "json": "1e0",
+      "canonical": "1",
+      "sha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+    },
+    {
+      "name": "256.0",
+      "json": "256.0",
+      "canonical": "256",
+      "sha256": "51e8ea280b44e16934d4d611901f3d3afc41789840acdff81942c2f65009cd52"
+    },
+    {
+      "name": "2.56e2",
+      "json": "2.56e2",
+      "canonical": "256",
+      "sha256": "51e8ea280b44e16934d4d611901f3d3afc41789840acdff81942c2f65009cd52"
+    },
+    {
+      "name": "1E2",
+      "json": "1E2",
+      "canonical": "100",
+      "sha256": "ad57366865126e55649ecb23ae1d48887544976efea46a48eb5d85a6eeb4d306"
+    },
+    {
+      "name": "100e-2",
+      "json": "100e-2",
+      "canonical": "1",
+      "sha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+    },
+    {
+      "name": "-0.0",
+      "json": "-0.0",
+      "canonical": "0",
+      "sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+    },
+    {
+      "name": "0.1",
+      "json": "0.1",
+      "canonical": "0.1",
+      "sha256": "14be4b45f18e0d8c67b4f719b5144eee88497e413709d11d85b096d8e2346310"
+    },
+    {
+      "name": "0.7",
+      "json": "0.7",
+      "canonical": "0.7",
+      "sha256": "973b372a514f91db8219fef585cdf81b09196afd7948f5fb1e29c2016dd995a0"
+    },
+    {
+      "name": "0.30000000000000004",
+      "json": "0.30000000000000004",
+      "canonical": "0.30000000000000004",
+      "sha256": "06bad31060c1212ae832de4c031f7b31e3b48aed57858294478cb19450cf34ca"
+    },
+    {
+      "name": "0.000001",
+      "json": "0.000001",
+      "canonical": "0.000001",
+      "sha256": "159fb29a827ad04b260aa6c8ab6d8637f8f2b38af5c4f3cb49d6a21205e040f8"
+    },
+    {
+      "name": "1e-7",
+      "json": "1e-7",
+      "canonical": "1e-7",
+      "sha256": "5b33e02f2c5103a05d32f6ba9cb058294452bfbf393967f68bb30c1bdcbbab22"
+    },
+    {
+      "name": "1.5e-7",
+      "json": "1.5e-7",
+      "canonical": "1.5e-7",
+      "sha256": "bbe54b73760f9025086de0202c3caa81352dc0260869890c9dca3cda39ba767f"
+    },
+    {
+      "name": "-0.5",
+      "json": "-0.5",
+      "canonical": "-0.5",
+      "sha256": "1b07b0cffa0b3f596b5e048b0115168886cc5183dd518655b5515ee5dddac6d1"
+    },
+    {
+      "name": "5e-324",
+      "json": "5e-324",
+      "canonical": "5e-324",
+      "sha256": "c46e7ca1be4c8734f373a56530787288fa2058d73d07855e9247e949f811a42a"
+    },
+    {
+      "name": "1e-400 underflows to 0",
+      "json": "1e-400",
+      "canonical": "0",
+      "sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+    },
+    {
+      "name": "1.7976931348623157e308 is integral and unsafe",
+      "json": "1.7976931348623157e308",
+      "fails": "an integer whose magnitude exceeds 9007199254740991"
+    },
+    {
+      "name": "9007199254740991",
+      "json": "9007199254740991",
+      "canonical": "9007199254740991",
+      "sha256": "f40b423c2dd95ff2b2f027e22208f438cf7242862e5e746860e697308c9add26"
+    },
+    {
+      "name": "9007199254740991.0",
+      "json": "9007199254740991.0",
+      "canonical": "9007199254740991",
+      "sha256": "f40b423c2dd95ff2b2f027e22208f438cf7242862e5e746860e697308c9add26"
+    },
+    {
+      "name": "9007199254740992",
+      "json": "9007199254740992",
+      "fails": "an integer whose magnitude exceeds 9007199254740991"
+    },
+    {
+      "name": "9007199254740993",
+      "json": "9007199254740993",
+      "fails": "an integer whose magnitude exceeds 9007199254740991"
+    },
+    {
+      "name": "1e21",
+      "json": "1e21",
+      "fails": "an integer whose magnitude exceeds 9007199254740991"
+    },
+    {
+      "name": "1e400 is not finite",
+      "json": "1e400",
+      "fails": "a number that is not finite"
+    },
+    {
+      "name": "123456789012345680000",
+      "json": "123456789012345680000",
+      "fails": "an integer whose magnitude exceeds 9007199254740991"
+    },
+    {
+      "name": "Japanese",
+      "json": "\"日本語\"",
+      "canonical": "\"日本語\"",
+      "sha256": "d2b94e6e664483bbf04d80902abc235527ab68cecf488e8abe22112a6dd62bd4"
+    },
+    {
+      "name": "NFC e-acute",
+      "json": "\"é\"",
+      "canonical": "\"é\"",
+      "sha256": "f2886017e9c7abacf804b54d64787dce2b611c9544ba21f3affdd126a6e50086"
+    },
+    {
+      "name": "NFD e-acute: differs from NFC",
+      "json": "\"é\"",
+      "canonical": "\"é\"",
+      "sha256": "3d68ce21f2899a475713cdbe7562ba9bdb6b1dfde8af1f221bdff4a0935b53b2"
+    },
+    {
+      "name": "characters other serialisers escape",
+      "json": "\"<>&/  \"",
+      "canonical": "\"<>&/  \"",
+      "sha256": "6c397a7c04a9d9cd70976f48117c208fadaa777bdf77f8fbd3d346fe92aefb8b"
+    },
+    {
+      "name": "U+0001",
+      "json": "\"\\u0001\"",
+      "canonical": "\"\\u0001\"",
+      "sha256": "b81cfb0a6715e53b373345b49e8ad94eb55fd777519dc539373d0634973c186e"
+    },
+    {
+      "name": "escapes",
+      "json": "\"\\\"\\\\\\b\\f\\n\\r\\t\\/\"",
+      "canonical": "\"\\\"\\\\\\b\\f\\n\\r\\t/\"",
+      "sha256": "c0f54c2a131b23782317cd5b5e3b07ac4ebc132991feb8d5466bbbe2d73ef645"
+    },
+    {
+      "name": "an astral character",
+      "json": "\"\\ud83d\\ude00\"",
+      "canonical": "\"😀\"",
+      "sha256": "7a0c50b92434b015545fe93ab723db2d4b2cdd14a441405624a9ce8be29f1d5a"
+    },
+    {
+      "name": "a lone high surrogate",
+      "json": "\"\\ud800\"",
+      "fails": "a string that is not a sequence of Unicode scalar values"
+    },
+    {
+      "name": "a lone low surrogate in a member name",
+      "json": "{\"\\udc00\":1}",
+      "fails": "a string that is not a sequence of Unicode scalar values"
+    },
+    {
+      "name": "RFC 8785 sorting example",
+      "json": "{\"\\u20ac\":\"Euro Sign\",\"\\r\":\"Carriage Return\",\"\\ufb33\":\"Hebrew Letter Dalet With Dagesh\",\"1\":\"One\",\"\\ud83d\\ude00\":\"Emoji: Grinning Face\",\"\\u0080\":\"Control\",\"\\u00f6\":\"Latin Small Letter O With Diaeresis\"}",
+      "canonical": "{\"\\r\":\"Carriage Return\",\"1\":\"One\",\"\":\"Control\",\"ö\":\"Latin Small Letter O With Diaeresis\",\"€\":\"Euro Sign\",\"😀\":\"Emoji: Grinning Face\",\"דּ\":\"Hebrew Letter Dalet With Dagesh\"}",
+      "sha256": "5e321556d22018a9656991a9e94f77ec175fa193e52a2429d312f8419ec8b08c"
+    },
+    {
+      "name": "UTF-16 order differs from code-point order",
+      "json": "{\"\\ufb33\":1,\"\\ud83d\\ude00\":2}",
+      "canonical": "{\"😀\":2,\"דּ\":1}",
+      "sha256": "ec4e7d8c2963caa38dccc3d42693719ac9c6ecd783891b583d333565620ac2be"
+    },
+    {
+      "name": "nested structure",
+      "json": "{\"b\":[{\"y\":null,\"x\":true},[],{}],\"a\":false}",
+      "canonical": "{\"a\":false,\"b\":[{\"x\":true,\"y\":null},[],{}]}",
+      "sha256": "69da1c914e24b3981cf61aa066bbb866ecf37402f4b658c40ae798e98395d663"
+    },
+    {
+      "name": "a repeated member name takes its last value",
+      "json": "{\"a\":1,\"a\":2}",
+      "canonical": "{\"a\":2}",
+      "sha256": "7e8059f495589fcd981232cc11d00b00da3802c01d688fa1cf1f6bed6e5bb33c"
+    },
+    {
+      "name": "an empty member name, __proto__ and constructor",
+      "json": "{\"constructor\":1,\"__proto__\":2,\"\":3}",
+      "canonical": "{\"\":3,\"__proto__\":2,\"constructor\":1}",
+      "sha256": "aea568eb84c90623afb38ecbed79dc573df04a3760b4c37a248716eacc480825"
+    },
+    {
+      "name": "white space between tokens",
+      "json": " { \"a\" : [ 1 , 2 ] } ",
+      "canonical": "{\"a\":[1,2]}",
+      "sha256": "01530d164d479cf08e26d3b1ad9bdba927120d97e2d057a6d792db778780d720"
+    },
+    {
+      "name": "a declaration string is digested with its quotes",
+      "json": "\"regex-v1\"",
+      "canonical": "\"regex-v1\"",
+      "sha256": "82a65915c3d339059436568978e18a97b90696dcb1a597feb19923d7e62d0f89"
+    },
+    {
+      "name": "1e22 is integral and unsafe",
+      "json": "1e22",
+      "fails": "an integer whose magnitude exceeds 9007199254740991"
+    }
+  ]
+}

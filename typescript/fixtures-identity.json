@@ -201,7 +201,7 @@
         "messages": [
           {
             "role": "system",
-            "content": "\ufeff"
+            "content": "﻿"
           }
         ]
       },
@@ -209,7 +209,7 @@
       "instruction_digest": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5"
     },
     {
-      "name": "an empty tools array and an empty response_format are none sent",
+      "name": "an empty tools array is none sent; an empty response_format object is a generation control, held as sent",
       "body": {
         "messages": [
           {
@@ -220,11 +220,12 @@
         "tools": [],
         "response_format": {}
       },
-      "identity": "eeb813c17bed213fe02c7100",
-      "instruction_digest": "a57ac565bffcbeaeb74a934deef4f5e089ea851bb1d23001b2e578f137473a0a"
+      "identity": "9ff0df8a304ada11b22d0510",
+      "instruction_digest": "a57ac565bffcbeaeb74a934deef4f5e089ea851bb1d23001b2e578f137473a0a",
+      "generation_controls": "9da028dbc32ec47d4558b1757057d1bde98d8909eaf932be4fbae3a8e61b68b2"
     },
     {
-      "name": "a response_format that is not an object fails readout, not the identity",
+      "name": "a response_format that is not an object is held as sent: no type check on a generation control, and the identity changes with it",
       "body": {
         "messages": [
           {
@@ -234,8 +235,9 @@
         ],
         "response_format": "json"
       },
-      "identity": "eeb813c17bed213fe02c7100",
-      "instruction_digest": "a57ac565bffcbeaeb74a934deef4f5e089ea851bb1d23001b2e578f137473a0a"
+      "identity": "ff7e94158c99928e2c1d5b60",
+      "instruction_digest": "a57ac565bffcbeaeb74a934deef4f5e089ea851bb1d23001b2e578f137473a0a",
+      "generation_controls": "2e85f23674ae307be193a9d676a109fe096311051bc5b25b5a59d10a4224b59b"
     },
     {
       "name": "an instruction and a user-turn wrapper: the template splits what the instruction alone would join",
@@ -650,7 +652,7 @@
           },
           {
             "role": "user",
-            "content": "<a>\nx\u2028y</a>\n"
+            "content": "<a>\nx y</a>\n"
           }
         ],
         "perigraph_template": {
@@ -682,7 +684,7 @@
           },
           {
             "role": "user",
-            "content": "\ufeff\u001fStocks rise"
+            "content": "﻿\u001fStocks rise"
           }
         ],
         "perigraph_template": {
@@ -693,7 +695,7 @@
             {
               "role": "user",
               "fixed": [
-                "\ufeff\u001f",
+                "﻿\u001f",
                 ""
               ]
             }
@@ -1278,6 +1280,697 @@
       "request_template": {
         "absent": "not_provided"
       }
+    },
+    {
+      "name": "R17b H0: base, max_tokens 32, thinking off",
+      "body": {
+        "model": "student",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Reply with exactly one intent name from the list and nothing else."
+          },
+          {
+            "role": "user",
+            "content": "Message: I lost my card"
+          }
+        ],
+        "temperature": 0,
+        "perigraph_template": {
+          "messages": [
+            {
+              "role": "system"
+            },
+            {
+              "role": "user",
+              "fixed": [
+                "Message: ",
+                ""
+              ]
+            }
+          ]
+        },
+        "max_tokens": 32,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "logprobs": true
+      },
+      "identity": "87a7e93764821ecf19efa86b",
+      "instruction_digest": "580650b2496176fe70c3dd199bf789ce8ff77d8e836820a1c4c5e05be4375228",
+      "generation_controls": "10df6dc1ed3edcea177059dc1188ca3d72f49b4e9618e5e6ab64979a64c5359c",
+      "unlisted": []
+    },
+    {
+      "name": "R17b H3: reasoning before the answer, max_tokens 256, thinking on: a different identity from H0",
+      "body": {
+        "model": "student",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Reply with exactly one intent name from the list and nothing else."
+          },
+          {
+            "role": "user",
+            "content": "Message: I lost my card"
+          }
+        ],
+        "temperature": 0,
+        "perigraph_template": {
+          "messages": [
+            {
+              "role": "system"
+            },
+            {
+              "role": "user",
+              "fixed": [
+                "Message: ",
+                ""
+              ]
+            }
+          ]
+        },
+        "max_tokens": 256,
+        "chat_template_kwargs": {
+          "enable_thinking": true
+        },
+        "logprobs": true
+      },
+      "identity": "693c8bf97467fc42aa230e70",
+      "instruction_digest": "580650b2496176fe70c3dd199bf789ce8ff77d8e836820a1c4c5e05be4375228",
+      "generation_controls": "b7566e9adc44c02958bf4c41f4b9fa2cfe78ffab3434d70f6055e3341aa27df4",
+      "unlisted": []
+    },
+    {
+      "name": "H3 with members reordered and max_tokens 256.0: the same identity as H3 (canonical_value merges spellings)",
+      "body": {
+        "logprobs": true,
+        "chat_template_kwargs": {
+          "enable_thinking": true
+        },
+        "max_tokens": 256.0,
+        "temperature": 0.0,
+        "perigraph_template": {
+          "messages": [
+            {
+              "role": "system"
+            },
+            {
+              "role": "user",
+              "fixed": [
+                "Message: ",
+                ""
+              ]
+            }
+          ]
+        },
+        "messages": [
+          {
+            "role": "system",
+            "content": "Reply with exactly one intent name from the list and nothing else."
+          },
+          {
+            "role": "user",
+            "content": "Message: I lost my card"
+          }
+        ],
+        "model": "another-name"
+      },
+      "identity": "693c8bf97467fc42aa230e70",
+      "instruction_digest": "580650b2496176fe70c3dd199bf789ce8ff77d8e836820a1c4c5e05be4375228",
+      "generation_controls": "b7566e9adc44c02958bf4c41f4b9fa2cfe78ffab3434d70f6055e3341aa27df4",
+      "unlisted": []
+    },
+    {
+      "name": "max_completion_tokens 256 instead of max_tokens 256: a different identity, names are not aliased",
+      "body": {
+        "model": "student",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Reply with exactly one intent name from the list and nothing else."
+          },
+          {
+            "role": "user",
+            "content": "Message: I lost my card"
+          }
+        ],
+        "temperature": 0,
+        "perigraph_template": {
+          "messages": [
+            {
+              "role": "system"
+            },
+            {
+              "role": "user",
+              "fixed": [
+                "Message: ",
+                ""
+              ]
+            }
+          ]
+        },
+        "max_completion_tokens": 256,
+        "chat_template_kwargs": {
+          "enable_thinking": true
+        },
+        "logprobs": true
+      },
+      "identity": "fe6d13a9a99852270f50d305",
+      "instruction_digest": "580650b2496176fe70c3dd199bf789ce8ff77d8e836820a1c4c5e05be4375228",
+      "generation_controls": "e31baebf981772e8f228e4ffae59bf6fbb96c7b6840e7c095710e7ded7d818e7",
+      "unlisted": []
+    },
+    {
+      "name": "chat_template_kwargs {} is held and differs from absent",
+      "body": {
+        "model": "student",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Reply with exactly one intent name from the list and nothing else."
+          },
+          {
+            "role": "user",
+            "content": "Message: I lost my card"
+          }
+        ],
+        "temperature": 0,
+        "perigraph_template": {
+          "messages": [
+            {
+              "role": "system"
+            },
+            {
+              "role": "user",
+              "fixed": [
+                "Message: ",
+                ""
+              ]
+            }
+          ]
+        },
+        "chat_template_kwargs": {}
+      },
+      "identity": "1c97099af51f00f3213f1268",
+      "instruction_digest": "580650b2496176fe70c3dd199bf789ce8ff77d8e836820a1c4c5e05be4375228",
+      "generation_controls": "394758d3b3d3e7c95a6e1751f62f4d1087346a17d0590213f9803cec02a00ed4",
+      "unlisted": []
+    },
+    {
+      "name": "no generation control at all: the version 3 identity",
+      "body": {
+        "model": "student",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Reply with exactly one intent name from the list and nothing else."
+          },
+          {
+            "role": "user",
+            "content": "Message: I lost my card"
+          }
+        ],
+        "temperature": 0,
+        "perigraph_template": {
+          "messages": [
+            {
+              "role": "system"
+            },
+            {
+              "role": "user",
+              "fixed": [
+                "Message: ",
+                ""
+              ]
+            }
+          ]
+        }
+      },
+      "identity": "c3c041da74bed25bdee70990",
+      "instruction_digest": "580650b2496176fe70c3dd199bf789ce8ff77d8e836820a1c4c5e05be4375228",
+      "generation_controls": {
+        "absent": "not_provided"
+      },
+      "unlisted": []
+    },
+    {
+      "name": "stop null is absent: the version 3 identity",
+      "body": {
+        "model": "student",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Reply with exactly one intent name from the list and nothing else."
+          },
+          {
+            "role": "user",
+            "content": "Message: I lost my card"
+          }
+        ],
+        "temperature": 0,
+        "perigraph_template": {
+          "messages": [
+            {
+              "role": "system"
+            },
+            {
+              "role": "user",
+              "fixed": [
+                "Message: ",
+                ""
+              ]
+            }
+          ]
+        },
+        "stop": null
+      },
+      "identity": "c3c041da74bed25bdee70990",
+      "instruction_digest": "580650b2496176fe70c3dd199bf789ce8ff77d8e836820a1c4c5e05be4375228",
+      "generation_controls": {
+        "absent": "not_provided"
+      },
+      "unlisted": []
+    },
+    {
+      "name": "a seed, a temperature and an unlisted member do not key: the version 3 identity",
+      "body": {
+        "model": "student",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Reply with exactly one intent name from the list and nothing else."
+          },
+          {
+            "role": "user",
+            "content": "Message: I lost my card"
+          }
+        ],
+        "temperature": 0.7,
+        "perigraph_template": {
+          "messages": [
+            {
+              "role": "system"
+            },
+            {
+              "role": "user",
+              "fixed": [
+                "Message: ",
+                ""
+              ]
+            }
+          ]
+        },
+        "seed": 7,
+        "top_logprobs": 3,
+        "some_vendor_switch": true
+      },
+      "identity": "c3c041da74bed25bdee70990",
+      "instruction_digest": "580650b2496176fe70c3dd199bf789ce8ff77d8e836820a1c4c5e05be4375228",
+      "generation_controls": {
+        "absent": "not_provided"
+      },
+      "unlisted": [
+        "some_vendor_switch"
+      ]
+    },
+    {
+      "name": "generation controls without a system message: no identity, they name no prompt text (refines_only)",
+      "body": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "Message: I lost my card"
+          }
+        ],
+        "max_tokens": 8,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        }
+      },
+      "identity": null,
+      "instruction_digest": null,
+      "generation_controls": "55a525498259d8c6424966333ac9b70e408a714406f01caba1decc8cdae47775",
+      "unlisted": []
+    },
+    {
+      "name": "generation controls and a template without a system message: no identity",
+      "body": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "Message: I lost my card"
+          }
+        ],
+        "max_tokens": 8,
+        "perigraph_template": {
+          "messages": [
+            {
+              "role": "user",
+              "fixed": [
+                "Message: ",
+                ""
+              ]
+            }
+          ]
+        }
+      },
+      "identity": null,
+      "instruction_digest": null,
+      "generation_controls": "ca7d3a24a1c82c765a44965689c5b1dedacfe52e63cfa75df48b3538ae71784a",
+      "unlisted": []
+    },
+    {
+      "name": "an integer above 2**53-1 in a generation control: extraction_failed, and no identity",
+      "body": {
+        "model": "student",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Reply with exactly one intent name from the list and nothing else."
+          },
+          {
+            "role": "user",
+            "content": "Message: I lost my card"
+          }
+        ],
+        "temperature": 0,
+        "perigraph_template": {
+          "messages": [
+            {
+              "role": "system"
+            },
+            {
+              "role": "user",
+              "fixed": [
+                "Message: ",
+                ""
+              ]
+            }
+          ]
+        },
+        "max_tokens": 9007199254740993
+      },
+      "identity": null,
+      "instruction_digest": "580650b2496176fe70c3dd199bf789ce8ff77d8e836820a1c4c5e05be4375228",
+      "generation_controls": {
+        "absent": "extraction_failed"
+      },
+      "unlisted": []
+    },
+    {
+      "name": "an integer above 2**53-1 in a decoding member: decoding fails, the identity stands",
+      "body": {
+        "model": "student",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Reply with exactly one intent name from the list and nothing else."
+          },
+          {
+            "role": "user",
+            "content": "Message: I lost my card"
+          }
+        ],
+        "temperature": 0,
+        "perigraph_template": {
+          "messages": [
+            {
+              "role": "system"
+            },
+            {
+              "role": "user",
+              "fixed": [
+                "Message: ",
+                ""
+              ]
+            }
+          ]
+        },
+        "logit_bias": {
+          "50256": 9007199254740993
+        }
+      },
+      "identity": "c3c041da74bed25bdee70990",
+      "instruction_digest": "580650b2496176fe70c3dd199bf789ce8ff77d8e836820a1c4c5e05be4375228",
+      "generation_controls": {
+        "absent": "not_provided"
+      },
+      "unlisted": []
+    },
+    {
+      "name": "kwargs 1 and 1.0 merge at canonical_value (a stated merge)",
+      "body": {
+        "model": "student",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Reply with exactly one intent name from the list and nothing else."
+          },
+          {
+            "role": "user",
+            "content": "Message: I lost my card"
+          }
+        ],
+        "temperature": 0,
+        "perigraph_template": {
+          "messages": [
+            {
+              "role": "system"
+            },
+            {
+              "role": "user",
+              "fixed": [
+                "Message: ",
+                ""
+              ]
+            }
+          ]
+        },
+        "chat_template_kwargs": {
+          "budget": 1.0
+        }
+      },
+      "identity": "d31757805c7899b4ceb8dd2b",
+      "instruction_digest": "580650b2496176fe70c3dd199bf789ce8ff77d8e836820a1c4c5e05be4375228",
+      "generation_controls": "9b65a77689ed99c37f6d1c71a13da3f19e25b4ebccb837f6da78666b5f17c4b6",
+      "unlisted": []
+    },
+    {
+      "name": "kwargs 1 and 1.0 merge at canonical_value: the same identity as the previous case",
+      "body": {
+        "model": "student",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Reply with exactly one intent name from the list and nothing else."
+          },
+          {
+            "role": "user",
+            "content": "Message: I lost my card"
+          }
+        ],
+        "temperature": 0,
+        "perigraph_template": {
+          "messages": [
+            {
+              "role": "system"
+            },
+            {
+              "role": "user",
+              "fixed": [
+                "Message: ",
+                ""
+              ]
+            }
+          ]
+        },
+        "chat_template_kwargs": {
+          "budget": 1
+        }
+      },
+      "identity": "d31757805c7899b4ceb8dd2b",
+      "instruction_digest": "580650b2496176fe70c3dd199bf789ce8ff77d8e836820a1c4c5e05be4375228",
+      "generation_controls": "9b65a77689ed99c37f6d1c71a13da3f19e25b4ebccb837f6da78666b5f17c4b6",
+      "unlisted": []
+    },
+    {
+      "name": "a response_format beside an instruction keys the identity",
+      "body": {
+        "model": "student",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Reply with exactly one intent name from the list and nothing else."
+          },
+          {
+            "role": "user",
+            "content": "Message: I lost my card"
+          }
+        ],
+        "temperature": 0,
+        "perigraph_template": {
+          "messages": [
+            {
+              "role": "system"
+            },
+            {
+              "role": "user",
+              "fixed": [
+                "Message: ",
+                ""
+              ]
+            }
+          ]
+        },
+        "response_format": {
+          "type": "json_object"
+        }
+      },
+      "identity": "831d43d5e90ed4102f55dc28",
+      "instruction_digest": "580650b2496176fe70c3dd199bf789ce8ff77d8e836820a1c4c5e05be4375228",
+      "generation_controls": "e68b9971b6ab4852aca8ad76d543bf4315b88c9f50e4847e32f544d11a2e97c0",
+      "unlisted": []
+    },
+    {
+      "name": "stop as a string and as a one-element array are not normalised",
+      "body": {
+        "model": "student",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Reply with exactly one intent name from the list and nothing else."
+          },
+          {
+            "role": "user",
+            "content": "Message: I lost my card"
+          }
+        ],
+        "temperature": 0,
+        "perigraph_template": {
+          "messages": [
+            {
+              "role": "system"
+            },
+            {
+              "role": "user",
+              "fixed": [
+                "Message: ",
+                ""
+              ]
+            }
+          ]
+        },
+        "stop": "\n"
+      },
+      "identity": "543b3b0a1db9a77cb8dd11a7",
+      "instruction_digest": "580650b2496176fe70c3dd199bf789ce8ff77d8e836820a1c4c5e05be4375228",
+      "generation_controls": "ae76c0048149ccccaba8b081ed1238fe0c8b086e2e174dd3850e66e705d5581b",
+      "unlisted": []
+    },
+    {
+      "name": "stop as a one-element array: a different identity from the string",
+      "body": {
+        "model": "student",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Reply with exactly one intent name from the list and nothing else."
+          },
+          {
+            "role": "user",
+            "content": "Message: I lost my card"
+          }
+        ],
+        "temperature": 0,
+        "perigraph_template": {
+          "messages": [
+            {
+              "role": "system"
+            },
+            {
+              "role": "user",
+              "fixed": [
+                "Message: ",
+                ""
+              ]
+            }
+          ]
+        },
+        "stop": [
+          "\n"
+        ]
+      },
+      "identity": "a5fae8c2d6bdd61b8633b062",
+      "instruction_digest": "580650b2496176fe70c3dd199bf789ce8ff77d8e836820a1c4c5e05be4375228",
+      "generation_controls": "bf05adc101a75df2fa3073317d7737ddc982c31e6b6a86f296c658d40a93eee3",
+      "unlisted": []
+    },
+    {
+      "name": "a non-ascii and astral stop string, which a UTF-16 or escaping serialiser renders differently",
+      "body": {
+        "model": "student",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Reply with exactly one intent name from the list and nothing else."
+          },
+          {
+            "role": "user",
+            "content": "Message: I lost my card"
+          }
+        ],
+        "temperature": 0,
+        "perigraph_template": {
+          "messages": [
+            {
+              "role": "system"
+            },
+            {
+              "role": "user",
+              "fixed": [
+                "Message: ",
+                ""
+              ]
+            }
+          ]
+        },
+        "stop": [
+          "終わり ",
+          "😀</s>&"
+        ]
+      },
+      "identity": "22d1d86b4311ae76c4e6cd64",
+      "instruction_digest": "580650b2496176fe70c3dd199bf789ce8ff77d8e836820a1c4c5e05be4375228",
+      "generation_controls": "86a16d8c98f9eac227faa0eebe2c178bde20ade32c0b8bbad1fd84a134c7acfe",
+      "unlisted": []
+    },
+    {
+      "name": "members named like JavaScript object properties are unlisted, null-valued ones included",
+      "body": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Reply with exactly one intent name from the list and nothing else."
+          }
+        ],
+        "max_tokens": 8,
+        "toString": 1,
+        "constructor": 2,
+        "__proto__": 3,
+        "hasOwnProperty": 4,
+        "zz": null
+      },
+      "identity": "795fbe0f97c431e41c0f9c0e",
+      "instruction_digest": "580650b2496176fe70c3dd199bf789ce8ff77d8e836820a1c4c5e05be4375228",
+      "generation_controls": "ca7d3a24a1c82c765a44965689c5b1dedacfe52e63cfa75df48b3538ae71784a",
+      "unlisted": [
+        "__proto__",
+        "constructor",
+        "hasOwnProperty",
+        "toString",
+        "zz"
+      ]
     }
   ],
   "request_template_serialisation_example": {
