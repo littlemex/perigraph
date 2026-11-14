@@ -85,6 +85,51 @@ def model_failures() -> list[str]:
     return failures
 
 
+def go_failures() -> list[str]:
+    """The Go sender, written from SPEC.md alone by a different model family. It must reproduce every identity and every
+    `model_visible` digest, and give the same absence reason for every part both collectors claim. Free text (details,
+    labels) and each collector's own manifest are its own and are not compared, except that a manifest is read as a set."""
+    out = subprocess.run(["go", "run", "./cmd/crosscheck",  # noqa: S603, S607
+                          str(ROOT / "spec" / "fixtures" / "identity.json"),
+                          str(ROOT / "spec" / "fixtures" / "model_identity.json")],
+                         cwd=ROOT / "go", capture_output=True, text=True, check=False)
+    if out.returncode != 0:
+        raise SystemExit(f"the Go sender failed:\n{out.stderr}")
+    got = json.loads(out.stdout)
+    failures = []
+    for case, ga in zip(CASES, got["attrs"]):
+        pa = wire.to_attributes(collect.from_request(case["body"], collector="x", version="1"))
+        name = case["name"]
+        if ga.get("perigraph.harness_identity") != case["identity"]:
+            failures.append(f"{name}: Go identity {ga.get('perigraph.harness_identity')} and the fixture says "
+                            f"{case['identity']}")
+        for key in pa:
+            if key.endswith(".digest") and pa.get(key.replace(".digest", ".boundary")) == "model_visible" \
+                    and pa[key] != ga.get(key):
+                failures.append(f"{name}: {key} is model_visible and Go differs")
+        both = set(pa["perigraph.collector_reaches"].split(",")) & set(
+            p for p in str(ga.get("perigraph.collector_reaches", "")).split(",") if p)
+        for part in sorted(both):
+            for k in (f"perigraph.absent.{part}.reason", f"perigraph.part.{part}.sourcing"):
+                if pa.get(k) != ga.get(k):
+                    failures.append(f"{name}: {k} is {pa.get(k)!r} against Go's {ga.get(k)!r}")
+        for part in ("checkpoint", "precision", "runtime", "answer_mode"):
+            k = f"perigraph.model_absent.{part}.reason"
+            if pa.get(k) != ga.get(k):
+                failures.append(f"{name}: {k} is {pa.get(k)!r} against Go's {ga.get(k)!r}")
+    for case, gm in zip(MODEL_CASES, got["models"]):
+        for key, gk in (("checkpoint_digest", "checkpoint_digest"), ("precision_digest", "precision_digest"),
+                        ("runtime_digest", "runtime_digest"), ("model_identity", "model"),
+                        ("artifact_identity", "artifact")):
+            if case[key] != gm.get(gk):
+                failures.append(f"{case['name']}: {key} is {case[key]} and Go says {gm.get(gk)}")
+    refused = json.loads((ROOT / "spec" / "fixtures" / "model_identity.json").read_text(encoding="utf-8"))
+    for precision, ok in zip(refused["refused_precision"]["cases"], got["refused_precision"]):
+        if not ok:
+            failures.append(f"Go accepted the unresolved precision {precision}")
+    return failures
+
+
 def main() -> int:
     bodies = [c["body"] for c in CASES]
     ts = typescript_attributes(bodies)
@@ -129,7 +174,8 @@ def main() -> int:
             "tightened into a normative serialisation, or a case that does differ belongs in the fixtures")
 
     failures.extend(model_failures())
-    print(f"checked {len(CASES)} bodies and {len(MODEL_CASES)} model cases across two independent senders")
+    failures.extend(go_failures())
+    print(f"checked {len(CASES)} bodies and {len(MODEL_CASES)} model cases across three senders")
     for f in failures:
         print(f"FAIL {f}")
     if not failures:

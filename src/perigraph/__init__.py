@@ -10,7 +10,7 @@ from perigraph.record import Absence, Manifest, Part, Record, digest
 from perigraph.vocab import SPEC_VERSION, Unidentified, conformance
 from perigraph.wire import from_attributes, to_attributes
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 __all__ = ["Absence", "FROM_A_REQUEST", "Manifest", "Model", "ModelAbsence", "ModelPart", "Part", "REQUEST_BOUNDARIES", "Record", "SPEC_VERSION",
            "Unidentified", "conformance", "declare", "digest", "emit", "from_attributes", "from_request", "observe",
            "to_attributes", "wrap"]

@@ -7,7 +7,7 @@
  */
 import { createHash } from "node:crypto";
 
-import { digest } from "./record.js";
+import { digest, stripWhiteSpace } from "./record.js";
 import {
   ABSENCE_BLAMES,
   ABSENCE_REASONS,
@@ -68,7 +68,9 @@ export function linesDigest(pairs: Record<string, string>, sep: string): string 
 
 export function precisionDigest(fields: Record<string, string>): string {
   for (const [k, v] of Object.entries(fields)) {
-    if (String(v).trim() === "" || String(v).trim().toLowerCase() === "auto") {
+    const name = k.startsWith("dtype.") ? stripWhiteSpace(k.slice("dtype.".length)).toLowerCase() : null;
+    const value = stripWhiteSpace(String(v)).toLowerCase();
+    if (value === "" || value === "auto" || name === "" || name === "auto") {
       throw new Unidentified(`precision field ${k}=${v} is unresolved; record the part as extraction_failed instead`);
     }
   }

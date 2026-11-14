@@ -14,8 +14,9 @@ points, and it is also the only part of a request whose exact bytes we can prove
 """
 from __future__ import annotations
 
-from perigraph.record import Absence, Manifest, Part, Record, digest
-from perigraph.vocab import PARTS
+from perigraph.model import Model, ModelAbsence
+from perigraph.record import Absence, Manifest, Part, Record, blank, digest
+from perigraph.vocab import MODEL_PARTS, PARTS
 
 #: What this collector claims it can reach from a request body, and nothing more. **Static per version on purpose:** a
 #: manifest that adapted to what it happened to find could never contradict a record, which is the one thing it is for.
@@ -56,9 +57,20 @@ def from_request(body: dict, *, collector: str, version: str) -> Record:
         parts.append(Part(kind=kind, sourcing="in_the_request", label=label,
                           content_digest=digest(payload), boundary=REQUEST_BOUNDARIES[kind]))
 
-    messages = body.get("messages") or []
-    instruction = "\n".join(str(m.get("content", "")) for m in messages if m.get("role") == "system")
-    if instruction.strip():
+    if not isinstance(body, dict):
+        # Section 1.2: a body we cannot parse is an absence we name, never a record we withhold.
+        found = _json_type(body)
+        absences = [Absence(kind=k, reason="extraction_failed", detail=f"the body is {found}, not an object")
+                    for k in FROM_A_REQUEST]
+        absences += [Absence(kind=k, reason="not_provided") for k in PUSHED_PARTS]
+        absences += [Absence(kind="tool_extension", reason="not_observable"),
+                     Absence(kind="tool_trace", reason="not_provided")]
+        return _record(collector, version, (), absences)
+
+    instruction, failed = _instruction(body.get("messages"))
+    if failed:
+        absences.append(Absence(kind="instruction", reason="extraction_failed", detail=failed))
+    elif not blank(instruction):
         # Hashed RAW, down to case and whitespace. The model reads the string and not its meaning, and 0.6243 against
         # 0.7447 came from one sentence's wording -- so two spellings are two harnesses even where a human would call
         # them the same instruction.
@@ -67,7 +79,12 @@ def from_request(body: dict, *, collector: str, version: str) -> Record:
         absences.append(Absence(kind="instruction", reason="not_provided"))
 
     tools = body.get("tools")
-    if tools:
+    bad_tool = (f"tools is {_json_type(tools)}, not an array" if tools is not None and not isinstance(tools, list) else
+                next((f"tools[{i}] is {_json_type(t)}, not an object" for i, t in enumerate(tools or [])
+                      if not isinstance(t, dict) or not isinstance(t.get("function", {}), dict)), ""))
+    if bad_tool:
+        absences.append(Absence(kind="tool_schemas", reason="extraction_failed", detail=bad_tool))
+    elif tools:
         # Sorted by rendered shape: the order a caller lists tools in is not part of what it offered, and an unsorted
         # digest would make two identical toolsets look like two harnesses.
         shapes = sorted(_scalars([("name", (t.get("function") or t).get("name")),
@@ -77,7 +94,11 @@ def from_request(body: dict, *, collector: str, version: str) -> Record:
         absences.append(Absence(kind="tool_schemas", reason="not_provided"))
 
     fmt = body.get("response_format")
-    if fmt:
+    bad_fmt = f"response_format is {_json_type(fmt)}, not an object" if fmt is not None and not isinstance(fmt, dict) \
+        else ""
+    if bad_fmt:
+        absences.append(Absence(kind="readout", reason="extraction_failed", detail=bad_fmt))
+    elif fmt:
         hold("readout", _scalars([("response_format", fmt)]),
              label=str(fmt.get("type", "")) if isinstance(fmt, dict) else "")
     else:
@@ -85,8 +106,11 @@ def from_request(body: dict, *, collector: str, version: str) -> Record:
         # side, and a mis-set convention has been measured to put 1,822 of 2,364 answers on one option.
         absences.append(Absence(kind="readout", reason="not_provided"))
 
-    knobs = [(k, body[k]) for k in DECODING_KEYS if k in body]
-    if knobs:
+    # A response_format constrains the grammar of the output, so it is decoding as well as readout (section 1).
+    knobs = [(k, body[k]) for k in DECODING_KEYS if body.get(k) is not None] + ([("response_format", fmt)] if fmt else [])
+    if bad_fmt:
+        absences.append(Absence(kind="decoding", reason="extraction_failed", detail=bad_fmt))
+    elif knobs:
         hold("decoding", _scalars(knobs), label=",".join(k for k, _ in knobs))
     else:
         absences.append(Absence(kind="decoding", reason="not_provided"))
@@ -97,10 +121,63 @@ def from_request(body: dict, *, collector: str, version: str) -> Record:
     # At request time the calls have not happened, so there is nothing the sender could have supplied.
     absences.append(Absence(kind="tool_trace", reason="not_provided"))
 
+    return _record(collector, version, parts, absences)
+
+
+def _record(collector: str, version: str, parts, absences) -> Record:
+    """A request collector did not load the model, so it says so for each model part (section 6) rather than leaving
+    the model half out, which would be a hole nobody named."""
     record = Record(manifest=Manifest(collector=collector, version=version, reaches=FROM_A_REQUEST),
-                    status="complete", parts=tuple(parts), absences=tuple(absences))
+                    status="complete", parts=tuple(parts), absences=tuple(absences),
+                    model=Model(absences=tuple(ModelAbsence(kind=k, reason="not_observable") for k in MODEL_PARTS)))
     assert not record.unaccounted, f"the collector left {record.unaccounted} unaccounted for"
     return record
+
+
+def _json_type(value: object) -> str:
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "a boolean"
+    if isinstance(value, (int, float)):
+        return "a number"
+    if isinstance(value, str):
+        return "a string"
+    if isinstance(value, list):
+        return "an array"
+    if isinstance(value, dict):
+        return "an object"
+    return type(value).__name__
+
+
+def _instruction(messages: object) -> tuple[str, str]:
+    """The system text, newline-joined (section 2.2), or the reason it cannot be read.
+
+    A system message whose content is not a string fails the whole part: the text a model reads from an array of parts
+    is the chat template's to decide, and the request does not carry the template. The detail names the message and the
+    type found and never quotes the content."""
+    if messages is None:
+        return "", ""
+    if not isinstance(messages, list):
+        return "", f"messages is {_json_type(messages)}, not an array"
+    texts = []
+    for i, m in enumerate(messages):
+        if not isinstance(m, dict):
+            return "", f"messages[{i}] is {_json_type(m)}, not an object"
+        # A message whose role cannot be read might have been a system message.
+        if "role" not in m:
+            return "", f"messages[{i}].role is missing, not a string"
+        if not isinstance(m["role"], str):
+            return "", f"messages[{i}].role is {_json_type(m['role'])}, not a string"
+    for i, m in enumerate(messages):
+        if m.get("role") != "system":
+            continue
+        if "content" not in m:
+            return "", f"messages[{i}].content is missing, not a string"
+        if not isinstance(m["content"], str):
+            return "", f"messages[{i}].content is {_json_type(m['content'])}, not a string"
+        texts.append(m["content"])
+    return "\n".join(texts), ""
 
 
 def declare(record: Record, **pushed: str) -> Record:

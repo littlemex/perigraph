@@ -19,9 +19,20 @@ if TYPE_CHECKING:  # pragma: no cover
     from perigraph.model import Model
 
 
+#: The Unicode White_Space property (section 1.2). Named rather than `str.strip()`, which also strips U+001C-U+001F,
+#: because three languages' default trims disagree at the edges and an emptiness test decides whether a part exists.
+WHITE_SPACE = ("\u0009\u000a\u000b\u000c\u000d\u0020\u0085\u00a0\u1680" + "".join(chr(c) for c in range(0x2000, 0x200b))
+               + "\u2028\u2029\u202f\u205f\u3000")
+
+
+def blank(text: str) -> bool:
+    """Empty after removing leading and trailing White_Space (section 1.2)."""
+    return not text.strip(WHITE_SPACE)
+
+
 def digest(payload: str) -> str:
     """Hash a part's content. Over the bytes, because that is the only thing a label cannot drift away from."""
-    if not payload.strip():
+    if blank(payload):
         raise Unidentified("an empty payload has no content to identify; a part that is genuinely empty is a part that "
                            "was not applied, and that is a different record")
     return hashlib.sha256(payload.encode()).hexdigest()

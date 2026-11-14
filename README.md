@@ -24,8 +24,8 @@ comparison at all.
 **Not a logging format, and not an evaluation framework.** It carries the facts a claim about accuracy or cost
 needs in order to be checkable, and it is deliberately unopinionated about what you then claim.
 
-**Not a standard.** It is a spec with two implementations by one author, published in the hope that the shape is
-right. The `spec/` directory is normative; this README is not.
+**Not a standard.** It is a spec with two implementations by one author and a third written from the spec alone by a
+different model, published in the hope that the shape is right. The `spec/` directory is normative; this README is not.
 
 Writing the second implementation found **five sentences that read two ways**, one of them fatal to interoperability:
 the identity's serialisation was never specified, so two conformant senders would have produced two identities for one
@@ -127,16 +127,17 @@ decision checkable afterwards (SPEC section 11).
 |---|---|
 | `spec/vocabularies.json` | normative, version 2 |
 | `SPEC.md` | the prose that goes with it |
-| Python sender and receiver | implemented, 56 tests |
-| TypeScript sender | implemented, 33 tests (lineage is Python only: it is read by receivers) |
-| `spec/fixtures/identity.json` | golden identities both implementations reproduce, including a non-ASCII one |
-| `spec/fixtures/model_identity.json` | golden model and artifact identities: bf16 against int8 of the same files, and a non-ASCII path |
+| Python sender and receiver | implemented, 72 tests |
+| TypeScript sender | implemented, 41 tests (lineage is Python only: it is read by receivers) |
+| Go sender (`go/`) | implemented, 20 tests. **Written by a different model family (OpenAI GPT-6 Sol) from `SPEC.md` and `spec/vocabularies.json` alone**, without reading the Python or TypeScript source or the fixtures. It reproduced every fixture and disagreed with the reference senders on ten rules the text left open, each now written in the spec with a fixture where one can hold it (see the 0.2.1 changelog) |
+| `spec/fixtures/identity.json` | golden identities every implementation reproduces, including a non-ASCII one, and the request shapes that have none |
+| `spec/fixtures/model_identity.json` | golden model and artifact identities: bf16 against int8 of the same files, a non-ASCII path, and precisions every sender must refuse |
 | Riding on a tracer's auto-instrumentation | not implemented -- one explicit `wrap` at the client boundary for now |
-| A third implementation, by somebody else | none. **That is the remaining test** -- see [CONTRIBUTING.md](CONTRIBUTING.md) |
+| An implementation by an independent person | none. The Go sender is the closest substitute so far: another model, not another mind with other incentives. **That is still the remaining test** -- see [CONTRIBUTING.md](CONTRIBUTING.md) |
 
-CI runs both suites on four Python versions (3.10-3.13) and two Node versions (22, 24 -- 20 is end of life), proves the spec ships **inside** each built package,
-checks that the three copies of the normative JSON are byte-identical, and runs `tools/cross_check.py` -- **the only
-check neither implementation can pass by agreeing with itself.**
+CI runs the three suites on four Python versions (3.10-3.13), two Node versions (22, 24 -- 20 is end of life) and Go 1.22, proves the spec ships **inside** each built package,
+checks that every copy of the normative JSON is byte-identical, and runs `tools/cross_check.py` -- **the only
+check no implementation can pass by agreeing with itself.**
 
 ## Relationship to the projects it came out of
 

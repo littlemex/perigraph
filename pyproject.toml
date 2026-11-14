@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "perigraph"
-version = "0.2.0"
+version = "0.2.1"
 description = "A record of what surrounded the model: the harness, its per-part content digests, and what the record cannot see"
 readme = "README.md"
 requires-python = ">=3.10"

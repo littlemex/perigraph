@@ -278,12 +278,70 @@ def test_a_sink_that_raises_never_breaks_the_call_either():
     assert pg.wrap(lambda body: "sent", on_record=explode)(BODY) == "sent"
 
 
-def test_a_collector_that_crashed_emits_a_record_rather_than_nothing():
+def test_a_collector_that_crashed_emits_a_record_rather_than_nothing(monkeypatch):
     """A collector cannot record its own absence: if a crashed shim emitted nothing, the run would be indistinguishable
     from a run that never happened."""
-    r = pg.observe(None)
+    from perigraph import instrument
+
+    def broken(*_a, **_k):
+        raise RuntimeError("a bug in the collector")
+    monkeypatch.setattr(instrument, "from_request", broken)
+    r = pg.observe(BODY)
     assert r.status == "collector_failed"
     assert r.admissible_to_a_verdict() is False
+
+
+def test_a_body_that_is_not_an_object_is_named_not_a_crash():
+    """SPEC 1.2: a request we cannot parse is an absence we name. The status stays complete, because this collector
+    finished; every manifest part says what was found."""
+    a = pg.to_attributes(pg.observe(None))
+    assert a["perigraph.status"] == "complete"
+    for k in ("instruction", "tool_schemas", "readout", "decoding"):
+        assert a[f"perigraph.absent.{k}.reason"] == "extraction_failed"
+        assert a[f"perigraph.absent.{k}.detail"] == "the body is null, not an object"
+
+
+def test_messages_that_is_not_an_array_fails_only_what_is_read_from_messages():
+    a = pg.to_attributes(pg.observe({"messages": "x", "temperature": 0.0}))
+    assert a["perigraph.absent.instruction.reason"] == "extraction_failed"
+    assert a["perigraph.absent.instruction.detail"] == "messages is a string, not an array"
+    assert a["perigraph.part.decoding.sourcing"] == "in_the_request"
+
+
+def test_a_system_message_with_an_array_of_parts_fails_the_instruction_without_quoting_it():
+    """SPEC 2.2: the chat template decides how parts become text, and the request does not carry it. The two reference
+    senders used to render the same array as two different strings and so gave one request two identities."""
+    body = {"messages": [{"role": "system", "content": "Terse."},
+                         {"role": "system", "content": [{"type": "text", "text": "secret prompt"}]}]}
+    a = pg.to_attributes(pg.observe(body))
+    assert a["perigraph.absent.instruction.reason"] == "extraction_failed"
+    assert a["perigraph.absent.instruction.detail"] == "messages[1].content is an array, not a string"
+    assert "secret" not in json.dumps(a)
+    assert "perigraph.harness_identity" not in a
+
+
+def test_a_request_collector_says_the_model_was_not_observable():
+    """SPEC 6: a collector that did not load the model names the four model parts absent instead of leaving them out."""
+    a = pg.to_attributes(pg.observe(BODY))
+    for k in ("checkpoint", "precision", "runtime", "answer_mode"):
+        assert a[f"perigraph.model_absent.{k}.reason"] == "not_observable"
+    assert "perigraph.model_identity" not in a and "perigraph.artifact_identity" not in a
+
+
+def test_a_record_with_no_model_half_is_read_not_refused():
+    """SPEC 6: a missing model half is a hole nobody named, read as unknown; a provider's label is the other form."""
+    a = {k: v for k, v in pg.to_attributes(pg.observe(BODY)).items() if "model" not in k}
+    assert wire.from_attributes(a).model is None
+    a["perigraph.model.checkpoint.sourcing"], a["perigraph.model.checkpoint.label"] = "not_observable", "provider-x"
+    assert not wire.from_attributes(a).model.has_model_identity
+
+
+@pytest.mark.parametrize("field", ["messages", "tools", "response_format", "temperature"])
+def test_a_null_top_level_field_is_one_the_sender_did_not_send(field):
+    """SPEC 1.2: missing or null means the sender sent none, as clients that serialise an unset field as null mean."""
+    body = {**BODY, field: None}
+    without = {k: v for k, v in BODY.items() if k != field}
+    assert pg.to_attributes(pg.observe(body)) == pg.to_attributes(pg.observe(without))
 
 
 def test_emit_returns_the_attributes_when_there_is_no_tracer():
@@ -324,7 +382,10 @@ def test_every_golden_identity_is_reproduced():
     failure on both sides rather than something discovered by comparing two records in production."""
     for case in FIXTURES["cases"]:
         r = collect.from_request(case["body"], collector="fixture", version="1")
-        assert r.identity == case["identity"], case["name"]
+        if case["identity"] is None:
+            assert not r.has_identity, case["name"]
+        else:
+            assert r.identity == case["identity"], case["name"]
         got = next((p.content_digest for p in r.parts if p.kind == "instruction"), None)
         assert got == case["instruction_digest"], case["name"]
 
@@ -428,6 +489,12 @@ def test_every_model_fixture_reproduces():
         assert mdl.runtime_digest(case["runtime"]) == case["runtime_digest"], case["name"]
         assert m.model_identity == case["model_identity"], case["name"]
         assert m.artifact_identity == case["artifact_identity"], case["name"]
+
+
+@pytest.mark.parametrize("precision", MODEL_FIXTURES["refused_precision"]["cases"])
+def test_every_unresolved_precision_fixture_is_refused(precision):
+    with pytest.raises(Exception):
+        mdl.precision_digest(precision)
 
 
 def test_int8_at_load_changes_the_model_identity_and_not_the_artifact_identity():
@@ -575,3 +642,13 @@ def test_lineage_is_closed_and_subtract_only():
         lin.load({"spec_version": 2, "subject": CHILD_ID, "parent": ROOT_ID, "method": "distillation"})
     with pytest.raises(vocab.Unidentified, match="not lineage fields"):
         lin.load({"spec_version": 2, "subject": CHILD_ID, "parent": ROOT_ID, "method": "sft", "excluded": []})
+
+
+def test_a_dtype_named_auto_is_unresolved_as_a_value_of_auto_is():
+    """SPEC 9: torch_dtype="auto" in a configuration is a question, whether it lands in the name or the value."""
+    from perigraph import model as pm
+    for fields in ({"dtype.auto": "1", "quantisation": "none", "device": "cuda"},
+                   {"dtype.bfloat16": "auto", "quantisation": "none", "device": "cuda"},
+                   {"dtype.bfloat16": "1", "quantisation": "AUTO", "device": "cuda"}):
+        with pytest.raises(pg.Unidentified):
+            pm.precision_digest(fields)

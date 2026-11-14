@@ -27,7 +27,7 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Iterable, Mapping
 
-from perigraph.record import digest
+from perigraph.record import WHITE_SPACE, digest
 from perigraph.vocab import (ABSENCE_BLAMES, ABSENCE_REASONS, ANSWER_MODES, DETAIL_REQUIRED_WHEN_BLAMES,
                             IDENTIFYING_MODEL_SOURCING, MODEL_PARTS, SOURCING, Unidentified)
 
@@ -96,7 +96,9 @@ def lines_digest(pairs: Mapping[str, object], sep: str = "=") -> str:
 def precision_digest(fields: Mapping[str, object]) -> str:
     """Read off the loaded parameters, never the configuration: `auto` is not a precision, it is a question."""
     for k, v in fields.items():
-        if str(v).strip().lower() in ("", "auto"):
+        name = k.split(".", 1)[1] if k.startswith("dtype.") else None
+        if str(v).strip(WHITE_SPACE).lower() in ("", "auto") or (
+                name is not None and name.strip(WHITE_SPACE).lower() in ("", "auto")):
             raise Unidentified(f"precision field {k}={v!r} is unresolved; record the part as extraction_failed instead")
     return lines_digest(fields, "=")
 

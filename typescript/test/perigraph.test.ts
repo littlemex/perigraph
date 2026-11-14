@@ -229,7 +229,7 @@ test("emit sets every attribute on a span and survives one it rejects", () => {
 import { createRequire } from "node:module";
 const require_ = createRequire(import.meta.url);
 const FIXTURES = require_("../fixtures-identity.json") as {
-  cases: { name: string; body: unknown; identity: string; instruction_digest: string | null }[];
+  cases: { name: string; body: unknown; identity: string | null; instruction_digest: string | null }[];
 };
 
 test("every golden identity is reproduced", () => {
@@ -237,7 +237,8 @@ test("every golden identity is reproduced", () => {
   // encoding were NOT in the spec; this file could not have matched these values until they were added.
   for (const c of FIXTURES.cases) {
     const r = fromRequest(c.body as pg.Body, { collector: "fixture", version: "1" });
-    assert.equal(r.identity, c.identity, c.name);
+    if (c.identity === null) assert.equal(r.hasIdentity, false, c.name);
+    else assert.equal(r.identity, c.identity, c.name);
     const got = r.parts.find((p) => p.kind === "instruction")?.contentDigest ?? null;
     assert.equal(got, c.instruction_digest, c.name);
   }
@@ -246,7 +247,7 @@ test("every golden identity is reproduced", () => {
 test("a non-ascii instruction is covered, because that is where an encoding disagreement shows", () => {
   const anyNonAscii = FIXTURES.cases.some((c) =>
     ((c.body as { messages: { content?: string }[] }).messages ?? []).some((m) =>
-      [...(m.content ?? "")].some((ch) => ch.codePointAt(0)! > 127),
+      typeof m.content === "string" && [...m.content].some((ch) => ch.codePointAt(0)! > 127),
     ),
   );
   assert.ok(anyNonAscii);
@@ -270,6 +271,7 @@ const MODEL_FIXTURES = require_("../fixtures-model-identity.json") as {
     model_identity: string;
     artifact_identity: string;
   }[];
+  refused_precision: { cases: Record<string, string>[] };
 };
 
 const sha = (t: string) => createHash("sha256").update(Buffer.from(t, "utf8")).digest("hex");
@@ -284,6 +286,10 @@ test("every golden model identity is reproduced", () => {
     assert.equal(m.modelIdentity, c.model_identity, c.name);
     assert.equal(m.artifactIdentity, c.artifact_identity, c.name);
   }
+});
+
+test("every unresolved precision fixture is refused (SPEC 9)", () => {
+  for (const p of MODEL_FIXTURES.refused_precision.cases) assert.throws(() => model.precisionDigest(p), JSON.stringify(p));
 });
 
 test("int8 at load is a different model and the same artifact", () => {
@@ -309,4 +315,69 @@ test("the model half round-trips over the wire and a forged identity is refused"
   const back = fromAttributes(attrs);
   assert.equal((back.model as model.Model).modelIdentity, c.model_identity);
   assert.throws(() => fromAttributes({ ...attrs, "perigraph.model_identity": "0".repeat(24) }), /does not follow/);
+});
+
+test("a body that is not an object is named, not a crash (SPEC 1.2)", () => {
+  const a = toAttributes(read(null));
+  assert.equal(a["perigraph.status"], "complete");
+  for (const k of ["instruction", "tool_schemas", "readout", "decoding"]) {
+    assert.equal(a[`perigraph.absent.${k}.reason`], "extraction_failed");
+    assert.equal(a[`perigraph.absent.${k}.detail`], "the body is null, not an object");
+  }
+});
+
+test("messages that is not an array fails only what is read from messages (SPEC 1.2)", () => {
+  const a = toAttributes(read({ messages: "x", temperature: 0.0 }));
+  assert.equal(a["perigraph.absent.instruction.reason"], "extraction_failed");
+  assert.equal(a["perigraph.absent.instruction.detail"], "messages is a string, not an array");
+  assert.equal(a["perigraph.part.decoding.sourcing"], "in_the_request");
+});
+
+test("a system message with an array of parts fails the instruction without quoting it (SPEC 2.2)", () => {
+  const body = {
+    messages: [
+      { role: "system", content: "Terse." },
+      { role: "system", content: [{ type: "text", text: "secret prompt" }] },
+    ],
+  };
+  const a = toAttributes(read(body));
+  assert.equal(a["perigraph.absent.instruction.reason"], "extraction_failed");
+  assert.equal(a["perigraph.absent.instruction.detail"], "messages[1].content is an array, not a string");
+  assert.ok(!JSON.stringify(a).includes("secret"));
+  assert.ok(!("perigraph.harness_identity" in a));
+});
+
+test("a request collector says the model was not observable (SPEC 6)", () => {
+  const a = toAttributes(read());
+  for (const k of ["checkpoint", "precision", "runtime", "answer_mode"]) {
+    assert.equal(a[`perigraph.model_absent.${k}.reason`], "not_observable");
+  }
+  assert.ok(!("perigraph.model_identity" in a) && !("perigraph.artifact_identity" in a));
+});
+
+test("a record with no model half is read, not refused (SPEC 6)", () => {
+  const a: Record<string, string | number> = Object.fromEntries(
+    Object.entries(toAttributes(read())).filter(([k]) => !k.includes("model")));
+  assert.equal(fromAttributes(a).model, null);
+  a["perigraph.model.checkpoint.sourcing"] = "not_observable";
+  a["perigraph.model.checkpoint.label"] = "provider-x";
+  assert.ok(!fromAttributes(a).model!.hasModelIdentity);
+});
+
+test("a null top-level field is one the sender did not send (SPEC 1.2)", () => {
+  for (const field of ["messages", "tools", "response_format", "temperature"]) {
+    const without = Object.fromEntries(Object.entries(BODY).filter(([k]) => k !== field));
+    assert.deepEqual(toAttributes(read({ ...BODY, [field]: null })), toAttributes(read(without)));
+  }
+});
+
+test("a dtype named auto is unresolved as a value of auto is (SPEC 9)", async () => {
+  const { precisionDigest } = await import("../src/model.js");
+  for (const f of [
+    { "dtype.auto": "1", quantisation: "none", device: "cuda" },
+    { "dtype.bfloat16": "auto", quantisation: "none", device: "cuda" },
+    { "dtype.bfloat16": "1", quantisation: "AUTO", device: "cuda" },
+  ]) {
+    assert.throws(() => precisionDigest(f), pg.Unidentified);
+  }
 });

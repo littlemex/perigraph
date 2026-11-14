@@ -31,8 +31,18 @@ import {
  * so -- and a UTF-16 implementation would have produced a different identity for every non-ASCII instruction while
  * passing every test it wrote for itself.
  */
+/**
+ * Empty after removing leading and trailing Unicode White_Space (SPEC 1.2). Named rather than `String.trim()`, which
+ * also trims U+FEFF and keeps U+0085: three languages' default trims disagree at the edges, and an emptiness test
+ * decides whether a part exists.
+ */
+const WHITE_SPACE = "\u0009\u000a\u000b\u000c\u000d\u0020\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000";
+const EDGES = new RegExp(`^[${WHITE_SPACE}]+|[${WHITE_SPACE}]+$`, "g");
+export const stripWhiteSpace = (text: string): string => text.replace(EDGES, "");
+export const blank = (text: string): boolean => stripWhiteSpace(text) === "";
+
 export function digest(payload: string): string {
-  if (payload.trim() === "") {
+  if (blank(payload)) {
     throw new Unidentified(
       "an empty payload has no content to identify; a part that is genuinely empty is a part that was not applied, " +
         "and that is a different record",

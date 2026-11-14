@@ -94,6 +94,30 @@ sender genuinely sent none.** Every consumer then behaves exactly as designed wh
 An absence that blames the collector MUST carry a detail: a measurement failure nobody described is one nobody can fix.
 An absence that does not blame the collector MUST NOT carry one: there is no moment for us to describe.
 
+**A request the collector cannot parse is an absence it names, not a record it withholds** (section 1.1). When the body
+is not valid JSON, or is JSON that is not an object, every manifest part read from the request body is
+`extraction_failed`. When a field a part is read from is present but not of the JSON type the collector expects -- for
+example `messages` or `tools` that is not an array, an entry of either that is not an object, a message whose `role` is
+missing or is not a string, or a `response_format` that is not an object -- every manifest part read from the top-level
+field holding the defect is `extraction_failed`, even if the entries it needs are readable, because the unreadable entry
+might have been one of them. A system message's `content` is narrower: it fails `instruction` only (section 2.2). A
+top-level field that is missing or `null` is not this case: the request carries none, which is what a client that
+serialises an unset optional field as `null` means. Parts read from anywhere else are unaffected. Each such absence
+carries a detail naming the body or the field, the entry's index where there is one, and the JSON type found, or
+`missing`, or, for a body that is not JSON, that it did not parse; it never quotes the value. The record's status is
+derived from its parts as for any other record and is never `collector_failed` for this cause: that status is for a
+collector that did not finish, and this one finished and named what it could not read.
+
+**An empty request field is a missing one.** An `instruction` that is empty after removing leading and trailing white
+space, a `tools` array with no entries and a `response_format` object with no members are each treated as not sent; a
+part is `not_provided` only when everything it is read from is missing or empty. The white-space removal is for this
+test only: a non-empty instruction is digested as section 2.2 says. The rule covers these three and nothing else; an
+empty `precision` value is `extraction_failed` (section 9). A `response_format` is read by both `readout` and
+`decoding`: it says how the answer is taken out, and it constrains the grammar of the output. **White space**, here and
+in section 9, is the Unicode `White_Space` property: U+0009-U+000D, U+0020, U+0085, U+00A0, U+1680, U+2000-U+200A,
+U+2028, U+2029, U+202F, U+205F and U+3000. It is named because the default trim of each language tried strips a
+different set, and this test decides whether a part exists.
+
 ### 1.3 The manifest, and what a contradiction is
 
 The manifest states what the collector claims it can reach **here**. It MUST be static per collector version: a manifest
@@ -157,6 +181,12 @@ fixtures has not checked this.
 **Where several system messages are present**, join their contents with a single U+000A in the order they appear. This
 is normative rather than a collector's choice, because the instruction digest keys the identity and two collectors
 choosing differently would give two identities for one request.
+
+**A system message whose `content` is not a JSON string makes the whole `instruction` part `extraction_failed`**, even
+when other system messages have string content. This covers an array of content parts, any other non-string JSON value
+including `null`, and a message with no `content` at all. The detail names the first such message by its index in
+`messages` and the JSON type found, or `missing`, and never quotes the content. The text a model reads from an array of
+parts is decided by a chat template the request does not carry, so no rendering of the array is the model-visible bytes.
 
 ### 2.3 A `parsed` digest is collector-local
 
@@ -316,6 +346,20 @@ Part names contain no commas -- they come from a closed vocabulary -- so the sep
 MUST drop empty entries: splitting `""` on `","` yields a single empty string in every language tried, which is a
 manifest claiming a part named empty-string, and that refuses the whole record.
 
+**The list is a set.** A sender may emit the names in any order and SHOULD NOT repeat one; a receiver counts a repeated
+name once and compares two manifests as sets.
+
+**A collector that cannot observe the model says so.** A collector outside the process that loaded the model, with no
+stamp to forward or read back (section 9) -- a request adapter, or a router or gateway in front of an unstamped backend
+-- MUST emit each of the four model parts either as absent with reason `not_observable`
+(`perigraph.model_absent.<part>.reason`) or, where it has a name for that part (a provider's model name names
+`checkpoint` and no other part), as a part with sourcing `not_observable`, that name as its label, and no digest. The
+form is chosen per part. It MUST NOT emit a model or artifact identity. The two forms say the same thing: neither keys
+an identity, and a receiver treats them alike. A record with no model half at all does not conform (section 9) but is
+not refused: it is a hole nobody named (section 1.2), indistinguishable from the record of a collector that loaded the
+model and lost the stamp; a receiver reads it as unknown, not as `not_observable`, and MUST NOT refuse the record for
+it.
+
 ## 7. Versioning
 
 **`spec_version` is a single integer and there is no minor version.** A protocol whose compatibility rules are
@@ -325,7 +369,8 @@ negotiable is a protocol two implementations disagree about quietly, and this on
 
 - removing or renaming a value in any closed vocabulary;
 - changing what a value **means**, including which values may key an identity;
-- changing anything in section 2.2 -- the algorithm, the encoding, the length, the serialisation, or the join;
+- changing anything in section 2.2 -- the algorithm, the encoding, the length, the serialisation, or the join --
+  except a change that only withdraws an identity (below);
 - adding an entry to `receiver_obligations.must_refuse`, because a receiver that does not implement it is no longer
   conformant while still claiming the same version.
 
@@ -334,6 +379,13 @@ negotiable is a protocol two implementations disagree about quietly, and this on
 - adding a value to a closed vocabulary **whose meaning is a refusal a receiver already performs**;
 - adding an optional attribute a receiver may ignore without dropping an absence;
 - any change to a `note` or a `rationale`.
+
+**A change that only withdraws an identity is not breaking**: after it, every input has either no identity or the
+identity a sender built from this repository already gave it, and no sender's identity for an input changes to a
+different one. A sender that gave none where another gave one may therefore come to give that one. An earlier and a
+later record of the same input then differ only in that one has no identity, which a receiver reports as unidentified
+and never reads as a difference. The changelog MUST list the inputs withdrawn. This exception holds only while every
+known sender is built from this repository.
 
 **A receiver meeting an unknown version refuses the record** (section 6). It does not downgrade, and it does not parse
 what it recognises: the fields it would drop are the ones that say what the record cannot see.
@@ -348,7 +400,7 @@ its manifest must say which one ran.
 
 ## 8. Conformance
 
-**A sender conforms** when it emits records satisfying sections 1, 2 and 5, and when its vocabularies match
+**A sender conforms** when it emits records satisfying sections 1, 2, 5, 6 and 9, and when its vocabularies match
 `spec/vocabularies.json` exactly.
 
 **A receiver conforms** when it implements every refusal in `receiver_obligations.must_refuse` and none of the ones in
@@ -360,21 +412,23 @@ it by showing that the only comparison it performs reads identifying parts, whic
 **Every implementation MUST reproduce `spec/fixtures/identity.json` and `spec/fixtures/model_identity.json`.** It is the only part of conformance that a second
 implementation cannot pass by agreeing with itself.
 
-**Neither is conformant on the strength of this document alone.** There is one implementation, so the spec has not yet
-been tested as a spec — the first genuine test of it is a second implementation disagreeing about what a sentence here
-means.
+**Neither is conformant on the strength of this document alone.** The sections say what MUST hold; the fixtures and
+`spec/vocabularies.json` are how that is checked, and where a fixture or `spec/vocabularies.json` and this text disagree
+the file governs and the text is the defect. No implementation has yet been written by an independent person, and that
+is still the test this document most needs.
 
 ## 9. What answered: the model parts
 
-A record may carry a **model half**: the parts of what answered, as opposed to what surrounded it. It is written by a
-collector **in the process that loaded the model**, and stamped on every answer, because only that process holds the
-bytes. A request never carries weights, so a model part is never `in_the_request`, and a harness part is never
-`loaded_by_us`.
+A sender MUST emit a **model half** on every record: each of the four model parts below, as a part or as a named
+absence; together they are what answered, as opposed to what surrounded it. Its parts are digested only by a collector
+**in the process that loaded the model**, which stamps them on every answer, because only that process holds the bytes;
+a collector anywhere else forwards that stamp, reads it back, or reports the four parts `not_observable` (section 6). A
+request never carries weights, so a model part is never `in_the_request`, and a harness part is never `loaded_by_us`.
 
 | model part | what it is | content digested | needed because |
 |---|---|---|---|
 | `checkpoint` | every file the process read from the model artifact: parameters, adapters, tokenizer, chat template, configuration | for each file, sorted by the utf-8 bytes of its POSIX path relative to the artifact root, `<path>` TAB `<sha256 of the file>` LF; a path with a tab or a newline is refused | a retrain with the same script and seed agreed on 93.4% of labels under one name |
-| `precision` | the numeric transform in force once loading finished, read off the loaded parameters | `dtype.<name>=<count>`, `quantisation=<scheme or none>`, `device=<type>`, one per line, sorted; `auto` is unresolved and is `extraction_failed` | dynamic int8 at load left the stored bytes unchanged and agreed on 33-40% |
+| `precision` | the numeric transform in force once loading finished, read off the loaded parameters | `dtype.<name>=<count>`, `quantisation=<scheme or none>`, `device=<type>`, one per line, sorted; a dtype name, a `quantisation` value or a `device` value that, after removing leading and trailing white space (section 1.2) and comparing ASCII letters without case, is empty or equals `auto` is unresolved and makes the whole part `extraction_failed` (this normalisation is for the test only; values are digested as read) | dynamic int8 at load left the stored bytes unchanged and agreed on 33-40% |
 | `runtime` | the code computing the answer | `<distribution>==<version>` for each package the collector declares it reads, resolved in-process, sorted | a rebuilt image lost packages; 97 of 100 answers agreed |
 | `answer_mode` | where the answer is taken from | one of `generated_text`, `option_scores`, `classifier_output` | a student trained on option scores generated "1111" |
 

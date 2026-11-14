@@ -14,8 +14,9 @@
  * newline is what the first implementation did, and because the instruction digest KEYS THE IDENTITY, two collectors
  * choosing differently would give two identities for one request.
  */
-import { Absence, Manifest, Part, Record_, digest } from "./record.js";
-import { PARTS } from "./vocab.js";
+import { Model, ModelAbsence } from "./model.js";
+import { Absence, Manifest, Part, Record_, blank, digest } from "./record.js";
+import { MODEL_PARTS, PARTS } from "./vocab.js";
 
 /** Static per version: a manifest that adapted to what it found could never contradict a record. */
 export const FROM_A_REQUEST = ["instruction", "tool_schemas", "readout", "decoding"] as const;
@@ -39,15 +40,83 @@ function scalars(pairs: [string, unknown][]): string {
 }
 
 export interface Body {
-  messages?: { role?: string; content?: unknown }[];
-  tools?: { function?: { name?: string; parameters?: unknown }; name?: string; parameters?: unknown }[];
+  messages?: unknown;
+  tools?: unknown;
   response_format?: unknown;
   [key: string]: unknown;
+}
+
+/** The JSON type of a value, as a detail names it. */
+function jsonType(v: unknown): string {
+  if (v === null || v === undefined) return "null";
+  if (Array.isArray(v)) return "an array";
+  switch (typeof v) {
+    case "string":
+      return "a string";
+    case "number":
+      return "a number";
+    case "boolean":
+      return "a boolean";
+    case "object":
+      return "an object";
+    default:
+      return typeof v;
+  }
+}
+
+/**
+ * The system text, newline-joined (SPEC 2.2), or the reason it cannot be read. A system message whose content is not a
+ * string fails the whole part: the chat template decides how parts become text, and the request does not carry it. The
+ * detail names the message and the type found and never quotes the content.
+ */
+function instructionOf(messages: unknown): [string, string] {
+  if (messages === undefined || messages === null) return ["", ""];
+  if (!Array.isArray(messages)) return ["", `messages is ${jsonType(messages)}, not an array`];
+  for (const [i, m] of messages.entries()) {
+    if (m === null || typeof m !== "object" || Array.isArray(m)) return ["", `messages[${i}] is ${jsonType(m)}, not an object`];
+    // A message whose role cannot be read might have been a system message.
+    if (!("role" in m)) return ["", `messages[${i}].role is missing, not a string`];
+    if (typeof (m as { role: unknown }).role !== "string") {
+      return ["", `messages[${i}].role is ${jsonType((m as { role: unknown }).role)}, not a string`];
+    }
+  }
+  const texts: string[] = [];
+  for (const [i, m] of (messages as Record<string, unknown>[]).entries()) {
+    if (m.role !== "system") continue;
+    if (!("content" in m)) return ["", `messages[${i}].content is missing, not a string`];
+    if (typeof m.content !== "string") return ["", `messages[${i}].content is ${jsonType(m.content)}, not a string`];
+    texts.push(m.content);
+  }
+  return [texts.join("\n"), ""];
+}
+
+/** A request collector did not load the model, so it names the four model parts absent (SPEC 6). */
+function finish(opts: { collector: string; version: string }, parts: Part[], absences: Absence[]): Record_ {
+  const record = new Record_(
+    new Manifest(opts.collector, opts.version, [...FROM_A_REQUEST]),
+    "complete",
+    parts,
+    absences,
+    new Model([], MODEL_PARTS.map((k) => new ModelAbsence(k, "not_observable"))),
+  );
+  if (record.unaccounted.length > 0) {
+    throw new Error(`the collector left ${record.unaccounted} unaccounted for`);
+  }
+  return record;
 }
 
 export function fromRequest(body: Body, opts: { collector: string; version: string }): Record_ {
   const parts: Part[] = [];
   const absences: Absence[] = [];
+  if (body === null || typeof body !== "object" || Array.isArray(body)) {
+    // SPEC 1.2: a body we cannot parse is an absence we name, never a record we withhold.
+    const found = jsonType(body);
+    for (const k of FROM_A_REQUEST) absences.push(new Absence(k, "extraction_failed", `the body is ${found}, not an object`));
+    for (const k of PUSHED_PARTS) absences.push(new Absence(k, "not_provided"));
+    absences.push(new Absence("tool_extension", "not_observable"));
+    absences.push(new Absence("tool_trace", "not_provided"));
+    return finish(opts, parts, absences);
+  }
 
   const hold = (kind: string, payload: string, label = ""): void => {
     parts.push(
@@ -61,21 +130,31 @@ export function fromRequest(body: Body, opts: { collector: string; version: stri
     );
   };
 
-  const messages = body.messages ?? [];
-  // Newline-joined, per the spec's serialisation section. This keys the identity, so it is normative rather than local.
-  const instruction = messages
-    .filter((m) => m.role === "system")
-    .map((m) => String(m.content ?? ""))
-    .join("\n");
-  if (instruction.trim() !== "") {
+  const [instruction, failed] = instructionOf(body.messages);
+  if (failed !== "") {
+    absences.push(new Absence("instruction", "extraction_failed", failed));
+  } else if (!blank(instruction)) {
     // Hashed RAW, down to case and whitespace: the model reads the string and not its meaning.
     hold("instruction", instruction);
   } else {
     absences.push(new Absence("instruction", "not_provided"));
   }
 
-  const tools = body.tools;
-  if (tools !== undefined && tools.length > 0) {
+  const rawTools = body.tools;
+  let badTool = "";
+  if (rawTools !== undefined && rawTools !== null && !Array.isArray(rawTools)) {
+    badTool = `tools is ${jsonType(rawTools)}, not an array`;
+  } else if (Array.isArray(rawTools)) {
+    const i = rawTools.findIndex((t) => t === null || typeof t !== "object" || Array.isArray(t) ||
+      ("function" in t && (t.function === null || typeof t.function !== "object" || Array.isArray(t.function))));
+    if (i >= 0) badTool = `tools[${i}] is ${jsonType(rawTools[i])}, not an object`;
+  }
+  const tools = (Array.isArray(rawTools) ? rawTools : undefined) as
+    | { function?: { name?: string; parameters?: unknown }; name?: string; parameters?: unknown }[]
+    | undefined;
+  if (badTool !== "") {
+    absences.push(new Absence("tool_schemas", "extraction_failed", badTool));
+  } else if (tools !== undefined && tools.length > 0) {
     // Sorted: the order a caller lists tools in is not part of what it offered.
     const shapes = tools
       .map((t) => {
@@ -92,15 +171,25 @@ export function fromRequest(body: Body, opts: { collector: string; version: stri
   }
 
   const fmt = body.response_format;
-  if (fmt !== undefined && fmt !== null) {
-    const label = typeof fmt === "object" && fmt !== null && "type" in fmt ? String((fmt as { type: unknown }).type) : "";
+  const badFmt = fmt !== undefined && fmt !== null && (typeof fmt !== "object" || Array.isArray(fmt))
+    ? `response_format is ${jsonType(fmt)}, not an object` : "";
+  // An empty object is a format the sender did not choose, as an empty `tools` array is tools it did not offer.
+  const chosen = badFmt === "" && fmt !== undefined && fmt !== null && Object.keys(fmt).length > 0;
+  if (badFmt !== "") {
+    absences.push(new Absence("readout", "extraction_failed", badFmt));
+  } else if (chosen) {
+    const label = "type" in (fmt as object) ? String((fmt as { type: unknown }).type) : "";
     hold("readout", scalars([["response_format", fmt]]), label);
   } else {
     absences.push(new Absence("readout", "not_provided"));
   }
 
-  const knobs = DECODING_KEYS.filter((k) => k in body).map((k) => [k, body[k]] as [string, unknown]);
-  if (knobs.length > 0) {
+  // A response_format constrains the grammar of the output, so it is decoding as well as readout (SPEC 1).
+  const knobs = DECODING_KEYS.filter((k) => body[k] !== undefined && body[k] !== null).map((k) => [k, body[k]] as [string, unknown]);
+  if (chosen) knobs.push(["response_format", fmt]);
+  if (badFmt !== "") {
+    absences.push(new Absence("decoding", "extraction_failed", badFmt));
+  } else if (knobs.length > 0) {
     hold("decoding", scalars(knobs), knobs.map(([k]) => k).join(","));
   } else {
     absences.push(new Absence("decoding", "not_provided"));
@@ -111,16 +200,7 @@ export function fromRequest(body: Body, opts: { collector: string; version: stri
   // At request time the calls have not happened, so there is nothing the sender could have supplied.
   absences.push(new Absence("tool_trace", "not_provided"));
 
-  const record = new Record_(
-    new Manifest(opts.collector, opts.version, [...FROM_A_REQUEST]),
-    "complete",
-    parts,
-    absences,
-  );
-  if (record.unaccounted.length > 0) {
-    throw new Error(`the collector left ${record.unaccounted} unaccounted for`);
-  }
-  return record;
+  return finish(opts, parts, absences);
 }
 
 /** Attach what the owner says about the parts a request cannot carry, replacing their `not_provided` absences. */

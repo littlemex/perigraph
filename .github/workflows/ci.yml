@@ -72,6 +72,20 @@ jobs:
           tar tzf *.tgz | grep -E 'vocabularies.json$' || { echo 'the spec did not ship in the tarball'; exit 1; }
         working-directory: typescript
 
+  go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - name: vet and test
+        run: |
+          test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+          go vet ./...
+          go test ./...
+        working-directory: go
+
   cross:
     # The one job neither implementation can pass by agreeing with itself.
     runs-on: ubuntu-latest
@@ -83,9 +97,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
       - run: npm install && npm run build
         working-directory: typescript
-      - name: both senders agree on every identity, and disagree only where the spec says they may
+      - name: the three senders agree on every identity, and disagree only where the spec says they may
         run: PYTHONPATH=src python tools/cross_check.py
 
   spec:
@@ -95,14 +112,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: the normative JSON is valid, and the three copies of it are identical
+      - name: the normative JSON is valid, and every copy of it is identical
         run: |
           python -c "
           import hashlib, pathlib, json
           src = pathlib.Path('spec/vocabularies.json')
           json.loads(src.read_text(encoding='utf-8'))
           want = hashlib.sha256(src.read_bytes()).hexdigest()
-          for copy in ('src/perigraph/vocabularies.json', 'typescript/vocabularies.json'):
+          for copy in ('src/perigraph/vocabularies.json', 'typescript/vocabularies.json', 'go/spec/vocabularies.json'):
               got = hashlib.sha256(pathlib.Path(copy).read_bytes()).hexdigest()
               assert got == want, f'{copy} has drifted from spec/vocabularies.json'
           print('all copies identical:', want[:16])

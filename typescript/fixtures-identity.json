@@ -89,6 +89,153 @@
       },
       "identity": "35d1123979a29b8ddba4d753",
       "instruction_digest": "00855b7d30a6499b70ec45e7973b6346c5fc88a2d0c2e7b4a8a4ec74ab2c03cf"
+    },
+    {
+      "name": "a system message whose content is an array of parts: no rendering is model-visible, so no identity",
+      "body": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Terse."
+          },
+          {
+            "role": "system",
+            "content": [
+              {
+                "type": "text",
+                "text": "Answer with one word."
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "content": "Q1"
+          }
+        ],
+        "temperature": 0.0
+      },
+      "identity": null,
+      "instruction_digest": null
+    },
+    {
+      "name": "a system message with no content: no identity",
+      "body": {
+        "messages": [
+          {
+            "role": "system"
+          },
+          {
+            "role": "user",
+            "content": "Q1"
+          }
+        ]
+      },
+      "identity": null,
+      "instruction_digest": null
+    },
+    {
+      "name": "a number as system content: not a string, so no identity",
+      "body": {
+        "messages": [
+          {
+            "role": "system",
+            "content": 5
+          },
+          {
+            "role": "user",
+            "content": "Q1"
+          }
+        ]
+      },
+      "identity": null,
+      "instruction_digest": null
+    },
+    {
+      "name": "tools and response_format sent as null are fields the sender did not send",
+      "body": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Answer with the option letter only. Do not explain."
+          }
+        ],
+        "tools": null,
+        "response_format": null
+      },
+      "identity": "eeb813c17bed213fe02c7100",
+      "instruction_digest": "a57ac565bffcbeaeb74a934deef4f5e089ea851bb1d23001b2e578f137473a0a"
+    },
+    {
+      "name": "a message with no role might have been a system message: no identity",
+      "body": {
+        "messages": [
+          {
+            "content": "Q0"
+          },
+          {
+            "role": "system",
+            "content": "Answer with the option letter only. Do not explain."
+          }
+        ]
+      },
+      "identity": null,
+      "instruction_digest": null
+    },
+    {
+      "name": "an instruction of white space only (U+3000, U+0085, tab) is none sent",
+      "body": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "　\t"
+          }
+        ],
+        "temperature": 0.0
+      },
+      "identity": null,
+      "instruction_digest": null
+    },
+    {
+      "name": "U+FEFF is not white space, so an instruction of it alone is held",
+      "body": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "﻿"
+          }
+        ]
+      },
+      "identity": "33fd7bf489219bbd8782bbd1",
+      "instruction_digest": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5"
+    },
+    {
+      "name": "an empty tools array and an empty response_format are none sent",
+      "body": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Answer with the option letter only. Do not explain."
+          }
+        ],
+        "tools": [],
+        "response_format": {}
+      },
+      "identity": "eeb813c17bed213fe02c7100",
+      "instruction_digest": "a57ac565bffcbeaeb74a934deef4f5e089ea851bb1d23001b2e578f137473a0a"
+    },
+    {
+      "name": "a response_format that is not an object fails readout, not the identity",
+      "body": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "Answer with the option letter only. Do not explain."
+          }
+        ],
+        "response_format": "json"
+      },
+      "identity": "eeb813c17bed213fe02c7100",
+      "instruction_digest": "a57ac565bffcbeaeb74a934deef4f5e089ea851bb1d23001b2e578f137473a0a"
     }
   ]
 }
