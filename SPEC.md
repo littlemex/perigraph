@@ -99,7 +99,7 @@ is what makes its change recordable, not what makes it identifying.
 
 **Rationale: why `request_template` is a part.** On one byte-identical checkpoint with no system message, wrapping
 each item as `<instruction>\n\nHeadline: <item>` instead of sending the item alone moved measured accuracy by 4.58
-points (95% interval 2.38 to 6.79), and appending an irrelevant block of about 1,500 tokens to the user message moved it
+points (95% interval 2.38 to 6.79), and appending an irrelevant block of about 150 tokens to the user message moved it
 from 0.898 to 0.858. Version 2 read nothing from the user message, so neither change reached any part. Reading the whole
 user message would make every item its own harness; the template names the text that stays fixed and leaves out the
 item. Without a system message neither run has a harness identity in either version (section 2); what the part changes

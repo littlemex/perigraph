@@ -9,7 +9,7 @@ R17a of the tierbook distillation study answered 1,200 certification items of a 
 | H0 | user message: the headline | 0.8983 | none |
 | H1 | system message: the instruction; user message: the headline | 0.8608 | `d6c151cf…` |
 | H2 | user message: `<the same instruction>\n\nHeadline: <the headline>` | 0.8525 (H0 minus 4.58 points, 95% interval 2.38 to 6.79) | none |
-| cache suffix | an irrelevant block of about 1,500 tokens appended in the user message | 0.898 to 0.858 | unchanged |
+| cache suffix | an irrelevant block of about 150 tokens appended in the user message (measured under the serving load test) | 0.898 to 0.858 | unchanged |
 
 Every part stayed the same across H0 and H2, and across the cache-suffix change (whose baseline is H0), because version 2 reads nothing from a message whose role is not `system`. The same would hold for two harnesses that share a system message and differ in the text they wrap around each item: one identity, pooled. That case is not measured; R17a's measured cases have no system message, so under this proposal they are recorded and still have no harness identity.
 
