@@ -9,10 +9,10 @@
     "verdict": "refused"
   },
   "attributes": {
-    "perigraph.spec_version": 2,
+    "perigraph.spec_version": 3,
     "perigraph.collector": "example-gateway",
     "perigraph.collector_version": "3.1.0",
-    "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+    "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
     "perigraph.status": "collector_failed",
     "perigraph.harness_identity": "bce1661a858007475f0904f2",
     "perigraph.model_reaches": "",
@@ -23,6 +23,7 @@
     "perigraph.part.instruction.sourcing": "in_the_request",
     "perigraph.part.instruction.digest": "bacd57c7865681349464805df0960cdc63901fa4caae9afe7d673472b8cbdddd",
     "perigraph.part.instruction.boundary": "model_visible",
+    "perigraph.absent.request_template.reason": "not_provided",
     "perigraph.part.tool_schemas.sourcing": "in_the_request",
     "perigraph.part.tool_schemas.digest": "b8a9be85aab9975f36cffea93e5a33c16d8be38711193a6e8bf2ab5f3d0e492f",
     "perigraph.part.tool_schemas.boundary": "parsed",

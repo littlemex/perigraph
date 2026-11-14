@@ -28,15 +28,17 @@ var (
 	vocabularyErr  error
 )
 
+func loadVocabulary() {
+	data, err := VocabularyJSON()
+	if err != nil {
+		vocabularyErr = err
+		return
+	}
+	vocabularyErr = json.Unmarshal(data, &vocabulary)
+}
+
 func vocabularyValues(section string) ([]string, error) {
-	vocabularyOnce.Do(func() {
-		data, err := VocabularyJSON()
-		if err != nil {
-			vocabularyErr = err
-			return
-		}
-		vocabularyErr = json.Unmarshal(data, &vocabulary)
-	})
+	vocabularyOnce.Do(loadVocabulary)
 	if vocabularyErr != nil {
 		return nil, vocabularyErr
 	}
@@ -143,26 +145,28 @@ func identity(digests map[string]string) string {
 	return digest([]byte(b.String()))[:24]
 }
 
-// specWhiteSpace implements the Unicode White_Space property as enumerated in
-// section 1.2. Use it only to decide whether a value exists or is unresolved;
-// identifying and precision digests retain the original bytes.
+// specWhiteSpace implements the Unicode White_Space code points in the
+// vocabulary's top-level white_space.code_points list. It is used only for
+// existence and unresolved-value tests; digests retain the original bytes.
 func specWhiteSpace(r rune) bool {
-	switch {
-	case r >= '\u0009' && r <= '\u000D',
-		r == '\u0020',
-		r == '\u0085',
-		r == '\u00A0',
-		r == '\u1680',
-		r >= '\u2000' && r <= '\u200A',
-		r == '\u2028',
-		r == '\u2029',
-		r == '\u202F',
-		r == '\u205F',
-		r == '\u3000':
-		return true
-	default:
+	vocabularyOnce.Do(loadVocabulary)
+	if vocabularyErr != nil {
 		return false
 	}
+	definition, ok := vocabulary["white_space"].(map[string]any)
+	if !ok {
+		return false
+	}
+	points, ok := definition["code_points"].([]any)
+	if !ok {
+		return false
+	}
+	for _, point := range points {
+		if n, ok := point.(float64); ok && rune(n) == r {
+			return true
+		}
+	}
+	return false
 }
 
 func trimSpecWhiteSpace(s string) string {
@@ -170,8 +174,8 @@ func trimSpecWhiteSpace(s string) string {
 }
 
 func parsed(value any) (Part, error) {
-	// Parsed digests are collector-local. JSON encoding here is a convention
-	// of this Go collector, not a model-visible rendering.
+	// Parsed digests are collector-local. JSON encoding is this Go
+	// collector's convention, not a model-visible rendering.
 	data, err := json.Marshal(value)
 	if err != nil {
 		return Part{}, err
@@ -215,10 +219,10 @@ func failed(where string) Absence {
 
 func requestRecord(collector, version string) Record {
 	r := Record{
-		SpecVersion:      2,
+		SpecVersion:      3,
 		Collector:        collector,
 		CollectorVersion: version,
-		CollectorReaches: []string{"instruction", "tool_schemas", "tool_trace", "readout", "decoding"},
+		CollectorReaches: []string{"instruction", "request_template", "tool_schemas", "readout", "decoding"},
 		Status:           "complete",
 		Parts:            make(map[string]Part),
 		Absent:           make(map[string]Absence),
@@ -230,7 +234,7 @@ func requestRecord(collector, version string) Record {
 	for _, name := range []string{"checkpoint", "precision", "runtime", "answer_mode"} {
 		r.Model.Absent[name] = Absence{Reason: "not_observable"}
 	}
-	for _, name := range []string{"loop", "turn_budget", "retry_policy", "context_partitioning"} {
+	for _, name := range []string{"loop", "turn_budget", "retry_policy", "context_partitioning", "tool_trace"} {
 		r.Absent[name] = Absence{Reason: "not_provided"}
 	}
 	r.Absent["tool_extension"] = Absence{Reason: "not_observable"}
@@ -258,21 +262,24 @@ func FromRequestValue(body any, collector, version string) Record {
 		return r
 	}
 
+	if part, absence := readRequestTemplate(object); absence != nil {
+		r.Absent["request_template"] = *absence
+	} else {
+		r.Parts["request_template"] = part
+	}
+
 	if raw := object["messages"]; raw == nil {
 		r.Absent["instruction"] = Absence{Reason: "not_provided"}
-		r.Absent["tool_trace"] = Absence{Reason: "not_provided"}
 	} else if messages, ok := raw.([]any); !ok {
 		a := wrongType("messages", raw, "array")
-		r.Absent["instruction"], r.Absent["tool_trace"] = a, a
+		r.Absent["instruction"] = a
+		r.Absent["tool_trace"] = a
 	} else {
-		// The array's shape and each role are shared by both readers. Check
-		// every entry before extracting either part: an unreadable entry
-		// might have supplied either one.
 		var structural *Absence
 		for i, item := range messages {
 			where := fmt.Sprintf("messages[%d]", i)
 			m, ok := item.(map[string]any)
-			if !ok {
+			if !ok || m == nil {
 				a := wrongType(where, item, "object")
 				structural = &a
 				break
@@ -290,57 +297,28 @@ func FromRequestValue(body any, collector, version string) Record {
 			}
 		}
 		if structural != nil {
-			r.Absent["instruction"], r.Absent["tool_trace"] = *structural, *structural
+			r.Absent["instruction"] = *structural
+			r.Absent["tool_trace"] = *structural
 		} else {
 			var systems []string
-			var trace []any
-			var instructionFailure, traceFailure *Absence
+			var instructionFailure *Absence
 			for i, item := range messages {
 				m := item.(map[string]any)
+				if m["role"].(string) != "system" {
+					continue
+				}
 				where := fmt.Sprintf("messages[%d]", i)
-				switch m["role"].(string) {
-				case "system":
-					content, exists := m["content"]
-					if !exists {
-						if instructionFailure == nil {
-							a := Absence{"extraction_failed", where + ".content: missing; expected string"}
-							instructionFailure = &a
-						}
-					} else if text, ok := content.(string); ok {
-						systems = append(systems, text)
-					} else if instructionFailure == nil {
-						a := wrongType(where+".content", content, "string")
+				content, exists := m["content"]
+				if !exists {
+					if instructionFailure == nil {
+						a := Absence{"extraction_failed", where + ".content: missing; expected string"}
 						instructionFailure = &a
 					}
-				case "tool":
-					trace = append(trace, m)
-				case "assistant":
-					if calls, exists := m["tool_calls"]; exists {
-						if array, ok := calls.([]any); !ok {
-							if traceFailure == nil {
-								a := wrongType(where+".tool_calls", calls, "array")
-								traceFailure = &a
-							}
-						} else {
-							for j, call := range array {
-								if _, ok := call.(map[string]any); !ok && traceFailure == nil {
-									a := wrongType(fmt.Sprintf("%s.tool_calls[%d]", where, j), call, "object")
-									traceFailure = &a
-								}
-							}
-							trace = append(trace, calls)
-						}
-					}
-					if call, exists := m["function_call"]; exists {
-						if _, ok := call.(map[string]any); !ok {
-							if traceFailure == nil {
-								a := wrongType(where+".function_call", call, "object")
-								traceFailure = &a
-							}
-						} else {
-							trace = append(trace, call)
-						}
-					}
+				} else if text, ok := content.(string); ok {
+					systems = append(systems, text)
+				} else if instructionFailure == nil {
+					a := wrongType(where+".content", content, "string")
+					instructionFailure = &a
 				}
 			}
 			if instructionFailure != nil {
@@ -357,15 +335,6 @@ func FromRequestValue(body any, collector, version string) Record {
 						Digest: digest([]byte(instruction)),
 					}
 				}
-			}
-			if traceFailure != nil {
-				r.Absent["tool_trace"] = *traceFailure
-			} else if len(trace) == 0 {
-				r.Absent["tool_trace"] = Absence{Reason: "not_provided"}
-			} else if p, err := parsed(trace); err != nil {
-				r.Absent["tool_trace"] = failed("messages tool trace")
-			} else {
-				r.Parts["tool_trace"] = p
 			}
 		}
 	}
@@ -419,10 +388,7 @@ func FromRequestValue(body any, collector, version string) Record {
 	}
 
 	sampler := make(map[string]any)
-	for _, key := range []string{
-		"temperature", "top_p", "top_k", "seed", "frequency_penalty",
-		"presence_penalty", "logit_bias",
-	} {
+	for _, key := range []string{"temperature", "top_p", "top_k", "seed"} {
 		if value := object[key]; value != nil {
 			sampler[key] = value
 		}
@@ -440,26 +406,15 @@ func FromRequestValue(body any, collector, version string) Record {
 		r.Parts["decoding"] = p
 	}
 
-	identifying := make(map[string]string)
-	for name, p := range r.Parts {
-		if p.Sourcing == "in_the_request" && p.Boundary == "model_visible" &&
-			!inVocabulary("never_identifying", name) {
-			identifying[name] = p.Digest
-		}
-	}
-	r.HarnessIdentity = identity(identifying)
+	r.HarnessIdentity = harnessIdentity(r)
 	return r
 }
 
-// ToAttributes encodes the flat, scalar-valued version-2 wire form.
+// ToAttributes encodes the flat, scalar-valued version-3 wire form.
 // Identity keys are omitted, rather than emitted as empty strings, when absent.
 func ToAttributes(r Record) map[string]any {
-	version := r.SpecVersion
-	if version == 0 {
-		version = 2
-	}
 	a := map[string]any{
-		"perigraph.spec_version":      version,
+		"perigraph.spec_version":      3,
 		"perigraph.collector":         r.Collector,
 		"perigraph.collector_version": r.CollectorVersion,
 		"perigraph.status":            r.Status,

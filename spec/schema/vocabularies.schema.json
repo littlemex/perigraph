@@ -17,6 +17,8 @@
     "sourcing",
     "boundaries",
     "never_identifying",
+    "refines_only",
+    "must_be_known_for_identity",
     "absence_reasons",
     "status",
     "context_crossings",
@@ -111,6 +113,38 @@
       }
     },
     "never_identifying": {
+      "type": "object",
+      "required": [
+        "values"
+      ],
+      "properties": {
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        }
+      }
+    },
+    "refines_only": {
+      "type": "object",
+      "required": [
+        "values"
+      ],
+      "properties": {
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        }
+      }
+    },
+    "must_be_known_for_identity": {
       "type": "object",
       "required": [
         "values"

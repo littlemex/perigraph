@@ -13,7 +13,9 @@ from typing import TYPE_CHECKING
 
 from perigraph.vocab import (ABSENCE_BLAMES, ABSENCE_REASONS, ADMISSIBLE_STATUS, BOUNDARIES,
                             DETAIL_REQUIRED_WHEN_BLAMES, IDENTIFYING_BOUNDARIES, IDENTIFYING_SOURCING,
-                            NEVER_IDENTIFYING, PARTS, SOURCING, STATUS, Unidentified)
+                            KNOWN_WHEN_ABSENT_AS, NEVER_IDENTIFYING, PARTS, MUST_BE_KNOWN_FOR_IDENTITY, REFINES_ONLY,
+                            SOURCING, STATUS,
+                            Unidentified)
 
 if TYPE_CHECKING:  # pragma: no cover
     from perigraph.model import Model
@@ -218,7 +220,20 @@ class Record:
 
     @property
     def has_identity(self) -> bool:
-        return any(p.identifying for p in self.parts)
+        """Whether an identity can be derived (SPEC section 2). Three conditions:
+
+        * some part is identifying;
+        * one of them is not `refines_only` -- a part whose split between fixed text and item is the requester's word
+          may split an identity a held instruction establishes and may never establish one;
+        * every `must_be_known_for_identity` part is held or absent `not_provided`. A part the collector failed to read, could
+          not reach, or did not mention might have been there, and an identity computed without it joins runs that
+          differ in it."""
+        identifying = [p for p in self.parts if p.identifying]
+        if not any(p.kind not in REFINES_ONLY for p in identifying):
+            return False
+        held = {p.kind for p in self.parts}
+        kept = {a.kind for a in self.absences if a.reason == KNOWN_WHEN_ABSENT_AS}
+        return all(k in held or k in kept for k in MUST_BE_KNOWN_FOR_IDENTITY)
 
     @property
     def identity(self) -> str:
@@ -241,7 +256,7 @@ class Record:
 
     @property
     def harness_identity(self) -> str:
-        """The version 2 name of `identity`; the computation is unchanged."""
+        """The version 2 name of `identity`; version 3 computes it the same way for a record with no request template."""
         return self.identity
 
     @property

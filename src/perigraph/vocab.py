@@ -37,6 +37,9 @@ IDENTIFYING_MODEL_SOURCING: tuple[str, ...] = tuple(_SPEC["sourcing"]["may_key_m
 BOUNDARIES: tuple[str, ...] = tuple(_SPEC["boundaries"]["values"])
 IDENTIFYING_BOUNDARIES: tuple[str, ...] = tuple(_SPEC["boundaries"]["may_key_identity"])
 NEVER_IDENTIFYING: tuple[str, ...] = tuple(_SPEC["never_identifying"]["values"])
+REFINES_ONLY: tuple[str, ...] = tuple(_SPEC["refines_only"]["values"])
+MUST_BE_KNOWN_FOR_IDENTITY: tuple[str, ...] = tuple(_SPEC["must_be_known_for_identity"]["values"])
+KNOWN_WHEN_ABSENT_AS: str = _SPEC["must_be_known_for_identity"]["known_when_absent_as"]
 ABSENCE_REASONS: tuple[str, ...] = tuple(_SPEC["absence_reasons"]["values"])
 ABSENCE_BLAMES: dict[str, str] = dict(_SPEC["absence_reasons"]["blames"])
 DETAIL_REQUIRED_WHEN_BLAMES: str = _SPEC["absence_reasons"]["detail_required_when_blames"]
@@ -111,9 +114,13 @@ def check_spec_is_total() -> None:
         extra = set(subset) - set(whole)
         if extra:
             raise Unidentified(f"{name}.may_key_identity names {sorted(extra)}, which is not in its own vocabulary")
-    extra_parts = set(NEVER_IDENTIFYING) - set(PARTS)
-    if extra_parts:
-        raise Unidentified(f"never_identifying names {sorted(extra_parts)}, which are not parts")
+    for name, listed in (("never_identifying", NEVER_IDENTIFYING), ("refines_only", REFINES_ONLY),
+                         ("must_be_known_for_identity", MUST_BE_KNOWN_FOR_IDENTITY)):
+        extra_parts = set(listed) - set(PARTS)
+        if extra_parts:
+            raise Unidentified(f"{name} names {sorted(extra_parts)}, which are not parts")
+    if KNOWN_WHEN_ABSENT_AS not in ABSENCE_REASONS:
+        raise Unidentified("must_be_known_for_identity.known_when_absent_as is not an absence reason")
 
 
 check_spec_is_total()

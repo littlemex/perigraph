@@ -20,11 +20,12 @@ from perigraph.vocab import MODEL_PARTS, PARTS
 
 #: What this collector claims it can reach from a request body, and nothing more. **Static per version on purpose:** a
 #: manifest that adapted to what it happened to find could never contradict a record, which is the one thing it is for.
-FROM_A_REQUEST = ("instruction", "tool_schemas", "readout", "decoding")
+FROM_A_REQUEST = ("instruction", "request_template", "tool_schemas", "readout", "decoding")
 
 #: Which boundary each of those digests is actually over. This table is the finding; see the module docstring.
 REQUEST_BOUNDARIES = {
     "instruction": "model_visible",
+    "request_template": "model_visible",
     "tool_schemas": "parsed",
     "readout": "parsed",
     "decoding": "parsed",
@@ -77,6 +78,14 @@ def from_request(body: dict, *, collector: str, version: str) -> Record:
         hold("instruction", instruction)
     else:
         absences.append(Absence(kind="instruction", reason="not_provided"))
+
+    template, failed = _template(body.get(TEMPLATE_FIELD), body.get("messages"))
+    if failed:
+        absences.append(Absence(kind="request_template", reason="extraction_failed", detail=failed))
+    elif template is not None:
+        hold("request_template", template)
+    else:
+        absences.append(Absence(kind="request_template", reason="not_provided"))
 
     tools = body.get("tools")
     bad_tool = (f"tools is {_json_type(tools)}, not an array" if tools is not None and not isinstance(tools, list) else
@@ -178,6 +187,93 @@ def _instruction(messages: object) -> tuple[str, str]:
             return "", f"messages[{i}].content is {_json_type(m['content'])}, not a string"
         texts.append(m["content"])
     return "\n".join(texts), ""
+
+
+#: The top-level member of a request body that carries the request template (binding: openai-chat-completions).
+TEMPLATE_FIELD = "perigraph_template"
+
+
+def _template(template: object, messages: object) -> tuple[str | None, str]:
+    """The `request_template` payload, None when the request declares none, or the reason it cannot be read.
+
+    The template names the fixed text of each templated message as the strings around the holes the item went in, and
+    is verified against the request: each such message's content must be its strings with something, possibly nothing,
+    in each hole. Only the fixed strings are digested, so the item never reaches the digest. A template that fixes no
+    text other than white space is treated as not sent (SPEC 1.2), and that test comes after every check."""
+    if template is None:
+        return None, ""
+    where = TEMPLATE_FIELD
+    if not isinstance(template, dict):
+        return None, f"{where} is {_json_type(template)}, not an object"
+    if set(template) != {"messages"}:
+        return None, f"{where} has members other than messages, or lacks messages"
+    entries = template["messages"]
+    if not isinstance(entries, list):
+        return None, f"{where}.messages is {_json_type(entries)}, not an array"
+    if not isinstance(messages, list):
+        return None, f"messages is {'missing' if messages is None else _json_type(messages)}, not an array"
+    if len(entries) != len(messages):
+        return None, f"{where}.messages has {len(entries)} entries and messages has {len(messages)}"
+    payload = [f"{len(entries)}:".encode()]
+    names_text = False
+    for i, (e, m) in enumerate(zip(entries, messages)):
+        at = f"{where}.messages[{i}]"
+        if not isinstance(e, dict) or "role" not in e or not set(e) <= {"role", "fixed"}:
+            return None, f"{at} is not an object with role and optionally fixed"
+        role = e["role"]
+        if not isinstance(role, str) or not isinstance(m, dict) or m.get("role") != role:
+            return None, f"{at}.role is not a string equal to messages[{i}].role"
+        rb = _utf8(role)
+        if rb is None:
+            return None, f"{at}.role is not a sequence of Unicode scalar values"
+        if "fixed" not in e:
+            payload.append(f"{len(rb)}:".encode() + rb + b"0:")
+            continue
+        if role == "system":
+            return None, f"{at} is a system entry with fixed strings; its text is the instruction part"
+        strings = e["fixed"]
+        if not isinstance(strings, list) or not strings or not all(isinstance(g, str) for g in strings):
+            return None, f"{at}.fixed is not a non-empty array of strings"
+        if any(not g for g in strings[1:-1]):
+            return None, f"{at}.fixed has an empty interior string; adjacent holes are one hole"
+        content = m.get("content")
+        if not isinstance(content, str):
+            return None, f"messages[{i}].content is {'missing' if 'content' not in m else _json_type(content)}, not a string"
+        segs = [_utf8(g) for g in strings]
+        cb = _utf8(content)
+        if cb is None or any(b is None for b in segs):
+            return None, f"{at} or messages[{i}].content holds a string that is not a sequence of Unicode scalar values"
+        if not _fits(cb, segs):
+            return None, f"messages[{i}].content does not match {at}.fixed"
+        names_text = names_text or any(not blank(g) for g in strings)
+        payload.append(f"{len(rb)}:".encode() + rb + f"{len(segs)}:".encode()
+                       + b"".join(f"{len(b)}:".encode() + b for b in segs))
+    if not names_text:
+        return None, ""
+    return b"".join(payload).decode("utf-8"), ""
+
+
+def _utf8(text: str) -> bytes | None:
+    try:
+        return text.encode("utf-8")
+    except UnicodeEncodeError:
+        return None
+
+
+def _fits(content: bytes, segs: list[bytes]) -> bool:
+    """Whether content is segs[0] h1 segs[1] ... hn segs[n] for some byte strings h. Leftmost matching of each interior
+    string is enough: taking the earliest occurrence leaves the most room for the rest."""
+    if len(segs) == 1:
+        return content == segs[0]
+    if not content.startswith(segs[0]):
+        return False
+    pos = len(segs[0])
+    for seg in segs[1:-1]:
+        j = content.find(seg, pos)
+        if j < 0:
+            return False
+        pos = j + len(seg)
+    return len(content) - len(segs[-1]) >= pos and content.endswith(segs[-1])
 
 
 def declare(record: Record, **pushed: str) -> Record:

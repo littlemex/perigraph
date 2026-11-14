@@ -52,11 +52,11 @@ def test_examples_validate_and_mean_what_they_say(path):
 
 
 def test_the_lineage_schema_refuses_what_the_reader_refuses():
-    bad = [{"spec_version": 2, "subject": "a" * 24, "parent": "b" * 24, "method": "pretrained"},
-           {"spec_version": 2, "subject": "a" * 24, "parent": "none", "method": "sft"},
-           {"spec_version": 2, "subject": "a" * 24, "parent": "b" * 24, "method": "rl"},
-           {"spec_version": 2, "subject": "a" * 24, "parent": "b" * 24, "method": "sft", "sets": [{"role": "excluded", "digest": "c" * 64}]},
-           {"spec_version": 2, "subject": "a" * 24, "parent": "b" * 24, "method": "sft", "notes": "x"}]
+    bad = [{"spec_version": 3, "subject": "a" * 24, "parent": "b" * 24, "method": "pretrained"},
+           {"spec_version": 3, "subject": "a" * 24, "parent": "none", "method": "sft"},
+           {"spec_version": 3, "subject": "a" * 24, "parent": "b" * 24, "method": "rl"},
+           {"spec_version": 3, "subject": "a" * 24, "parent": "b" * 24, "method": "sft", "sets": [{"role": "excluded", "digest": "c" * 64}]},
+           {"spec_version": 3, "subject": "a" * 24, "parent": "b" * 24, "method": "sft", "notes": "x"}]
     for d in bad:
         assert list(LINEAGE.iter_errors(d)), d
         with pytest.raises(Exception):

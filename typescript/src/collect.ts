@@ -19,11 +19,12 @@ import { Absence, Manifest, Part, Record_, blank, digest } from "./record.js";
 import { MODEL_PARTS, PARTS } from "./vocab.js";
 
 /** Static per version: a manifest that adapted to what it found could never contradict a record. */
-export const FROM_A_REQUEST = ["instruction", "tool_schemas", "readout", "decoding"] as const;
+export const FROM_A_REQUEST = ["instruction", "request_template", "tool_schemas", "readout", "decoding"] as const;
 
 /** Only the instruction is text the model provably read; the rest are protocol values whose rendering we do not hold. */
 export const REQUEST_BOUNDARIES: Record<string, string> = {
   instruction: "model_visible",
+  request_template: "model_visible",
   tool_schemas: "parsed",
   readout: "parsed",
   decoding: "parsed",
@@ -90,6 +91,91 @@ function instructionOf(messages: unknown): [string, string] {
   return [texts.join("\n"), ""];
 }
 
+/** The top-level member of a request body that carries the request template (binding: openai-chat-completions). */
+export const TEMPLATE_FIELD = "perigraph_template";
+
+const utf8 = new TextEncoder();
+/** A lone surrogate, which utf-8 encoding would silently replace with U+FFFD. */
+const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+const wellFormed = (s: string): boolean => !LONE_SURROGATE.test(s);
+const isObject = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === "object" && !Array.isArray(v);
+
+/** Whether `content` is segs[0] h1 segs[1] ... hn segs[n]; leftmost matching of each interior string decides it. */
+function fits(content: Buffer, segs: Buffer[]): boolean {
+  if (segs.length === 1) return content.equals(segs[0] as Buffer);
+  const first = segs[0] as Buffer;
+  const last = segs[segs.length - 1] as Buffer;
+  if (content.length < first.length || !content.subarray(0, first.length).equals(first)) return false;
+  let pos = first.length;
+  for (const seg of segs.slice(1, -1)) {
+    const j = content.indexOf(seg, pos);
+    if (j < 0) return false;
+    pos = j + seg.length;
+  }
+  return content.length - last.length >= pos && content.subarray(content.length - last.length).equals(last);
+}
+
+/**
+ * The `request_template` payload, null when the request declares none, or the reason it cannot be read. Only the fixed
+ * strings are digested, so the item never reaches the digest; a template that fixes no text other than white space is
+ * treated as not sent, and that test comes after every check. Lengths are utf-8 byte counts, not `.length`.
+ */
+function templateOf(template: unknown, messages: unknown): [string | null, string] {
+  if (template === undefined || template === null) return [null, ""];
+  const where = TEMPLATE_FIELD;
+  if (!isObject(template)) return [null, `${where} is ${jsonType(template)}, not an object`];
+  const keys = Object.keys(template);
+  if (keys.length !== 1 || keys[0] !== "messages") return [null, `${where} has members other than messages, or lacks messages`];
+  const entries = template.messages;
+  if (!Array.isArray(entries)) return [null, `${where}.messages is ${jsonType(entries)}, not an array`];
+  if (!Array.isArray(messages)) return [null, `messages is ${messages === undefined ? "missing" : jsonType(messages)}, not an array`];
+  if (entries.length !== messages.length) {
+    return [null, `${where}.messages has ${entries.length} entries and messages has ${messages.length}`];
+  }
+  const payload: Buffer[] = [Buffer.from(`${entries.length}:`, "utf8")];
+  let namesText = false;
+  for (const [i, e] of entries.entries()) {
+    const at = `${where}.messages[${i}]`;
+    const m = messages[i] as unknown;
+    if (!isObject(e) || !("role" in e) || Object.keys(e).some((k) => k !== "role" && k !== "fixed")) {
+      return [null, `${at} is not an object with role and optionally fixed`];
+    }
+    const role = e.role;
+    if (typeof role !== "string" || !isObject(m) || m.role !== role) {
+      return [null, `${at}.role is not a string equal to messages[${i}].role`];
+    }
+    if (!wellFormed(role)) return [null, `${at}.role is not a sequence of Unicode scalar values`];
+    const rb = Buffer.from(role, "utf8");
+    if (!("fixed" in e)) {
+      payload.push(Buffer.from(`${rb.length}:`, "utf8"), rb, Buffer.from("0:", "utf8"));
+      continue;
+    }
+    if (role === "system") return [null, `${at} is a system entry with fixed strings; its text is the instruction part`];
+    const strings = e.fixed;
+    if (!Array.isArray(strings) || strings.length === 0 || !strings.every((g) => typeof g === "string")) {
+      return [null, `${at}.fixed is not a non-empty array of strings`];
+    }
+    const strs = strings as string[];
+    if (strs.slice(1, -1).some((g) => g === "")) {
+      return [null, `${at}.fixed has an empty interior string; adjacent holes are one hole`];
+    }
+    const content = m.content;
+    if (typeof content !== "string") {
+      return [null, `messages[${i}].content is ${"content" in m ? jsonType(content) : "missing"}, not a string`];
+    }
+    if (!wellFormed(content) || !strs.every(wellFormed)) {
+      return [null, `${at} or messages[${i}].content holds a string that is not a sequence of Unicode scalar values`];
+    }
+    const segs = strs.map((g) => Buffer.from(utf8.encode(g)));
+    if (!fits(Buffer.from(utf8.encode(content)), segs)) return [null, `messages[${i}].content does not match ${at}.fixed`];
+    namesText = namesText || strs.some((g) => !blank(g));
+    payload.push(Buffer.from(`${rb.length}:`, "utf8"), rb, Buffer.from(`${segs.length}:`, "utf8"));
+    for (const b of segs) payload.push(Buffer.from(`${b.length}:`, "utf8"), b);
+  }
+  if (!namesText) return [null, ""];
+  return [Buffer.concat(payload).toString("utf8"), ""];
+}
+
 /** A request collector did not load the model, so it names the four model parts absent (SPEC 6). */
 function finish(opts: { collector: string; version: string }, parts: Part[], absences: Absence[]): Record_ {
   const record = new Record_(
@@ -138,6 +224,15 @@ export function fromRequest(body: Body, opts: { collector: string; version: stri
     hold("instruction", instruction);
   } else {
     absences.push(new Absence("instruction", "not_provided"));
+  }
+
+  const [template, templateFailed] = templateOf(body[TEMPLATE_FIELD], body.messages);
+  if (templateFailed !== "") {
+    absences.push(new Absence("request_template", "extraction_failed", templateFailed));
+  } else if (template !== null) {
+    hold("request_template", template);
+  } else {
+    absences.push(new Absence("request_template", "not_provided"));
   }
 
   const rawTools = body.tools;

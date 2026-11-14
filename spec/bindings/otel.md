@@ -16,7 +16,7 @@ A span can lose attributes on the way to the receiver, and a lost attribute is a
 | a value is truncated by an attribute length limit | a digest or identity of the wrong length |
 | the span is not sampled, or the exporter drops it | no record at all |
 
-A full record of version 2 has about 60 attributes, and an instrumented model-call span often carries 20 to 40 more of its own. A collector SHOULD raise the span's attribute count limit, or put the record on a span of its own linked to the model-call span, when the two together could pass the limit.
+A full record of version 3 has about 63 attributes, and an instrumented model-call span often carries 20 to 40 more of its own. A collector SHOULD raise the span's attribute count limit, or put the record on a span of its own linked to the model-call span, when the two together could pass the limit.
 
 A receiver reading a record from a span MUST refuse a verdict over it when the span reports a non-zero dropped attribute count. **Rationale**: a dropped absence turns a hole the sender declared into silence, and a dropped manifest turns a contradiction into nothing, so no remaining attribute can be read at face value. The record is still stored, as for any other refusal (SPEC section 0.5). A truncated digest or identity fails the receiver's checks and the record is rejected (SPEC section 6). A span that never arrived is a lost record, which SPEC section 1.1 says a receiver reads as `unknown`.
 

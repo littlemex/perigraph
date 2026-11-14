@@ -10,7 +10,8 @@ language is checked by the same cases and the same code.
 
 What is checked, per role (SPEC section 8):
 
-* collector: every body in spec/fixtures/identity.json gives the fixture's harness identity and instruction digest, the
+* collector: every body in spec/fixtures/identity.json gives the fixture's harness identity, instruction digest and,
+  where the case names it, request_template digest or absence reason, the
   record validates against spec/schema/record.schema.json, and it carries a model half and the tool_extension absence;
 * stamper: every case in spec/fixtures/model_identity.json gives the fixture's digests and identities, and every map in
   refused_precision is refused;
@@ -94,6 +95,12 @@ def check_collector(a: Adapter, v) -> list[tuple[str, list[str], list[str]]]:
             got = attrs.get(key)
             if got != want:
                 errs.append(f"{key} is {got!r}, the fixture says {want!r}")
+        if "request_template" in case:
+            want = case["request_template"]
+            got = (attrs.get(P + "part.request_template.digest") if isinstance(want, str)
+                   else {"absent": attrs.get(P + "absent.request_template.reason")})
+            if got != want:
+                errs.append(f"request_template is {got!r}, the fixture says {want!r}")
         for part in PARTS:
             if P + f"part.{part}.sourcing" not in attrs and P + f"absent.{part}.reason" not in attrs:
                 errs.append(f"part {part} is neither held nor absent (every part is required, SPEC 1.2)")

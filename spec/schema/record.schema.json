@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/littlemex/perigraph/blob/main/spec/schema/record.schema.json",
-  "title": "perigraph record, spec_version 2 (generated from spec/vocabularies.json)",
+  "title": "perigraph record, spec_version 3 (generated from spec/vocabularies.json)",
   "description": "The perigraph.* attributes of one record. Attributes outside the perigraph. prefix are not constrained, because a record rides on a span that carries others. This schema checks shape only; identity recomputation and manifest contradiction are conformance cases.",
   "type": "object",
   "required": [
@@ -13,7 +13,7 @@
   ],
   "properties": {
     "perigraph.spec_version": {
-      "const": 2
+      "const": 3
     },
     "perigraph.collector": {
       "type": "string",
@@ -25,7 +25,7 @@
     },
     "perigraph.collector_reaches": {
       "type": "string",
-      "pattern": "^(?:(?:instruction|tool_schemas|tool_extension|tool_trace|loop|turn_budget|retry_policy|readout|decoding|context_partitioning)?)(?:,(?:(?:instruction|tool_schemas|tool_extension|tool_trace|loop|turn_budget|retry_policy|readout|decoding|context_partitioning)?))*$"
+      "pattern": "^(?:(?:instruction|request_template|tool_schemas|tool_extension|tool_trace|loop|turn_budget|retry_policy|readout|decoding|context_partitioning)?)(?:,(?:(?:instruction|request_template|tool_schemas|tool_extension|tool_trace|loop|turn_budget|retry_policy|readout|decoding|context_partitioning)?))*$"
     },
     "perigraph.model_reaches": {
       "type": "string",
@@ -86,6 +86,45 @@
       ]
     },
     "perigraph.absent.instruction.detail": {
+      "type": "string",
+      "minLength": 1
+    },
+    "perigraph.part.request_template.sourcing": {
+      "enum": [
+        "in_the_request",
+        "pulled_by_us",
+        "pushed_by_owner",
+        "not_observable"
+      ]
+    },
+    "perigraph.part.request_template.digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "perigraph.part.request_template.label": {
+      "type": "string"
+    },
+    "perigraph.part.request_template.read_lag_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "perigraph.part.request_template.boundary": {
+      "enum": [
+        "transport",
+        "parsed",
+        "model_visible"
+      ]
+    },
+    "perigraph.absent.request_template.reason": {
+      "enum": [
+        "not_provided",
+        "not_reachable",
+        "extraction_failed",
+        "redacted",
+        "not_observable"
+      ]
+    },
+    "perigraph.absent.request_template.detail": {
       "type": "string",
       "minLength": 1
     },
@@ -577,7 +616,7 @@
         "boolean"
       ]
     },
-    "^perigraph\\.(?:part|absent)\\.(?!(?:instruction|tool_schemas|tool_extension|tool_trace|loop|turn_budget|retry_policy|readout|decoding|context_partitioning)\\.)": false,
+    "^perigraph\\.(?:part|absent)\\.(?!(?:instruction|request_template|tool_schemas|tool_extension|tool_trace|loop|turn_budget|retry_policy|readout|decoding|context_partitioning)\\.)": false,
     "^perigraph\\.(?:model|model_absent)\\.(?!(?:checkpoint|precision|runtime|answer_mode)\\.)": false
   },
   "allOf": [
@@ -710,6 +749,139 @@
         "not": {
           "required": [
             "perigraph.absent.instruction.detail"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "request_template: a part is held or absent, never both",
+      "not": {
+        "required": [
+          "perigraph.part.request_template.sourcing",
+          "perigraph.absent.request_template.reason"
+        ]
+      }
+    },
+    {
+      "$comment": "request_template: a read lag exactly when pulled_by_us",
+      "if": {
+        "required": [
+          "perigraph.part.request_template.sourcing"
+        ],
+        "properties": {
+          "perigraph.part.request_template.sourcing": {
+            "const": "pulled_by_us"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.part.request_template.read_lag_seconds"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.part.request_template.read_lag_seconds"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "request_template: digest, label and lag belong to a held part",
+      "if": {
+        "not": {
+          "required": [
+            "perigraph.part.request_template.sourcing"
+          ]
+        }
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "perigraph.part.request_template.digest"
+              ]
+            },
+            {
+              "required": [
+                "perigraph.part.request_template.label"
+              ]
+            },
+            {
+              "required": [
+                "perigraph.part.request_template.boundary"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "request_template: a part that is not observable has no bytes, so it has no digest",
+      "if": {
+        "required": [
+          "perigraph.part.request_template.sourcing"
+        ],
+        "properties": {
+          "perigraph.part.request_template.sourcing": {
+            "const": "not_observable"
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "perigraph.part.request_template.digest"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "request_template: a boundary exactly when there is a digest",
+      "if": {
+        "required": [
+          "perigraph.part.request_template.digest"
+        ]
+      },
+      "then": {
+        "required": [
+          "perigraph.part.request_template.boundary"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.part.request_template.boundary"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "request_template: a detail exactly when the absence blames the collector",
+      "if": {
+        "required": [
+          "perigraph.absent.request_template.reason"
+        ],
+        "properties": {
+          "perigraph.absent.request_template.reason": {
+            "enum": [
+              "not_reachable",
+              "extraction_failed"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.absent.request_template.detail"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.absent.request_template.detail"
           ]
         }
       }

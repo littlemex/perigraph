@@ -54,11 +54,12 @@ test("the instruction is hashed raw down to case and whitespace", () => {
 
 test("a parsed digest is recorded and never enters the hash", () => {
   const m = new Manifest("t", "1", []);
-  const onlyInstruction = new Record_(m, "complete", [part()]);
+  const noTemplate = [new Absence("request_template", "not_provided")];
+  const onlyInstruction = new Record_(m, "complete", [part()], noTemplate);
   const withParsed = new Record_(m, "complete", [
     part(),
     part({ kind: "decoding", contentDigest: digest("temperature=0"), boundary: "parsed" }),
-  ]);
+  ], noTemplate);
   assert.equal(withParsed.identity, onlyInstruction.identity);
 });
 
@@ -379,5 +380,26 @@ test("a dtype named auto is unresolved as a value of auto is (SPEC 9)", async ()
     { "dtype.bfloat16": "1", quantisation: "AUTO", device: "cuda" },
   ]) {
     assert.throws(() => precisionDigest(f), pg.Unidentified);
+  }
+});
+
+test("a lone surrogate in a template fails the part and withdraws the identity", () => {
+  const r = fromRequest(
+    {
+      messages: [{ role: "system", content: "Terse." }, { role: "user", content: "\ud800 x" }],
+      perigraph_template: { messages: [{ role: "system" }, { role: "user", fixed: ["\ud800 ", ""] }] },
+    },
+    { collector: "t", version: "1" },
+  );
+  assert.deepEqual(r.absences.filter((a) => a.kind === "request_template").map((a) => a.reason), ["extraction_failed"]);
+  assert.equal(r.hasIdentity, false);
+});
+
+test("the white-space set is the one the vocabulary lists", async () => {
+  const { blank } = await import("../src/record.js");
+  const spec = createRequire(import.meta.url)("../vocabularies.json") as { white_space: { code_points: number[] } };
+  for (const c of spec.white_space.code_points) assert.equal(blank(String.fromCodePoint(c)), true, c.toString(16));
+  for (let c = 0; c < 0x3001; c++) {
+    if (!spec.white_space.code_points.includes(c)) assert.equal(blank(String.fromCodePoint(c)), false, c.toString(16));
   }
 });

@@ -38,10 +38,14 @@ func TestRequestInstructionAndAbsences(t *testing.T) {
 	if got := r.Absent["tool_schemas"]; got != (Absence{Reason: "not_provided"}) {
 		t.Errorf("empty tools absence: %+v", got)
 	}
+	if got := r.Absent["request_template"]; got != (Absence{Reason: "not_provided"}) {
+		t.Errorf("missing template absence: %+v", got)
+	}
 	if _, held := r.Parts["tool_schemas"]; held {
 		t.Error("held an empty tools array")
 	}
 	if r.Absent["tool_extension"].Reason != "not_observable" ||
+		r.Absent["tool_trace"].Reason != "not_provided" ||
 		r.Absent["context_partitioning"].Reason != "not_provided" ||
 		r.Absent["readout"].Reason != "not_provided" {
 		t.Fatal("absence reasons or their attribution changed")
@@ -54,7 +58,7 @@ func TestRequestInstructionAndAbsences(t *testing.T) {
 func TestPartialAndMalformedRequest(t *testing.T) {
 	empty := FromRequest(map[string]any{}, "shim", "1")
 	if empty.HarnessIdentity != "" || len(empty.Parts) != 0 ||
-		len(empty.Absent) != 10 || empty.Status != "complete" {
+		len(empty.Absent) != 11 || empty.Status != "complete" {
 		t.Fatalf("partial record not emitted: %+v", empty)
 	}
 	a := ToAttributes(empty)
@@ -66,7 +70,7 @@ func TestPartialAndMalformedRequest(t *testing.T) {
 			t.Errorf("emitted empty identity %s", name)
 		}
 	}
-	if a["perigraph.spec_version"] != 2 {
+	if a["perigraph.spec_version"] != 3 {
 		t.Fatal("wrong spec version")
 	}
 	bad := FromRequest(map[string]any{"messages": "unreadable"}, "shim", "1")
@@ -78,7 +82,7 @@ func TestPartialAndMalformedRequest(t *testing.T) {
 	}
 }
 
-func TestTraceDoesNotIdentify(t *testing.T) {
+func TestToolMessagesAreNotReadAsTrace(t *testing.T) {
 	body := map[string]any{"messages": []any{
 		map[string]any{"role": "system", "content": "Do it"},
 		map[string]any{"role": "tool", "content": "one"},
@@ -86,12 +90,13 @@ func TestTraceDoesNotIdentify(t *testing.T) {
 	first := FromRequest(body, "shim", "1")
 	body["messages"].([]any)[1] = map[string]any{"role": "tool", "content": "two"}
 	second := FromRequest(body, "shim", "1")
-	if first.Parts["tool_trace"].Digest == second.Parts["tool_trace"].Digest ||
+	if first.Absent["tool_trace"].Reason != "not_provided" ||
+		second.Absent["tool_trace"].Reason != "not_provided" ||
 		first.HarnessIdentity != second.HarnessIdentity {
-		t.Fatal("per-run outcomes must not identify the harness")
+		t.Fatal("earlier tool messages must not be read as a trace")
 	}
-	if _, ok := ToAttributes(first)["perigraph.part.tool_trace.digest"]; !ok {
-		t.Fatal("trace not transmitted")
+	if _, ok := ToAttributes(first)["perigraph.part.tool_trace.digest"]; ok {
+		t.Fatal("transmitted an inferred trace")
 	}
 }
 
@@ -183,19 +188,21 @@ func TestRequiredSenderRefusals(t *testing.T) {
 
 func TestVocabularyLists(t *testing.T) {
 	expected := map[string][]string{
-		"parts": {"instruction", "tool_schemas", "tool_extension", "tool_trace",
+		"parts": {"instruction", "request_template", "tool_schemas", "tool_extension", "tool_trace",
 			"loop", "turn_budget", "retry_policy", "readout", "decoding", "context_partitioning"},
 		"model_parts":  {"checkpoint", "precision", "runtime", "answer_mode"},
 		"answer_modes": {"generated_text", "option_scores", "classifier_output"},
 		"sourcing": {"in_the_request", "loaded_by_us", "pulled_by_us",
 			"pushed_by_owner", "not_observable"},
-		"boundaries":        {"transport", "parsed", "model_visible"},
-		"never_identifying": {"tool_trace"},
-		"absence_reasons":   {"not_provided", "not_reachable", "extraction_failed", "redacted", "not_observable"},
-		"status":            {"complete", "aborted", "collector_failed"},
-		"context_crossings": {"nothing", "briefs_and_results", "whole_history"},
-		"tool_determinism":  {"declared_deterministic", "known_to_vary", "unstated"},
-		"billed_legs":       {"fresh_in", "cached_in", "cache_write", "generation"},
+		"boundaries":                 {"transport", "parsed", "model_visible"},
+		"never_identifying":          {"tool_trace"},
+		"refines_only":               {"request_template"},
+		"must_be_known_for_identity": {"instruction", "request_template"},
+		"absence_reasons":            {"not_provided", "not_reachable", "extraction_failed", "redacted", "not_observable"},
+		"status":                     {"complete", "aborted", "collector_failed"},
+		"context_crossings":          {"nothing", "briefs_and_results", "whole_history"},
+		"tool_determinism":           {"declared_deterministic", "known_to_vary", "unstated"},
+		"billed_legs":                {"fresh_in", "cached_in", "cache_write", "generation"},
 	}
 	data, err := VocabularyJSON()
 	if err != nil {
@@ -205,7 +212,7 @@ func TestVocabularyLists(t *testing.T) {
 	if err := json.Unmarshal(data, &document); err != nil {
 		t.Fatal(err)
 	}
-	if document["spec_version"] != float64(2) || document["namespace"] != "perigraph" {
+	if document["spec_version"] != float64(3) || document["namespace"] != "perigraph" {
 		t.Fatal("wrong embedded vocabulary version or namespace")
 	}
 	for section, want := range expected {
@@ -223,6 +230,14 @@ func TestVocabularyLists(t *testing.T) {
 
 func TestWireManifestAndCollectorStatus(t *testing.T) {
 	r := FromRequest(map[string]any{}, "collector", "v1")
+	if !strings.Contains(strings.Join(r.CollectorReaches, ","), "request_template") {
+		t.Fatal("request template missing from static manifest")
+	}
+	for _, name := range r.CollectorReaches {
+		if name == "tool_trace" {
+			t.Fatal("request collector claims to read a tool trace")
+		}
+	}
 	r.CollectorReaches = nil
 	r.Status = "collector_failed"
 	a := ToAttributes(r)

@@ -27,6 +27,8 @@ interface SpecShape {
   sourcing: Vocabulary;
   boundaries: Vocabulary;
   never_identifying: Vocabulary;
+  refines_only: Vocabulary;
+  must_be_known_for_identity: Vocabulary & { known_when_absent_as: string };
   absence_reasons: Vocabulary & { blames: Record<string, string>; detail_required_when_blames: string };
   status: Vocabulary & { admissible_to_a_verdict: string[] };
   context_crossings: Vocabulary;
@@ -52,6 +54,9 @@ export const IDENTIFYING_MODEL_SOURCING = SPEC.sourcing.may_key_model_identity ?
 export const BOUNDARIES = SPEC.boundaries.values;
 export const IDENTIFYING_BOUNDARIES = SPEC.boundaries.may_key_identity ?? [];
 export const NEVER_IDENTIFYING = SPEC.never_identifying.values;
+export const REFINES_ONLY = SPEC.refines_only.values;
+export const MUST_BE_KNOWN_FOR_IDENTITY = SPEC.must_be_known_for_identity.values;
+export const KNOWN_WHEN_ABSENT_AS = SPEC.must_be_known_for_identity.known_when_absent_as;
 export const ABSENCE_REASONS = SPEC.absence_reasons.values;
 export const ABSENCE_BLAMES = SPEC.absence_reasons.blames;
 export const DETAIL_REQUIRED_WHEN_BLAMES = SPEC.absence_reasons.detail_required_when_blames;

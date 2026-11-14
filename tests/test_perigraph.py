@@ -53,13 +53,14 @@ def test_the_identity_permissions_are_subsets_of_their_own_vocabularies():
     assert set(vocab.IDENTIFYING_SOURCING) <= set(vocab.SOURCING)
     assert set(vocab.IDENTIFYING_BOUNDARIES) <= set(vocab.BOUNDARIES)
     assert set(vocab.NEVER_IDENTIFYING) <= set(vocab.PARTS)
+    assert set(vocab.REFINES_ONLY) <= set(vocab.PARTS) and set(vocab.MUST_BE_KNOWN_FOR_IDENTITY) <= set(vocab.PARTS)
 
 
 def test_conformance_names_what_a_second_implementation_has_to_reproduce():
     """Data rather than assertions, so an implementation in another language can compare its own tables against the same
     file without reimplementing this module's opinions."""
     c = pg.conformance()
-    assert c["namespace"] == "perigraph" and c["spec_version"] == 2
+    assert c["namespace"] == "perigraph" and c["spec_version"] == 3
     assert set(c) == {"spec_version", "namespace", "parts", "model_parts", "answer_modes", "lineage_methods",
                       "lineage_set_roles", "sourcing", "boundaries", "absence_reasons", "status", "context_crossings",
                       "tool_determinism", "billed_legs"}
@@ -107,11 +108,13 @@ def test_a_harness_read_from_a_request_is_identified_by_its_instruction_and_noth
 
 
 def test_a_parsed_digest_is_recorded_and_never_enters_the_hash():
+    no_template = (rec.Absence(kind="request_template", reason="not_provided"),)
     only_instruction = rec.Record(manifest=rec.Manifest(collector="t", version="1", reaches=()),
-                                  parts=(part(),))
+                                  parts=(part(),), absences=no_template)
     with_a_parsed_part = rec.Record(
         manifest=rec.Manifest(collector="t", version="1", reaches=()),
-        parts=(part(), part(kind="decoding", content_digest=rec.digest("temperature=0.0"), boundary="parsed")))
+        parts=(part(), part(kind="decoding", content_digest=rec.digest("temperature=0.0"), boundary="parsed")),
+        absences=no_template)
     assert with_a_parsed_part.identity == only_instruction.identity
 
 
@@ -400,7 +403,8 @@ def test_a_non_ascii_instruction_is_covered_because_that_is_where_an_encoding_di
 def test_the_fixtures_hold_no_parsed_digest():
     """A `parsed` digest is collector-local by spec, and the two reference implementations legitimately disagree on one.
     Pinning one here would freeze an accident of a serialiser."""
-    assert all("instruction_digest" in case and set(case) == {"name", "body", "identity", "instruction_digest"}
+    assert all("instruction_digest" in case
+               and set(case) <= {"name", "body", "identity", "instruction_digest", "request_template"}
                for case in FIXTURES["cases"])
 
 
@@ -434,6 +438,7 @@ def test_every_receiver_obligation_appears_in_the_prose():
         "two `parsed` digests produced by different collectors": "collector-local",
         "occasion and the tool declared determinism": "declared_deterministic",
         "sourcing is not loaded_by_us": "loaded_by_us",
+        "distinct harness identities derived from them": "distinct harness identities derived from them",
         "more than one model identity": "more than one model identity",
         "do not carry that model identity": "do not carry that model identity",
         "two model identities produced by different collectors": "artifact identity",
@@ -622,10 +627,10 @@ CERT = "c" * 64
 
 
 def test_lineage_is_closed_and_subtract_only():
-    root = lin.load({"spec_version": 2, "subject": ROOT_ID, "parent": "none", "method": "pretrained"})
-    child = lin.load({"spec_version": 2, "subject": CHILD_ID, "parent": ROOT_ID, "method": "sft",
+    root = lin.load({"spec_version": 3, "subject": ROOT_ID, "parent": "none", "method": "pretrained"})
+    child = lin.load({"spec_version": 3, "subject": CHILD_ID, "parent": ROOT_ID, "method": "sft",
                       "sets": [{"role": "trained_on", "digest": CERT}]})
-    grand = lin.load({"spec_version": 2, "subject": GRAND_ID, "parent": CHILD_ID, "method": "rl",
+    grand = lin.load({"spec_version": 3, "subject": GRAND_ID, "parent": CHILD_ID, "method": "rl",
                       "signal": {"digest": "d" * 64}})
     docs = {d.subject: d for d in (root, child, grand)}
     # a quantised or RL child lists no sets, and its parent trained on the certification set: the chain finds it
@@ -636,12 +641,12 @@ def test_lineage_is_closed_and_subtract_only():
     # a lineage about another artifact is read as absent
     assert lin.about(child, ROOT_ID) is None and lin.about(child, CHILD_ID) is child
     with pytest.raises(vocab.Unidentified, match="not one of"):
-        lin.load({"spec_version": 2, "subject": CHILD_ID, "parent": ROOT_ID, "method": "sft",
+        lin.load({"spec_version": 3, "subject": CHILD_ID, "parent": ROOT_ID, "method": "sft",
                   "sets": [{"role": "excluded", "digest": CERT}]})
     with pytest.raises(vocab.Unidentified, match="signal"):
-        lin.load({"spec_version": 2, "subject": CHILD_ID, "parent": ROOT_ID, "method": "distillation"})
+        lin.load({"spec_version": 3, "subject": CHILD_ID, "parent": ROOT_ID, "method": "distillation"})
     with pytest.raises(vocab.Unidentified, match="not lineage fields"):
-        lin.load({"spec_version": 2, "subject": CHILD_ID, "parent": ROOT_ID, "method": "sft", "excluded": []})
+        lin.load({"spec_version": 3, "subject": CHILD_ID, "parent": ROOT_ID, "method": "sft", "excluded": []})
 
 
 def test_a_dtype_named_auto_is_unresolved_as_a_value_of_auto_is():
@@ -652,3 +657,31 @@ def test_a_dtype_named_auto_is_unresolved_as_a_value_of_auto_is():
                    {"dtype.bfloat16": "1", "quantisation": "AUTO", "device": "cuda"}):
         with pytest.raises(pg.Unidentified):
             pm.precision_digest(fields)
+
+
+def test_a_lone_surrogate_in_a_template_fails_the_part_and_withdraws_the_identity():
+    """Not in the shared fixtures: a JSON reader that replaces a lone surrogate with U+FFFD (Go's does) cannot make this
+    check, and the binding says such a collector is not conformant for that body rather than pretending it is."""
+    body = {"messages": [{"role": "system", "content": "Terse."}, {"role": "user", "content": "\ud800 x"}],
+            "perigraph_template": {"messages": [{"role": "system"}, {"role": "user", "fixed": ["\ud800 ", ""]}]}}
+    r = pg.from_request(body, collector="t", version="1")
+    assert [a.reason for a in r.absences if a.kind == "request_template"] == ["extraction_failed"]
+    assert not r.has_identity
+
+
+def test_a_template_beside_an_instruction_splits_and_alone_identifies_nothing():
+    instr = {"role": "system", "content": "Terse."}
+    plain = pg.from_request({"messages": [instr, {"role": "user", "content": "Q: x"}]}, collector="t", version="1")
+    wrapped = pg.from_request({"messages": [instr, {"role": "user", "content": "Q: x"}], "perigraph_template": {
+        "messages": [{"role": "system"}, {"role": "user", "fixed": ["Q: ", ""]}]}}, collector="t", version="1")
+    alone = pg.from_request({"messages": [{"role": "user", "content": "Q: x"}], "perigraph_template": {
+        "messages": [{"role": "user", "fixed": ["Q: ", ""]}]}}, collector="t", version="1")
+    assert plain.identity != wrapped.identity
+    assert any(p.kind == "request_template" for p in alone.parts) and not alone.has_identity
+
+
+def test_the_white_space_set_is_the_one_the_vocabulary_lists():
+    """The emptiness test decides whether a part exists, and each language's own trim strips a different set."""
+    listed = {chr(c) for c in vocab._SPEC["white_space"]["code_points"]}
+    assert set(rec.WHITE_SPACE) == listed
+    assert all(rec.blank(ch) for ch in listed) and not rec.blank("\ufeff") and not rec.blank("\u001f")

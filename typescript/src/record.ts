@@ -10,6 +10,7 @@ import { createHash } from "node:crypto";
 import {
   ABSENCE_BLAMES,
   ABSENCE_REASONS,
+  KNOWN_WHEN_ABSENT_AS,
   ADMISSIBLE_STATUS,
   BOUNDARIES,
   DETAIL_REQUIRED_WHEN_BLAMES,
@@ -18,6 +19,8 @@ import {
   IDENTIFYING_SOURCING,
   NEVER_IDENTIFYING,
   PARTS,
+  MUST_BE_KNOWN_FOR_IDENTITY,
+  REFINES_ONLY,
   SOURCING,
   STATUS,
   Unidentified,
@@ -251,13 +254,21 @@ export class Record_ {
     }
   }
 
-  /** The version 2 name of `identity`; the computation is unchanged. */
+  /** The version 2 name of `identity`; version 3 computes it the same way for a record with no request template. */
   get harnessIdentity(): string {
     return this.identity;
   }
 
+  /**
+   * SPEC 2: an identity needs an identifying part that is not `refines_only` (a requester's split between fixed text
+   * and item may split an identity and never establish one), and every `must_be_known_for_identity` part held or absent
+   * `not_provided` (a part the collector could not read might have been there).
+   */
   get hasIdentity(): boolean {
-    return this.parts.some((p) => p.identifying);
+    if (!this.parts.some((p) => p.identifying && !REFINES_ONLY.includes(p.kind))) return false;
+    const held = new Set(this.parts.map((p) => p.kind));
+    const kept = new Set(this.absences.filter((a) => a.reason === KNOWN_WHEN_ABSENT_AS).map((a) => a.kind));
+    return MUST_BE_KNOWN_FOR_IDENTITY.every((k) => held.has(k) || kept.has(k));
   }
 
   /**

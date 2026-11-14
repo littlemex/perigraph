@@ -5,9 +5,30 @@ Versions here are the **package** version. The **protocol** version is `spec_ver
 
 ## Unreleased
 
-No change to `spec_version` (still 2) and no change to any identity or fixture. The package versions are unchanged.
+### Specification version 3
 
-### Specification
+`spec_version` 3. Breaking: a version 2 receiver rejects every version 3 record. A request that declares no template has
+the same harness identity as in version 2, and every version 2 identity fixture is unchanged.
+
+- **New part `request_template`** ([proposal 0001](docs/proposals/0001-request-template.md)): the fixed text a requester
+  wraps around each item in the non-system messages, declared in the request as `perigraph_template` and verified
+  against `messages` by the OpenAI Chat Completions binding. `in_the_request`, `model_visible`.
+- **`refines_only`**: `request_template` may split an identity a held instruction establishes and never establishes
+  one, because which text is fixed is the requester's word (SPEC 1.1a).
+- **`must_be_known_for_identity`**: a record whose `instruction` or `request_template` is neither held nor `not_provided` has no
+  harness identity. Inputs whose identity this withdraws: none that version 2 identified, because version 2 had no
+  `request_template` part.
+- **One harness identity per arm** ([proposal 0002](docs/proposals/0002-one-harness-identity-per-arm.md)): a new
+  `must_refuse` entry, stated over the identities a receiver derives.
+- `digest.request_template_serialisation`, and the White_Space set as code points in a top-level `white_space`.
+- 32 identity fixtures and ten receiver cases for the template; the arm rule has no portable case yet.
+- Python, TypeScript and Go senders implement it; the Go change was written by GPT-6 Sol from the specification diff.
+
+### Earlier unreleased changes, at `spec_version` 2
+
+No change to any identity or fixture. The package versions are unchanged.
+
+#### Specification
 
 - **Conventions** (SPEC 0): BCP 14 keywords, what is normative and which source governs when two disagree, roles
   (requester, collector, stamper, forwarder, owner, trainer, receiver), terms, and the four things a receiver does with
@@ -23,7 +44,7 @@ No change to `spec_version` (still 2) and no change to any identity or fixture. 
   first was already emitted; the second is a reserved pattern. Both are additions a receiver may ignore (SPEC 7).
 - Bindings under `spec/bindings/`: OpenAI Chat Completions request bodies, OpenTelemetry spans, JSON Lines files.
 
-### Machine-readable specification and conformance
+#### Machine-readable specification and conformance
 
 - JSON Schemas for a record, a lineage document and the vocabulary file, generated from `spec/vocabularies.json`
   (`tools/gen_schema.py`).
@@ -33,7 +54,7 @@ No change to `spec_version` (still 2) and no change to any identity or fixture. 
   receiver cases in `conformance/cases/receiver.json` and adapters for the Python, TypeScript and Go implementations.
 - Example records and a lineage chain in `spec/examples/`, each validated in CI.
 
-### Receivers and collectors
+#### Receivers and collectors
 
 - SPEC 6 lists every ground for rejecting attributes, and both receivers now apply them all: missing required
   attributes, values of the wrong type, attributes of a part with no sourcing or reason, a boundary without a digest,
@@ -43,7 +64,7 @@ No change to `spec_version` (still 2) and no change to any identity or fixture. 
 - A collector emits every part and every model part as held or absent (SPEC 1.2), and the conformance runner checks it.
 - The verdict over a single record is named `admitted` or `refused`, the outcomes of SPEC 0.5.
 
-### Fixed
+#### Fixed
 
 - The Python and TypeScript receivers rejected a manifest that named a part twice. SPEC 6 says a repeated name counts
   once; both now read the manifest as a set.

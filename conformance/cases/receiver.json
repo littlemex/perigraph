@@ -8,10 +8,10 @@
         "PG-066"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -22,6 +22,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -47,10 +48,10 @@
         "PG-066"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "checkpoint,precision,runtime,answer_mode",
@@ -68,6 +69,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -93,15 +95,16 @@
         "PG-040"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -127,10 +130,10 @@
         "PG-066"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction",
+        "perigraph.collector_reaches": "instruction,request_template",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -140,7 +143,8 @@
         "perigraph.model_absent.answer_mode.reason": "not_observable",
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
-        "perigraph.part.instruction.boundary": "model_visible"
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided"
       },
       "expect": {
         "outcome": "stored",
@@ -154,10 +158,10 @@
         "PG-037"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,instruction,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -168,6 +172,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -193,10 +198,10 @@
         "PG-036"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,,tool_schemas,readout,decoding,",
+        "perigraph.collector_reaches": "instruction,request_template,,tool_schemas,readout,decoding,",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -207,6 +212,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -232,10 +238,10 @@
         "PG-057"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -246,6 +252,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -272,10 +279,10 @@
         "PG-066"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -286,6 +293,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -312,10 +320,10 @@
         "PG-006"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "collector_failed",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -326,6 +334,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -351,10 +360,10 @@
         "PG-006"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "aborted",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -365,6 +374,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -390,10 +400,10 @@
         "PG-016"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.model_reaches": "",
         "perigraph.model_absent.checkpoint.reason": "not_observable",
@@ -412,7 +422,8 @@
         "perigraph.absent.context_partitioning.reason": "not_provided",
         "perigraph.absent.tool_extension.reason": "not_observable",
         "perigraph.absent.tool_trace.reason": "not_provided",
-        "perigraph.absent.instruction.reason": "not_provided"
+        "perigraph.absent.instruction.reason": "not_provided",
+        "perigraph.absent.request_template.reason": "not_provided"
       },
       "expect": {
         "outcome": "stored",
@@ -426,10 +437,10 @@
         "PG-070"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -440,6 +451,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -466,10 +478,10 @@
         "PG-070"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -480,6 +492,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -504,10 +517,10 @@
         "PG-074"
       ],
       "attributes": {
-        "perigraph.spec_version": 3,
+        "perigraph.spec_version": 4,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -518,6 +531,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -544,10 +558,10 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -558,6 +572,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -584,10 +599,10 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -598,6 +613,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "guessed",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -623,10 +639,10 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -637,6 +653,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -662,10 +679,10 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "partial",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -676,6 +693,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -701,10 +719,10 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -715,6 +733,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "semantic",
@@ -740,10 +759,10 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -754,6 +773,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -781,10 +801,10 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -795,6 +815,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -822,10 +843,10 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -836,6 +857,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -863,10 +885,10 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -877,6 +899,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -903,10 +926,10 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -917,6 +940,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -943,10 +967,10 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "000000000000000000000000",
         "perigraph.model_reaches": "",
@@ -957,6 +981,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -983,10 +1008,10 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.model_reaches": "",
         "perigraph.model_absent.checkpoint.reason": "not_observable",
@@ -1006,6 +1031,7 @@
         "perigraph.absent.tool_extension.reason": "not_observable",
         "perigraph.absent.tool_trace.reason": "not_provided",
         "perigraph.absent.instruction.reason": "not_provided",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.harness_identity": ""
       },
       "expect": {
@@ -1020,10 +1046,10 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "checkpoint,precision,runtime,answer_mode",
@@ -1041,6 +1067,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -1067,10 +1094,10 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -1081,6 +1108,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -1107,10 +1135,10 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -1121,6 +1149,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "loaded_by_us",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -1146,10 +1175,10 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "checkpoint,precision,runtime,answer_mode",
@@ -1167,6 +1196,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -1192,10 +1222,10 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -1206,6 +1236,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "not_observable",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -1231,9 +1262,9 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -1244,6 +1275,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -1269,9 +1301,9 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -1282,6 +1314,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -1307,7 +1340,7 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
         "perigraph.status": "complete",
@@ -1320,6 +1353,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -1345,10 +1379,10 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
         "perigraph.model_absent.checkpoint.reason": "not_observable",
@@ -1358,6 +1392,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -1383,10 +1418,10 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": 1,
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -1397,6 +1432,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -1422,10 +1458,10 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -1436,6 +1472,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -1462,10 +1499,10 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -1476,6 +1513,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -1502,10 +1540,10 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -1516,6 +1554,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -1541,10 +1580,10 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "C8F8EDC45E222F663D8D70AC",
         "perigraph.model_reaches": "",
@@ -1555,6 +1594,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -1580,10 +1620,10 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -1594,6 +1634,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -1620,10 +1661,10 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "checkpoint,precision,runtime,answer_mode",
@@ -1640,6 +1681,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -1666,10 +1708,10 @@
         "PG-075"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction, tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template, tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "",
@@ -1680,6 +1722,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -1705,10 +1748,10 @@
         "PG-070"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
         "perigraph.model_reaches": "checkpoint,precision,runtime,answer_mode",
@@ -1723,6 +1766,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -1750,10 +1794,10 @@
         "PG-066"
       ],
       "attributes": {
-        "perigraph.spec_version": 2,
+        "perigraph.spec_version": 3,
         "perigraph.collector": "example-collector",
         "perigraph.collector_version": "1.0.0",
-        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
         "perigraph.status": "complete",
         "perigraph.model_reaches": "",
         "perigraph.model_absent.checkpoint.reason": "not_observable",
@@ -1763,6 +1807,7 @@
         "perigraph.part.instruction.sourcing": "in_the_request",
         "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
         "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "not_provided",
         "perigraph.part.decoding.sourcing": "in_the_request",
         "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
         "perigraph.part.decoding.boundary": "parsed",
@@ -1775,6 +1820,379 @@
         "perigraph.absent.context_partitioning.reason": "not_provided",
         "perigraph.absent.tool_extension.reason": "not_observable",
         "perigraph.absent.tool_trace.reason": "not_provided"
+      },
+      "expect": {
+        "outcome": "stored",
+        "verdict": "admitted"
+      }
+    },
+    {
+      "id": "admit-instruction-and-template",
+      "description": "An instruction and a request template, both held: the identity is over both.",
+      "requirements": [
+        "PG-066"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 3,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "3fd6655e020e0935295baa71",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "033ad316127164cd89f7f50ed85cd8299e01d34f9a4bdbee1bb1906902d89ec6",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.request_template.sourcing": "in_the_request",
+        "perigraph.part.request_template.digest": "9397d49334deb0e9f29b922901e05546d714645fa5b9edd7394a7c7ff705ad5c",
+        "perigraph.part.request_template.boundary": "model_visible",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.decoding.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided"
+      },
+      "expect": {
+        "outcome": "stored",
+        "verdict": "admitted"
+      }
+    },
+    {
+      "id": "refuse-template-alone",
+      "description": "A request template held with no instruction: refines_only, so the record has no harness identity.",
+      "requirements": [
+        "PG-016"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 3,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.request_template.sourcing": "in_the_request",
+        "perigraph.part.request_template.digest": "8a0928b5b2c9bb4ef5b96c3dc817d01801be7bdf575a4cc22cf1ee5b3b53cf96",
+        "perigraph.part.request_template.boundary": "model_visible",
+        "perigraph.absent.instruction.reason": "not_provided",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.decoding.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided"
+      },
+      "expect": {
+        "outcome": "stored",
+        "verdict": "refused"
+      }
+    },
+    {
+      "id": "reject-identity-over-template-alone",
+      "description": "A record states an identity over a request template alone, which refines_only forbids: the stated identity is not the derived one.",
+      "requirements": [
+        "PG-075"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 3,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.request_template.sourcing": "in_the_request",
+        "perigraph.part.request_template.digest": "8a0928b5b2c9bb4ef5b96c3dc817d01801be7bdf575a4cc22cf1ee5b3b53cf96",
+        "perigraph.part.request_template.boundary": "model_visible",
+        "perigraph.absent.instruction.reason": "not_provided",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.decoding.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided",
+        "perigraph.harness_identity": "a8a55a2e16dca7771d2c67b1"
+      },
+      "expect": {
+        "outcome": "rejected"
+      },
+      "schema": "accepts"
+    },
+    {
+      "id": "reject-identity-beside-failed-template",
+      "description": "A record whose request template is extraction_failed states the instruction-only identity: read_for_identity withdraws it, so the stated identity is not the derived one.",
+      "requirements": [
+        "PG-075"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 3,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "033ad316127164cd89f7f50ed85cd8299e01d34f9a4bdbee1bb1906902d89ec6",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "extraction_failed",
+        "perigraph.absent.request_template.detail": "messages[1].content does not match perigraph_template.messages[1].segments",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.decoding.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided",
+        "perigraph.harness_identity": "a5a734962069b2f6fcd8dde2"
+      },
+      "expect": {
+        "outcome": "rejected"
+      },
+      "schema": "accepts"
+    },
+    {
+      "id": "refuse-failed-template",
+      "description": "An instruction held and a request template that did not verify: no harness identity, so no verdict.",
+      "requirements": [
+        "PG-016"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 3,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "033ad316127164cd89f7f50ed85cd8299e01d34f9a4bdbee1bb1906902d89ec6",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "extraction_failed",
+        "perigraph.absent.request_template.detail": "messages[1].content does not match perigraph_template.messages[1].segments",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.decoding.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided"
+      },
+      "expect": {
+        "outcome": "stored",
+        "verdict": "refused"
+      }
+    },
+    {
+      "id": "refuse-template-unmentioned",
+      "description": "An instruction held and the request template neither held nor absent: it might have been there, so read_for_identity withdraws the identity. The record is stored, and no verdict is given.",
+      "requirements": [
+        "PG-016"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 3,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "033ad316127164cd89f7f50ed85cd8299e01d34f9a4bdbee1bb1906902d89ec6",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.decoding.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided"
+      },
+      "expect": {
+        "outcome": "stored",
+        "verdict": "refused"
+      }
+    },
+    {
+      "id": "reject-instruction-only-identity-beside-template",
+      "description": "A held request template and the instruction-only identity stated: the derived identity covers both parts, so the stated one is not it.",
+      "requirements": [
+        "PG-075"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 3,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "a5a734962069b2f6fcd8dde2",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "033ad316127164cd89f7f50ed85cd8299e01d34f9a4bdbee1bb1906902d89ec6",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.request_template.sourcing": "in_the_request",
+        "perigraph.part.request_template.digest": "9397d49334deb0e9f29b922901e05546d714645fa5b9edd7394a7c7ff705ad5c",
+        "perigraph.part.request_template.boundary": "model_visible",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.decoding.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided"
+      },
+      "expect": {
+        "outcome": "rejected"
+      },
+      "schema": "accepts"
+    },
+    {
+      "id": "refuse-template-redacted",
+      "description": "An instruction held and the request template withheld as redacted: must_be_known_for_identity withdraws the identity.",
+      "requirements": [
+        "PG-016"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 3,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "033ad316127164cd89f7f50ed85cd8299e01d34f9a4bdbee1bb1906902d89ec6",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.request_template.reason": "redacted",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.decoding.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided"
+      },
+      "expect": {
+        "outcome": "stored",
+        "verdict": "refused"
+      }
+    },
+    {
+      "id": "refuse-template-beside-unreadable-instruction",
+      "description": "A request template held and the instruction extraction_failed: the template refines only, and the instruction is not known, so there is no identity.",
+      "requirements": [
+        "PG-016"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 3,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.request_template.sourcing": "in_the_request",
+        "perigraph.part.request_template.digest": "9397d49334deb0e9f29b922901e05546d714645fa5b9edd7394a7c7ff705ad5c",
+        "perigraph.part.request_template.boundary": "model_visible",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.decoding.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided",
+        "perigraph.absent.instruction.reason": "extraction_failed",
+        "perigraph.absent.instruction.detail": "messages[0].content is an array, not a string"
+      },
+      "expect": {
+        "outcome": "stored",
+        "verdict": "refused"
+      }
+    },
+    {
+      "id": "admit-template-pushed-by-owner",
+      "description": "A request template declared by its owner beside a held instruction: it is held, so the identity is known, and it keys nothing, so the identity is the instruction's.",
+      "requirements": [
+        "PG-066"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 3,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,request_template,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "a5a734962069b2f6fcd8dde2",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "033ad316127164cd89f7f50ed85cd8299e01d34f9a4bdbee1bb1906902d89ec6",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.decoding.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided",
+        "perigraph.part.request_template.sourcing": "pushed_by_owner",
+        "perigraph.part.request_template.digest": "76baaba6c558a04084050b0daca40c8df4a5cc6a0926db701faf4ce43491d40a",
+        "perigraph.part.request_template.boundary": "parsed"
       },
       "expect": {
         "outcome": "stored",

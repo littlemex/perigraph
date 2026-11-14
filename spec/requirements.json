@@ -24,7 +24,9 @@
         "receiver/admit-stamped-record",
         "receiver/admit-missing-parts",
         "receiver/admit-foreign-attributes",
-        "receiver/admit-identity-omitted"
+        "receiver/admit-identity-omitted",
+        "receiver/admit-instruction-and-template",
+        "receiver/admit-template-pushed-by-owner"
       ]
     },
     {
@@ -129,13 +131,13 @@
       "cases": []
     },
     {
-      "id": "PG-068",
+      "id": "PG-080",
       "section": "1.2",
       "level": "MUST",
       "roles": [
         "collector"
       ],
-      "text": "A collector MUST emit each of the ten parts and each of the four model parts as held or as absent.",
+      "text": "A collector MUST emit each of the eleven parts and each of the four model parts as held or as absent.",
       "cases": []
     },
     {
@@ -213,6 +215,16 @@
       ]
     },
     {
+      "id": "PG-087",
+      "section": "2",
+      "level": "MAY",
+      "roles": [
+        "receiver"
+      ],
+      "text": "A part held with another sourcing satisfies this and keys nothing, which gives the identity a record without it would have; a receiver MAY refuse on it as on any claim it cannot check (section 1.1a).",
+      "cases": []
+    },
+    {
       "id": "PG-016",
       "section": "2",
       "level": "MUST",
@@ -221,7 +233,12 @@
       ],
       "text": "It is an error to ask such a record for an identity, and a receiver MUST refuse a verdict over one, because an identity constant across every possible harness groups things that have nothing in common.",
       "cases": [
-        "receiver/refuse-no-identity"
+        "receiver/refuse-no-identity",
+        "receiver/refuse-template-alone",
+        "receiver/refuse-failed-template",
+        "receiver/refuse-template-unmentioned",
+        "receiver/refuse-template-redacted",
+        "receiver/refuse-template-beside-unreadable-instruction"
       ]
     },
     {
@@ -347,6 +364,26 @@
       "cases": []
     },
     {
+      "id": "PG-081",
+      "section": "4",
+      "level": "MUST",
+      "roles": [
+        "any"
+      ],
+      "text": "**Records grouped as one arm MUST NOT be given one verdict when the distinct harness identities derived from them number more than one, or number one while some record has none.** The identities are the ones a receiver derives (section 6), not the ones a record states.",
+      "cases": []
+    },
+    {
+      "id": "PG-082",
+      "section": "4",
+      "level": "MUST",
+      "roles": [
+        "receiver"
+      ],
+      "text": "A receiver that gives a verdict over the records of one identity within the arm MUST say how many records of the arm it left out.",
+      "cases": []
+    },
+    {
       "id": "PG-029",
       "section": "4",
       "level": "MUST",
@@ -452,7 +489,10 @@
         "receiver/reject-uppercase-identity",
         "receiver/reject-unknown-model-part",
         "receiver/reject-answer-mode-digest-mismatch",
-        "receiver/reject-padded-manifest-name"
+        "receiver/reject-padded-manifest-name",
+        "receiver/reject-identity-over-template-alone",
+        "receiver/reject-identity-beside-failed-template",
+        "receiver/reject-instruction-only-identity-beside-template"
       ]
     },
     {
@@ -727,6 +767,36 @@
       "cases": []
     },
     {
+      "id": "PG-083",
+      "section": "bindings/openai-chat-completions",
+      "level": "MAY",
+      "roles": [
+        "any"
+      ],
+      "text": "The requester MAY add a top-level member `perigraph_template` to the body to declare which text of its non-system messages is fixed and where the item goes.",
+      "cases": []
+    },
+    {
+      "id": "PG-088",
+      "section": "bindings/openai-chat-completions",
+      "level": "MUST",
+      "roles": [
+        "collector"
+      ],
+      "text": "**Reading.** The collector MUST apply these checks, and any that fails makes `request_template` `extraction_failed`, with a detail that names a failed check and the index of the entry, fixed string or message, and never quotes a string (SPEC 12.3).",
+      "cases": []
+    },
+    {
+      "id": "PG-089",
+      "section": "bindings/openai-chat-completions",
+      "level": "MUST",
+      "roles": [
+        "collector"
+      ],
+      "text": "**Forwarding.** A collector that sends the body on MUST remove `perigraph_template` first, unless it is configured to send to a hop that reads the template, and MUST leave every other member's decoded value unchanged.",
+      "cases": []
+    },
+    {
       "id": "PG-060",
       "section": "bindings/openai-chat-completions",
       "level": "MUST",
@@ -788,6 +858,10 @@
     "PG-035",
     "PG-043",
     "PG-044",
-    "PG-045"
+    "PG-045",
+    "PG-068",
+    "PG-084",
+    "PG-085",
+    "PG-086"
   ]
 }
