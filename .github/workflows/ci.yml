@@ -46,6 +46,8 @@ jobs:
           "
       - name: test
         run: python -m pytest tests/ -q
+      - name: the README quickstart runs against the installed package
+        run: python examples/quickstart.py
 
   typescript:
     runs-on: ubuntu-latest
@@ -66,6 +68,9 @@ jobs:
       - name: typecheck, build and test
         run: npm test
         working-directory: typescript
+      - name: the README quickstart runs
+        run: node examples/quickstart.mjs
+        working-directory: typescript
       - name: the spec and the fixtures travel with the built package
         run: |
           npm pack --silent >/dev/null
@@ -84,6 +89,7 @@ jobs:
           test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
           go vet ./...
           go test ./...
+          go run ./examples/quickstart
         working-directory: go
 
   cross:
@@ -105,6 +111,31 @@ jobs:
       - name: the three senders agree on every identity, and disagree only where the spec says they may
         run: PYTHONPATH=src python tools/cross_check.py
 
+  conformance:
+    # The same cases and the same runner for every implementation, through an adapter each one provides. The runner
+    # never imports an implementation, which is what lets a fourth language be checked by code nobody rewrote for it.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - run: pip install jsonschema
+      - run: npm install && npm run build
+        working-directory: typescript
+      - name: Python (collector, stamper, receiver)
+        run: python tools/conform.py --adapter "python conformance/adapters/python_adapter.py"
+      - name: TypeScript (collector, stamper, receiver)
+        run: python tools/conform.py --adapter "node conformance/adapters/typescript_adapter.mjs"
+      - name: Go (collector, stamper)
+        run: python tools/conform.py --adapter "go -C go run ./cmd/conform"
+
   spec:
     runs-on: ubuntu-latest
     steps:
@@ -124,6 +155,10 @@ jobs:
               assert got == want, f'{copy} has drifted from spec/vocabularies.json'
           print('all copies identical:', want[:16])
           "
+      - name: the schemas and the requirement registry are what the vocabulary and SPEC.md generate
+        run: |
+          python tools/gen_schema.py --check
+          python tools/requirements.py --check
       - name: the fixtures are identical in both places
         run: |
           python -c "

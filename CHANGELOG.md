@@ -3,6 +3,41 @@
 Versions here are the **package** version. The **protocol** version is `spec_version` in
 `spec/vocabularies.json`, and [SPEC.md section 7](SPEC.md) says what forces it to change.
 
+## Unreleased
+
+No change to `spec_version` (still 2) and no change to any identity or fixture. The package versions are unchanged.
+
+### Specification
+
+- **Conventions** (SPEC 0): BCP 14 keywords, what is normative and which source governs when two disagree, roles
+  (requester, collector, stamper, forwarder, owner, trainer, receiver), terms, and the four things a receiver does with
+  a record.
+- **Security and privacy considerations** (SPEC 12) and **extensibility** (SPEC 13): the proposal path for a new value,
+  and the reserved `perigraph.ext.<vendor>.` prefix, which never keys an identity and is never grounds for rejection.
+- **Wire-level rejections stated in one place** (SPEC 6): out-of-vocabulary values, a part both held and absent, a read
+  lag or a detail where it is forbidden or missing, and an identity that is not the one derived from the parts. The
+  reference receivers already rejected each of these; the text now says so.
+- **Conformance per role** (SPEC 8), and the policy in SPEC 7 marked provisional, with the questions a formal versioning
+  and compatibility policy has to settle listed in SPEC 7.1.
+- `perigraph.model_reaches` and `perigraph.ext.<vendor>.<key>` added to `attributes` in `spec/vocabularies.json`. The
+  first was already emitted; the second is a reserved pattern. Both are additions a receiver may ignore (SPEC 7).
+- Bindings under `spec/bindings/`: OpenAI Chat Completions request bodies, OpenTelemetry spans, JSON Lines files.
+
+### Machine-readable specification and conformance
+
+- JSON Schemas for a record, a lineage document and the vocabulary file, generated from `spec/vocabularies.json`
+  (`tools/gen_schema.py`).
+- `spec/requirements.json`: every requirement sentence with an identifier that is never reused
+  (`tools/requirements.py`).
+- `tools/conform.py`, a conformance runner that checks any implementation through a line-oriented adapter, with
+  receiver cases in `conformance/cases/receiver.json` and adapters for the Python, TypeScript and Go implementations.
+- Example records and a lineage chain in `spec/examples/`, each validated in CI.
+
+### Fixed
+
+- The Python and TypeScript receivers rejected a manifest that named a part twice. SPEC 6 says a repeated name counts
+  once; both now read the manifest as a set.
+
 ## 0.2.1
 
 ### A third sender, and the sentences it read differently

@@ -1,0 +1,1228 @@
+{
+  "note": "Receiver cases. Each gives the perigraph attributes of one record and what a conforming receiver does with them: `rejected` (not a record of this version), or `stored` with whether a verdict over this record alone is `admissible` or `refused` (SPEC section 0.5). A rejected case says whether spec/schema/record.schema.json alone rejects it too (`schema`): the ones it accepts are rejected only by recomputing an identity. Run them with tools/conform.py. Comparisons between records are not covered here; see conformance/README.md.",
+  "cases": [
+    {
+      "id": "admit-request-record",
+      "description": "A record from a request adapter: instruction held, the rest absent, the model half not_observable.",
+      "requirements": [
+        "PG-001"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.decoding.sourcing": "in_the_request",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided"
+      },
+      "expect": {
+        "outcome": "stored",
+        "verdict": "admissible"
+      }
+    },
+    {
+      "id": "admit-stamped-record",
+      "description": "The same record with a model half a stamper loaded, carrying model and artifact identities.",
+      "requirements": [
+        "PG-001"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+        "perigraph.model_reaches": "checkpoint,precision,runtime,answer_mode",
+        "perigraph.model_identity": "f5d877dc4633e44cec452afe",
+        "perigraph.artifact_identity": "f38cf5458597263007cda5ba",
+        "perigraph.model.checkpoint.sourcing": "loaded_by_us",
+        "perigraph.model.checkpoint.digest": "e403309a769b8c7393fd9c441b648c46ba95d6832cab010aced749d68aade827",
+        "perigraph.model.precision.sourcing": "loaded_by_us",
+        "perigraph.model.precision.digest": "a41fbd74110c231ab894e5b422326e6f981aafe6711aef0c39d1d4be93dc3f4a",
+        "perigraph.model.runtime.sourcing": "loaded_by_us",
+        "perigraph.model.runtime.digest": "79eb5ff620f37e572b6b9d373f67b88d41231334bc524974f77b41090be2c05f",
+        "perigraph.model.answer_mode.sourcing": "loaded_by_us",
+        "perigraph.model.answer_mode.digest": "c33ad4054f053a525f682a2ca08474f17afd04016e565982d4d58dc0be841ccf",
+        "perigraph.model.answer_mode.label": "generated_text",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.decoding.sourcing": "in_the_request",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided"
+      },
+      "expect": {
+        "outcome": "stored",
+        "verdict": "admissible"
+      }
+    },
+    {
+      "id": "admit-no-model-half",
+      "description": "No model half at all. It does not conform as a sender's record, and a receiver still stores it and does not refuse a verdict for it.",
+      "requirements": [
+        "PG-040"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.decoding.sourcing": "in_the_request",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided"
+      },
+      "expect": {
+        "outcome": "stored",
+        "verdict": "admissible"
+      }
+    },
+    {
+      "id": "admit-missing-parts",
+      "description": "Most parts are not mentioned at all. A record missing any number of parts is stored, never rejected.",
+      "requirements": [
+        "PG-001"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible"
+      },
+      "expect": {
+        "outcome": "stored",
+        "verdict": "admissible"
+      }
+    },
+    {
+      "id": "admit-repeated-manifest-name",
+      "description": "A manifest naming a part twice is read as a set.",
+      "requirements": [
+        "PG-037"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.decoding.sourcing": "in_the_request",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided"
+      },
+      "expect": {
+        "outcome": "stored",
+        "verdict": "admissible"
+      }
+    },
+    {
+      "id": "admit-empty-manifest-entries",
+      "description": "Empty entries in a manifest are dropped, not read as a part named empty-string.",
+      "requirements": [
+        "PG-036"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,,tool_schemas,readout,decoding,",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.decoding.sourcing": "in_the_request",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided"
+      },
+      "expect": {
+        "outcome": "stored",
+        "verdict": "admissible"
+      }
+    },
+    {
+      "id": "admit-extension-key",
+      "description": "A vendor extension key is ignored, never grounds for rejection.",
+      "requirements": [
+        "PG-057"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.decoding.sourcing": "in_the_request",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided",
+        "perigraph.ext.example.note": "anything"
+      },
+      "expect": {
+        "outcome": "stored",
+        "verdict": "admissible"
+      }
+    },
+    {
+      "id": "admit-foreign-attributes",
+      "description": "Attributes outside the perigraph. prefix belong to the span and are not the record's.",
+      "requirements": [
+        "PG-001"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.decoding.sourcing": "in_the_request",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided",
+        "gen_ai.request.model": "example-model"
+      },
+      "expect": {
+        "outcome": "stored",
+        "verdict": "admissible"
+      }
+    },
+    {
+      "id": "refuse-status-collector_failed",
+      "description": "Status collector_failed: stored as a log, and no verdict.",
+      "requirements": [
+        "PG-006"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "collector_failed",
+        "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.decoding.sourcing": "in_the_request",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided"
+      },
+      "expect": {
+        "outcome": "stored",
+        "verdict": "refused"
+      }
+    },
+    {
+      "id": "refuse-status-aborted",
+      "description": "Status aborted: stored as a log, and no verdict.",
+      "requirements": [
+        "PG-006"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "aborted",
+        "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.decoding.sourcing": "in_the_request",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided"
+      },
+      "expect": {
+        "outcome": "stored",
+        "verdict": "refused"
+      }
+    },
+    {
+      "id": "refuse-no-identity",
+      "description": "No identifying part, so no harness identity: stored, no verdict.",
+      "requirements": [
+        "PG-016"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.decoding.sourcing": "in_the_request",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided",
+        "perigraph.absent.instruction.reason": "not_provided"
+      },
+      "expect": {
+        "outcome": "stored",
+        "verdict": "refused"
+      }
+    },
+    {
+      "id": "refuse-contradiction-not-reachable",
+      "description": "The manifest claims tool_schemas and the record reports it not_reachable.",
+      "requirements": [
+        "PG-015"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.decoding.sourcing": "in_the_request",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_reachable",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided",
+        "perigraph.absent.tool_schemas.detail": "tools were stripped by an upstream proxy before this collector saw the request"
+      },
+      "expect": {
+        "outcome": "stored",
+        "verdict": "refused"
+      }
+    },
+    {
+      "id": "refuse-contradiction-silent",
+      "description": "The manifest claims readout and the record says nothing about it.",
+      "requirements": [
+        "PG-015"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.decoding.sourcing": "in_the_request",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided"
+      },
+      "expect": {
+        "outcome": "stored",
+        "verdict": "refused"
+      }
+    },
+    {
+      "id": "reject-spec-version",
+      "description": "A spec_version this receiver does not implement.",
+      "requirements": [
+        "PG-034"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 3,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.decoding.sourcing": "in_the_request",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided"
+      },
+      "expect": {
+        "outcome": "rejected"
+      },
+      "schema": "rejects"
+    },
+    {
+      "id": "reject-unknown-part",
+      "description": "A part outside the closed list.",
+      "requirements": [
+        "PG-002",
+        "PG-035"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.decoding.sourcing": "in_the_request",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided",
+        "perigraph.part.memory.sourcing": "in_the_request"
+      },
+      "expect": {
+        "outcome": "rejected"
+      },
+      "schema": "rejects"
+    },
+    {
+      "id": "reject-unknown-sourcing",
+      "description": "A sourcing value outside the vocabulary.",
+      "requirements": [
+        "PG-035"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.decoding.sourcing": "guessed",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided"
+      },
+      "expect": {
+        "outcome": "rejected"
+      },
+      "schema": "rejects"
+    },
+    {
+      "id": "reject-unknown-reason",
+      "description": "An absence reason outside the vocabulary.",
+      "requirements": [
+        "PG-035"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.decoding.sourcing": "in_the_request",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.loop.reason": "forgot",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided"
+      },
+      "expect": {
+        "outcome": "rejected"
+      },
+      "schema": "rejects"
+    },
+    {
+      "id": "reject-unknown-status",
+      "description": "A status outside the vocabulary.",
+      "requirements": [
+        "PG-035"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "partial",
+        "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.decoding.sourcing": "in_the_request",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided"
+      },
+      "expect": {
+        "outcome": "rejected"
+      },
+      "schema": "rejects"
+    },
+    {
+      "id": "reject-unknown-boundary",
+      "description": "A boundary outside the vocabulary.",
+      "requirements": [
+        "PG-035"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.decoding.sourcing": "in_the_request",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "semantic",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided"
+      },
+      "expect": {
+        "outcome": "rejected"
+      },
+      "schema": "rejects"
+    },
+    {
+      "id": "reject-held-and-absent",
+      "description": "One part both held and absent.",
+      "requirements": [
+        "PG-035"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.decoding.sourcing": "in_the_request",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided",
+        "perigraph.absent.instruction.reason": "not_provided"
+      },
+      "expect": {
+        "outcome": "rejected"
+      },
+      "schema": "rejects"
+    },
+    {
+      "id": "reject-pulled-without-lag",
+      "description": "A pulled_by_us part with no read lag.",
+      "requirements": [
+        "PG-008",
+        "PG-035"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.decoding.sourcing": "in_the_request",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided",
+        "perigraph.part.loop.sourcing": "pulled_by_us",
+        "perigraph.part.loop.label": "agent-config"
+      },
+      "expect": {
+        "outcome": "rejected"
+      },
+      "schema": "rejects"
+    },
+    {
+      "id": "reject-lag-on-request-part",
+      "description": "A read lag on a part that was in the request.",
+      "requirements": [
+        "PG-008",
+        "PG-035"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.decoding.sourcing": "in_the_request",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided",
+        "perigraph.part.decoding.read_lag_seconds": 3
+      },
+      "expect": {
+        "outcome": "rejected"
+      },
+      "schema": "rejects"
+    },
+    {
+      "id": "reject-collector-absence-without-detail",
+      "description": "extraction_failed blames the collector and carries no detail.",
+      "requirements": [
+        "PG-012",
+        "PG-035"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.decoding.sourcing": "in_the_request",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "extraction_failed",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided"
+      },
+      "expect": {
+        "outcome": "rejected"
+      },
+      "schema": "rejects"
+    },
+    {
+      "id": "reject-sender-absence-with-detail",
+      "description": "not_provided blames the requester and carries a detail.",
+      "requirements": [
+        "PG-013",
+        "PG-035"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.decoding.sourcing": "in_the_request",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided",
+        "perigraph.absent.readout.detail": "nothing there"
+      },
+      "expect": {
+        "outcome": "rejected"
+      },
+      "schema": "rejects"
+    },
+    {
+      "id": "reject-harness-identity-mismatch",
+      "description": "A harness identity that is not the one derived from the parts carried.",
+      "requirements": [
+        "PG-035"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "000000000000000000000000",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.decoding.sourcing": "in_the_request",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided"
+      },
+      "expect": {
+        "outcome": "rejected"
+      },
+      "schema": "accepts"
+    },
+    {
+      "id": "reject-empty-harness-identity",
+      "description": "An empty harness identity string on a record with none. An identity is omitted, never empty.",
+      "requirements": [
+        "PG-033",
+        "PG-035"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.decoding.sourcing": "in_the_request",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided",
+        "perigraph.absent.instruction.reason": "not_provided",
+        "perigraph.harness_identity": ""
+      },
+      "expect": {
+        "outcome": "rejected"
+      },
+      "schema": "rejects"
+    },
+    {
+      "id": "reject-model-identity-mismatch",
+      "description": "A model identity that is not the one derived from the model parts carried.",
+      "requirements": [
+        "PG-035"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+        "perigraph.model_reaches": "checkpoint,precision,runtime,answer_mode",
+        "perigraph.model_identity": "ffffffffffffffffffffffff",
+        "perigraph.artifact_identity": "f38cf5458597263007cda5ba",
+        "perigraph.model.checkpoint.sourcing": "loaded_by_us",
+        "perigraph.model.checkpoint.digest": "e403309a769b8c7393fd9c441b648c46ba95d6832cab010aced749d68aade827",
+        "perigraph.model.precision.sourcing": "loaded_by_us",
+        "perigraph.model.precision.digest": "a41fbd74110c231ab894e5b422326e6f981aafe6711aef0c39d1d4be93dc3f4a",
+        "perigraph.model.runtime.sourcing": "loaded_by_us",
+        "perigraph.model.runtime.digest": "79eb5ff620f37e572b6b9d373f67b88d41231334bc524974f77b41090be2c05f",
+        "perigraph.model.answer_mode.sourcing": "loaded_by_us",
+        "perigraph.model.answer_mode.digest": "c33ad4054f053a525f682a2ca08474f17afd04016e565982d4d58dc0be841ccf",
+        "perigraph.model.answer_mode.label": "generated_text",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.decoding.sourcing": "in_the_request",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided"
+      },
+      "expect": {
+        "outcome": "rejected"
+      },
+      "schema": "accepts"
+    },
+    {
+      "id": "reject-model-identity-without-loaded-parts",
+      "description": "A model identity on a record whose model parts are not_observable.",
+      "requirements": [
+        "PG-039",
+        "PG-035"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.decoding.sourcing": "in_the_request",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided",
+        "perigraph.model_identity": "f5d877dc4633e44cec452afe"
+      },
+      "expect": {
+        "outcome": "rejected"
+      },
+      "schema": "accepts"
+    },
+    {
+      "id": "reject-harness-part-loaded",
+      "description": "A harness part with sourcing loaded_by_us, which only a model part can have.",
+      "requirements": [
+        "PG-035"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.decoding.sourcing": "loaded_by_us",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided"
+      },
+      "expect": {
+        "outcome": "rejected"
+      },
+      "schema": "rejects"
+    },
+    {
+      "id": "reject-model-part-in-request",
+      "description": "A model part with sourcing in_the_request: a request does not carry weights.",
+      "requirements": [
+        "PG-035"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+        "perigraph.model_reaches": "checkpoint,precision,runtime,answer_mode",
+        "perigraph.model_identity": "f5d877dc4633e44cec452afe",
+        "perigraph.artifact_identity": "f38cf5458597263007cda5ba",
+        "perigraph.model.checkpoint.sourcing": "loaded_by_us",
+        "perigraph.model.checkpoint.digest": "e403309a769b8c7393fd9c441b648c46ba95d6832cab010aced749d68aade827",
+        "perigraph.model.precision.sourcing": "loaded_by_us",
+        "perigraph.model.precision.digest": "a41fbd74110c231ab894e5b422326e6f981aafe6711aef0c39d1d4be93dc3f4a",
+        "perigraph.model.runtime.sourcing": "in_the_request",
+        "perigraph.model.runtime.digest": "79eb5ff620f37e572b6b9d373f67b88d41231334bc524974f77b41090be2c05f",
+        "perigraph.model.answer_mode.sourcing": "loaded_by_us",
+        "perigraph.model.answer_mode.digest": "c33ad4054f053a525f682a2ca08474f17afd04016e565982d4d58dc0be841ccf",
+        "perigraph.model.answer_mode.label": "generated_text",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.decoding.sourcing": "in_the_request",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided"
+      },
+      "expect": {
+        "outcome": "rejected"
+      },
+      "schema": "rejects"
+    },
+    {
+      "id": "reject-not-observable-with-digest",
+      "description": "A part recorded not_observable that carries a digest.",
+      "requirements": [
+        "PG-035"
+      ],
+      "attributes": {
+        "perigraph.spec_version": 2,
+        "perigraph.collector": "example-collector",
+        "perigraph.collector_version": "1.0.0",
+        "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
+        "perigraph.status": "complete",
+        "perigraph.harness_identity": "c8f8edc45e222f663d8d70ac",
+        "perigraph.model_reaches": "",
+        "perigraph.model_absent.checkpoint.reason": "not_observable",
+        "perigraph.model_absent.precision.reason": "not_observable",
+        "perigraph.model_absent.runtime.reason": "not_observable",
+        "perigraph.model_absent.answer_mode.reason": "not_observable",
+        "perigraph.part.instruction.sourcing": "in_the_request",
+        "perigraph.part.instruction.digest": "bc08b15e1d666817a85deb76df71182f5b17ee4ea314f8635a98fe14b17b4ad3",
+        "perigraph.part.instruction.boundary": "model_visible",
+        "perigraph.part.decoding.sourcing": "not_observable",
+        "perigraph.part.decoding.digest": "67a865a25ffe9dea5db8a7e6cdcfc6375a53544a1f3eb82d501424112a02845a",
+        "perigraph.part.decoding.boundary": "parsed",
+        "perigraph.part.decoding.label": "temperature",
+        "perigraph.absent.tool_schemas.reason": "not_provided",
+        "perigraph.absent.readout.reason": "not_provided",
+        "perigraph.absent.loop.reason": "not_provided",
+        "perigraph.absent.turn_budget.reason": "not_provided",
+        "perigraph.absent.retry_policy.reason": "not_provided",
+        "perigraph.absent.context_partitioning.reason": "not_provided",
+        "perigraph.absent.tool_extension.reason": "not_observable",
+        "perigraph.absent.tool_trace.reason": "not_provided"
+      },
+      "expect": {
+        "outcome": "rejected"
+      },
+      "schema": "rejects"
+    }
+  ]
+}

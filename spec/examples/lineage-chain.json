@@ -1,0 +1,35 @@
+{
+  "description": "Two lineage documents: a pretrained root and a student distilled from it. A receiver checking whether a certification set was trained on walks from the student to the root; had the root's document been missing, the answer would be unknown, not clean.",
+  "illustrates": [
+    "PG-048"
+  ],
+  "lineage": [
+    {
+      "spec_version": 2,
+      "subject": "76efdb11af6b4b87cbee5123",
+      "parent": "none",
+      "method": "pretrained",
+      "trainer": "example-org"
+    },
+    {
+      "spec_version": 2,
+      "subject": "ef6ebda094aa133b2d98def3",
+      "parent": "76efdb11af6b4b87cbee5123",
+      "method": "distillation",
+      "sets": [
+        {
+          "role": "trained_on",
+          "digest": "9298acbd35f28db71ba06226fea80ed9690681b5252cdeaab37e5ee635596785"
+        },
+        {
+          "role": "consulted",
+          "digest": "99d44e1d4f9dd4572781101e6501f99d6197c5ef398a8fe997aab01a74cb9d90"
+        }
+      ],
+      "signal": {
+        "artifact_identity": "76efdb11af6b4b87cbee5123"
+      },
+      "trainer": "example-trainer 0.4"
+    }
+  ]
+}

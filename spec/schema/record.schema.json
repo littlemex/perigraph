@@ -1,0 +1,2369 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/littlemex/perigraph/blob/main/spec/schema/record.schema.json",
+  "title": "perigraph record, spec_version 2 (generated from spec/vocabularies.json)",
+  "description": "The perigraph.* attributes of one record. Attributes outside the perigraph. prefix are not constrained, because a record rides on a span that carries others. This schema checks shape only; identity recomputation and manifest contradiction are conformance cases.",
+  "type": "object",
+  "required": [
+    "perigraph.spec_version",
+    "perigraph.collector",
+    "perigraph.collector_version",
+    "perigraph.collector_reaches",
+    "perigraph.status"
+  ],
+  "properties": {
+    "perigraph.spec_version": {
+      "const": 2
+    },
+    "perigraph.collector": {
+      "type": "string",
+      "minLength": 1
+    },
+    "perigraph.collector_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "perigraph.collector_reaches": {
+      "type": "string",
+      "pattern": "^(?:(?:instruction|tool_schemas|tool_extension|tool_trace|loop|turn_budget|retry_policy|readout|decoding|context_partitioning)?)(?:,(?:(?:instruction|tool_schemas|tool_extension|tool_trace|loop|turn_budget|retry_policy|readout|decoding|context_partitioning)?))*$"
+    },
+    "perigraph.model_reaches": {
+      "type": "string",
+      "pattern": "^(?:(?:checkpoint|precision|runtime|answer_mode)?)(?:,(?:(?:checkpoint|precision|runtime|answer_mode)?))*$"
+    },
+    "perigraph.status": {
+      "enum": [
+        "complete",
+        "aborted",
+        "collector_failed"
+      ]
+    },
+    "perigraph.harness_identity": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{24}$"
+    },
+    "perigraph.model_identity": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{24}$"
+    },
+    "perigraph.artifact_identity": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{24}$"
+    },
+    "perigraph.part.instruction.sourcing": {
+      "enum": [
+        "in_the_request",
+        "pulled_by_us",
+        "pushed_by_owner",
+        "not_observable"
+      ]
+    },
+    "perigraph.part.instruction.digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "perigraph.part.instruction.label": {
+      "type": "string"
+    },
+    "perigraph.part.instruction.read_lag_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "perigraph.part.instruction.boundary": {
+      "enum": [
+        "transport",
+        "parsed",
+        "model_visible"
+      ]
+    },
+    "perigraph.absent.instruction.reason": {
+      "enum": [
+        "not_provided",
+        "not_reachable",
+        "extraction_failed",
+        "redacted",
+        "not_observable"
+      ]
+    },
+    "perigraph.absent.instruction.detail": {
+      "type": "string",
+      "minLength": 1
+    },
+    "perigraph.part.tool_schemas.sourcing": {
+      "enum": [
+        "in_the_request",
+        "pulled_by_us",
+        "pushed_by_owner",
+        "not_observable"
+      ]
+    },
+    "perigraph.part.tool_schemas.digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "perigraph.part.tool_schemas.label": {
+      "type": "string"
+    },
+    "perigraph.part.tool_schemas.read_lag_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "perigraph.part.tool_schemas.boundary": {
+      "enum": [
+        "transport",
+        "parsed",
+        "model_visible"
+      ]
+    },
+    "perigraph.absent.tool_schemas.reason": {
+      "enum": [
+        "not_provided",
+        "not_reachable",
+        "extraction_failed",
+        "redacted",
+        "not_observable"
+      ]
+    },
+    "perigraph.absent.tool_schemas.detail": {
+      "type": "string",
+      "minLength": 1
+    },
+    "perigraph.part.tool_extension.sourcing": {
+      "enum": [
+        "in_the_request",
+        "pulled_by_us",
+        "pushed_by_owner",
+        "not_observable"
+      ]
+    },
+    "perigraph.part.tool_extension.digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "perigraph.part.tool_extension.label": {
+      "type": "string"
+    },
+    "perigraph.part.tool_extension.read_lag_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "perigraph.part.tool_extension.boundary": {
+      "enum": [
+        "transport",
+        "parsed",
+        "model_visible"
+      ]
+    },
+    "perigraph.absent.tool_extension.reason": {
+      "enum": [
+        "not_provided",
+        "not_reachable",
+        "extraction_failed",
+        "redacted",
+        "not_observable"
+      ]
+    },
+    "perigraph.absent.tool_extension.detail": {
+      "type": "string",
+      "minLength": 1
+    },
+    "perigraph.part.tool_trace.sourcing": {
+      "enum": [
+        "in_the_request",
+        "pulled_by_us",
+        "pushed_by_owner",
+        "not_observable"
+      ]
+    },
+    "perigraph.part.tool_trace.digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "perigraph.part.tool_trace.label": {
+      "type": "string"
+    },
+    "perigraph.part.tool_trace.read_lag_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "perigraph.part.tool_trace.boundary": {
+      "enum": [
+        "transport",
+        "parsed",
+        "model_visible"
+      ]
+    },
+    "perigraph.absent.tool_trace.reason": {
+      "enum": [
+        "not_provided",
+        "not_reachable",
+        "extraction_failed",
+        "redacted",
+        "not_observable"
+      ]
+    },
+    "perigraph.absent.tool_trace.detail": {
+      "type": "string",
+      "minLength": 1
+    },
+    "perigraph.part.loop.sourcing": {
+      "enum": [
+        "in_the_request",
+        "pulled_by_us",
+        "pushed_by_owner",
+        "not_observable"
+      ]
+    },
+    "perigraph.part.loop.digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "perigraph.part.loop.label": {
+      "type": "string"
+    },
+    "perigraph.part.loop.read_lag_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "perigraph.part.loop.boundary": {
+      "enum": [
+        "transport",
+        "parsed",
+        "model_visible"
+      ]
+    },
+    "perigraph.absent.loop.reason": {
+      "enum": [
+        "not_provided",
+        "not_reachable",
+        "extraction_failed",
+        "redacted",
+        "not_observable"
+      ]
+    },
+    "perigraph.absent.loop.detail": {
+      "type": "string",
+      "minLength": 1
+    },
+    "perigraph.part.turn_budget.sourcing": {
+      "enum": [
+        "in_the_request",
+        "pulled_by_us",
+        "pushed_by_owner",
+        "not_observable"
+      ]
+    },
+    "perigraph.part.turn_budget.digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "perigraph.part.turn_budget.label": {
+      "type": "string"
+    },
+    "perigraph.part.turn_budget.read_lag_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "perigraph.part.turn_budget.boundary": {
+      "enum": [
+        "transport",
+        "parsed",
+        "model_visible"
+      ]
+    },
+    "perigraph.absent.turn_budget.reason": {
+      "enum": [
+        "not_provided",
+        "not_reachable",
+        "extraction_failed",
+        "redacted",
+        "not_observable"
+      ]
+    },
+    "perigraph.absent.turn_budget.detail": {
+      "type": "string",
+      "minLength": 1
+    },
+    "perigraph.part.retry_policy.sourcing": {
+      "enum": [
+        "in_the_request",
+        "pulled_by_us",
+        "pushed_by_owner",
+        "not_observable"
+      ]
+    },
+    "perigraph.part.retry_policy.digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "perigraph.part.retry_policy.label": {
+      "type": "string"
+    },
+    "perigraph.part.retry_policy.read_lag_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "perigraph.part.retry_policy.boundary": {
+      "enum": [
+        "transport",
+        "parsed",
+        "model_visible"
+      ]
+    },
+    "perigraph.absent.retry_policy.reason": {
+      "enum": [
+        "not_provided",
+        "not_reachable",
+        "extraction_failed",
+        "redacted",
+        "not_observable"
+      ]
+    },
+    "perigraph.absent.retry_policy.detail": {
+      "type": "string",
+      "minLength": 1
+    },
+    "perigraph.part.readout.sourcing": {
+      "enum": [
+        "in_the_request",
+        "pulled_by_us",
+        "pushed_by_owner",
+        "not_observable"
+      ]
+    },
+    "perigraph.part.readout.digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "perigraph.part.readout.label": {
+      "type": "string"
+    },
+    "perigraph.part.readout.read_lag_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "perigraph.part.readout.boundary": {
+      "enum": [
+        "transport",
+        "parsed",
+        "model_visible"
+      ]
+    },
+    "perigraph.absent.readout.reason": {
+      "enum": [
+        "not_provided",
+        "not_reachable",
+        "extraction_failed",
+        "redacted",
+        "not_observable"
+      ]
+    },
+    "perigraph.absent.readout.detail": {
+      "type": "string",
+      "minLength": 1
+    },
+    "perigraph.part.decoding.sourcing": {
+      "enum": [
+        "in_the_request",
+        "pulled_by_us",
+        "pushed_by_owner",
+        "not_observable"
+      ]
+    },
+    "perigraph.part.decoding.digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "perigraph.part.decoding.label": {
+      "type": "string"
+    },
+    "perigraph.part.decoding.read_lag_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "perigraph.part.decoding.boundary": {
+      "enum": [
+        "transport",
+        "parsed",
+        "model_visible"
+      ]
+    },
+    "perigraph.absent.decoding.reason": {
+      "enum": [
+        "not_provided",
+        "not_reachable",
+        "extraction_failed",
+        "redacted",
+        "not_observable"
+      ]
+    },
+    "perigraph.absent.decoding.detail": {
+      "type": "string",
+      "minLength": 1
+    },
+    "perigraph.part.context_partitioning.sourcing": {
+      "enum": [
+        "in_the_request",
+        "pulled_by_us",
+        "pushed_by_owner",
+        "not_observable"
+      ]
+    },
+    "perigraph.part.context_partitioning.digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "perigraph.part.context_partitioning.label": {
+      "type": "string"
+    },
+    "perigraph.part.context_partitioning.read_lag_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "perigraph.part.context_partitioning.boundary": {
+      "enum": [
+        "transport",
+        "parsed",
+        "model_visible"
+      ]
+    },
+    "perigraph.absent.context_partitioning.reason": {
+      "enum": [
+        "not_provided",
+        "not_reachable",
+        "extraction_failed",
+        "redacted",
+        "not_observable"
+      ]
+    },
+    "perigraph.absent.context_partitioning.detail": {
+      "type": "string",
+      "minLength": 1
+    },
+    "perigraph.model.checkpoint.sourcing": {
+      "enum": [
+        "loaded_by_us",
+        "pulled_by_us",
+        "pushed_by_owner",
+        "not_observable"
+      ]
+    },
+    "perigraph.model.checkpoint.digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "perigraph.model.checkpoint.label": {
+      "type": "string"
+    },
+    "perigraph.model.checkpoint.read_lag_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "perigraph.model_absent.checkpoint.reason": {
+      "enum": [
+        "not_provided",
+        "not_reachable",
+        "extraction_failed",
+        "redacted",
+        "not_observable"
+      ]
+    },
+    "perigraph.model_absent.checkpoint.detail": {
+      "type": "string",
+      "minLength": 1
+    },
+    "perigraph.model.precision.sourcing": {
+      "enum": [
+        "loaded_by_us",
+        "pulled_by_us",
+        "pushed_by_owner",
+        "not_observable"
+      ]
+    },
+    "perigraph.model.precision.digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "perigraph.model.precision.label": {
+      "type": "string"
+    },
+    "perigraph.model.precision.read_lag_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "perigraph.model_absent.precision.reason": {
+      "enum": [
+        "not_provided",
+        "not_reachable",
+        "extraction_failed",
+        "redacted",
+        "not_observable"
+      ]
+    },
+    "perigraph.model_absent.precision.detail": {
+      "type": "string",
+      "minLength": 1
+    },
+    "perigraph.model.runtime.sourcing": {
+      "enum": [
+        "loaded_by_us",
+        "pulled_by_us",
+        "pushed_by_owner",
+        "not_observable"
+      ]
+    },
+    "perigraph.model.runtime.digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "perigraph.model.runtime.label": {
+      "type": "string"
+    },
+    "perigraph.model.runtime.read_lag_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "perigraph.model_absent.runtime.reason": {
+      "enum": [
+        "not_provided",
+        "not_reachable",
+        "extraction_failed",
+        "redacted",
+        "not_observable"
+      ]
+    },
+    "perigraph.model_absent.runtime.detail": {
+      "type": "string",
+      "minLength": 1
+    },
+    "perigraph.model.answer_mode.sourcing": {
+      "enum": [
+        "loaded_by_us",
+        "pulled_by_us",
+        "pushed_by_owner",
+        "not_observable"
+      ]
+    },
+    "perigraph.model.answer_mode.digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "perigraph.model.answer_mode.label": {
+      "type": "string"
+    },
+    "perigraph.model.answer_mode.read_lag_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "perigraph.model_absent.answer_mode.reason": {
+      "enum": [
+        "not_provided",
+        "not_reachable",
+        "extraction_failed",
+        "redacted",
+        "not_observable"
+      ]
+    },
+    "perigraph.model_absent.answer_mode.detail": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "patternProperties": {
+    "^perigraph\\.ext\\.[^.]+\\..+$": {
+      "type": [
+        "string",
+        "number",
+        "boolean"
+      ]
+    },
+    "^perigraph\\.(?:part|absent)\\.(?!(?:instruction|tool_schemas|tool_extension|tool_trace|loop|turn_budget|retry_policy|readout|decoding|context_partitioning)\\.)": false,
+    "^perigraph\\.(?:model|model_absent)\\.(?!(?:checkpoint|precision|runtime|answer_mode)\\.)": false
+  },
+  "allOf": [
+    {
+      "$comment": "instruction: a part is held or absent, never both",
+      "not": {
+        "required": [
+          "perigraph.part.instruction.sourcing",
+          "perigraph.absent.instruction.reason"
+        ]
+      }
+    },
+    {
+      "$comment": "instruction: a read lag exactly when pulled_by_us",
+      "if": {
+        "required": [
+          "perigraph.part.instruction.sourcing"
+        ],
+        "properties": {
+          "perigraph.part.instruction.sourcing": {
+            "const": "pulled_by_us"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.part.instruction.read_lag_seconds"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.part.instruction.read_lag_seconds"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "instruction: digest, label and lag belong to a held part",
+      "if": {
+        "not": {
+          "required": [
+            "perigraph.part.instruction.sourcing"
+          ]
+        }
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "perigraph.part.instruction.digest"
+              ]
+            },
+            {
+              "required": [
+                "perigraph.part.instruction.label"
+              ]
+            },
+            {
+              "required": [
+                "perigraph.part.instruction.boundary"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "instruction: a part that is not observable has no bytes, so it has no digest",
+      "if": {
+        "required": [
+          "perigraph.part.instruction.sourcing"
+        ],
+        "properties": {
+          "perigraph.part.instruction.sourcing": {
+            "const": "not_observable"
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "perigraph.part.instruction.digest"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "instruction: a boundary exactly when there is a digest",
+      "if": {
+        "required": [
+          "perigraph.part.instruction.digest"
+        ]
+      },
+      "then": {
+        "required": [
+          "perigraph.part.instruction.boundary"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.part.instruction.boundary"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "instruction: a detail exactly when the absence blames the collector",
+      "if": {
+        "required": [
+          "perigraph.absent.instruction.reason"
+        ],
+        "properties": {
+          "perigraph.absent.instruction.reason": {
+            "enum": [
+              "not_reachable",
+              "extraction_failed"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.absent.instruction.detail"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.absent.instruction.detail"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "tool_schemas: a part is held or absent, never both",
+      "not": {
+        "required": [
+          "perigraph.part.tool_schemas.sourcing",
+          "perigraph.absent.tool_schemas.reason"
+        ]
+      }
+    },
+    {
+      "$comment": "tool_schemas: a read lag exactly when pulled_by_us",
+      "if": {
+        "required": [
+          "perigraph.part.tool_schemas.sourcing"
+        ],
+        "properties": {
+          "perigraph.part.tool_schemas.sourcing": {
+            "const": "pulled_by_us"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.part.tool_schemas.read_lag_seconds"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.part.tool_schemas.read_lag_seconds"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "tool_schemas: digest, label and lag belong to a held part",
+      "if": {
+        "not": {
+          "required": [
+            "perigraph.part.tool_schemas.sourcing"
+          ]
+        }
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "perigraph.part.tool_schemas.digest"
+              ]
+            },
+            {
+              "required": [
+                "perigraph.part.tool_schemas.label"
+              ]
+            },
+            {
+              "required": [
+                "perigraph.part.tool_schemas.boundary"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "tool_schemas: a part that is not observable has no bytes, so it has no digest",
+      "if": {
+        "required": [
+          "perigraph.part.tool_schemas.sourcing"
+        ],
+        "properties": {
+          "perigraph.part.tool_schemas.sourcing": {
+            "const": "not_observable"
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "perigraph.part.tool_schemas.digest"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "tool_schemas: a boundary exactly when there is a digest",
+      "if": {
+        "required": [
+          "perigraph.part.tool_schemas.digest"
+        ]
+      },
+      "then": {
+        "required": [
+          "perigraph.part.tool_schemas.boundary"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.part.tool_schemas.boundary"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "tool_schemas: a detail exactly when the absence blames the collector",
+      "if": {
+        "required": [
+          "perigraph.absent.tool_schemas.reason"
+        ],
+        "properties": {
+          "perigraph.absent.tool_schemas.reason": {
+            "enum": [
+              "not_reachable",
+              "extraction_failed"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.absent.tool_schemas.detail"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.absent.tool_schemas.detail"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "tool_extension: a part is held or absent, never both",
+      "not": {
+        "required": [
+          "perigraph.part.tool_extension.sourcing",
+          "perigraph.absent.tool_extension.reason"
+        ]
+      }
+    },
+    {
+      "$comment": "tool_extension: a read lag exactly when pulled_by_us",
+      "if": {
+        "required": [
+          "perigraph.part.tool_extension.sourcing"
+        ],
+        "properties": {
+          "perigraph.part.tool_extension.sourcing": {
+            "const": "pulled_by_us"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.part.tool_extension.read_lag_seconds"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.part.tool_extension.read_lag_seconds"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "tool_extension: digest, label and lag belong to a held part",
+      "if": {
+        "not": {
+          "required": [
+            "perigraph.part.tool_extension.sourcing"
+          ]
+        }
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "perigraph.part.tool_extension.digest"
+              ]
+            },
+            {
+              "required": [
+                "perigraph.part.tool_extension.label"
+              ]
+            },
+            {
+              "required": [
+                "perigraph.part.tool_extension.boundary"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "tool_extension: a part that is not observable has no bytes, so it has no digest",
+      "if": {
+        "required": [
+          "perigraph.part.tool_extension.sourcing"
+        ],
+        "properties": {
+          "perigraph.part.tool_extension.sourcing": {
+            "const": "not_observable"
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "perigraph.part.tool_extension.digest"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "tool_extension: a boundary exactly when there is a digest",
+      "if": {
+        "required": [
+          "perigraph.part.tool_extension.digest"
+        ]
+      },
+      "then": {
+        "required": [
+          "perigraph.part.tool_extension.boundary"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.part.tool_extension.boundary"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "tool_extension: a detail exactly when the absence blames the collector",
+      "if": {
+        "required": [
+          "perigraph.absent.tool_extension.reason"
+        ],
+        "properties": {
+          "perigraph.absent.tool_extension.reason": {
+            "enum": [
+              "not_reachable",
+              "extraction_failed"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.absent.tool_extension.detail"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.absent.tool_extension.detail"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "tool_trace: a part is held or absent, never both",
+      "not": {
+        "required": [
+          "perigraph.part.tool_trace.sourcing",
+          "perigraph.absent.tool_trace.reason"
+        ]
+      }
+    },
+    {
+      "$comment": "tool_trace: a read lag exactly when pulled_by_us",
+      "if": {
+        "required": [
+          "perigraph.part.tool_trace.sourcing"
+        ],
+        "properties": {
+          "perigraph.part.tool_trace.sourcing": {
+            "const": "pulled_by_us"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.part.tool_trace.read_lag_seconds"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.part.tool_trace.read_lag_seconds"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "tool_trace: digest, label and lag belong to a held part",
+      "if": {
+        "not": {
+          "required": [
+            "perigraph.part.tool_trace.sourcing"
+          ]
+        }
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "perigraph.part.tool_trace.digest"
+              ]
+            },
+            {
+              "required": [
+                "perigraph.part.tool_trace.label"
+              ]
+            },
+            {
+              "required": [
+                "perigraph.part.tool_trace.boundary"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "tool_trace: a part that is not observable has no bytes, so it has no digest",
+      "if": {
+        "required": [
+          "perigraph.part.tool_trace.sourcing"
+        ],
+        "properties": {
+          "perigraph.part.tool_trace.sourcing": {
+            "const": "not_observable"
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "perigraph.part.tool_trace.digest"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "tool_trace: a boundary exactly when there is a digest",
+      "if": {
+        "required": [
+          "perigraph.part.tool_trace.digest"
+        ]
+      },
+      "then": {
+        "required": [
+          "perigraph.part.tool_trace.boundary"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.part.tool_trace.boundary"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "tool_trace: a detail exactly when the absence blames the collector",
+      "if": {
+        "required": [
+          "perigraph.absent.tool_trace.reason"
+        ],
+        "properties": {
+          "perigraph.absent.tool_trace.reason": {
+            "enum": [
+              "not_reachable",
+              "extraction_failed"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.absent.tool_trace.detail"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.absent.tool_trace.detail"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "loop: a part is held or absent, never both",
+      "not": {
+        "required": [
+          "perigraph.part.loop.sourcing",
+          "perigraph.absent.loop.reason"
+        ]
+      }
+    },
+    {
+      "$comment": "loop: a read lag exactly when pulled_by_us",
+      "if": {
+        "required": [
+          "perigraph.part.loop.sourcing"
+        ],
+        "properties": {
+          "perigraph.part.loop.sourcing": {
+            "const": "pulled_by_us"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.part.loop.read_lag_seconds"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.part.loop.read_lag_seconds"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "loop: digest, label and lag belong to a held part",
+      "if": {
+        "not": {
+          "required": [
+            "perigraph.part.loop.sourcing"
+          ]
+        }
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "perigraph.part.loop.digest"
+              ]
+            },
+            {
+              "required": [
+                "perigraph.part.loop.label"
+              ]
+            },
+            {
+              "required": [
+                "perigraph.part.loop.boundary"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "loop: a part that is not observable has no bytes, so it has no digest",
+      "if": {
+        "required": [
+          "perigraph.part.loop.sourcing"
+        ],
+        "properties": {
+          "perigraph.part.loop.sourcing": {
+            "const": "not_observable"
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "perigraph.part.loop.digest"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "loop: a boundary exactly when there is a digest",
+      "if": {
+        "required": [
+          "perigraph.part.loop.digest"
+        ]
+      },
+      "then": {
+        "required": [
+          "perigraph.part.loop.boundary"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.part.loop.boundary"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "loop: a detail exactly when the absence blames the collector",
+      "if": {
+        "required": [
+          "perigraph.absent.loop.reason"
+        ],
+        "properties": {
+          "perigraph.absent.loop.reason": {
+            "enum": [
+              "not_reachable",
+              "extraction_failed"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.absent.loop.detail"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.absent.loop.detail"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "turn_budget: a part is held or absent, never both",
+      "not": {
+        "required": [
+          "perigraph.part.turn_budget.sourcing",
+          "perigraph.absent.turn_budget.reason"
+        ]
+      }
+    },
+    {
+      "$comment": "turn_budget: a read lag exactly when pulled_by_us",
+      "if": {
+        "required": [
+          "perigraph.part.turn_budget.sourcing"
+        ],
+        "properties": {
+          "perigraph.part.turn_budget.sourcing": {
+            "const": "pulled_by_us"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.part.turn_budget.read_lag_seconds"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.part.turn_budget.read_lag_seconds"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "turn_budget: digest, label and lag belong to a held part",
+      "if": {
+        "not": {
+          "required": [
+            "perigraph.part.turn_budget.sourcing"
+          ]
+        }
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "perigraph.part.turn_budget.digest"
+              ]
+            },
+            {
+              "required": [
+                "perigraph.part.turn_budget.label"
+              ]
+            },
+            {
+              "required": [
+                "perigraph.part.turn_budget.boundary"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "turn_budget: a part that is not observable has no bytes, so it has no digest",
+      "if": {
+        "required": [
+          "perigraph.part.turn_budget.sourcing"
+        ],
+        "properties": {
+          "perigraph.part.turn_budget.sourcing": {
+            "const": "not_observable"
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "perigraph.part.turn_budget.digest"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "turn_budget: a boundary exactly when there is a digest",
+      "if": {
+        "required": [
+          "perigraph.part.turn_budget.digest"
+        ]
+      },
+      "then": {
+        "required": [
+          "perigraph.part.turn_budget.boundary"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.part.turn_budget.boundary"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "turn_budget: a detail exactly when the absence blames the collector",
+      "if": {
+        "required": [
+          "perigraph.absent.turn_budget.reason"
+        ],
+        "properties": {
+          "perigraph.absent.turn_budget.reason": {
+            "enum": [
+              "not_reachable",
+              "extraction_failed"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.absent.turn_budget.detail"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.absent.turn_budget.detail"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "retry_policy: a part is held or absent, never both",
+      "not": {
+        "required": [
+          "perigraph.part.retry_policy.sourcing",
+          "perigraph.absent.retry_policy.reason"
+        ]
+      }
+    },
+    {
+      "$comment": "retry_policy: a read lag exactly when pulled_by_us",
+      "if": {
+        "required": [
+          "perigraph.part.retry_policy.sourcing"
+        ],
+        "properties": {
+          "perigraph.part.retry_policy.sourcing": {
+            "const": "pulled_by_us"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.part.retry_policy.read_lag_seconds"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.part.retry_policy.read_lag_seconds"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "retry_policy: digest, label and lag belong to a held part",
+      "if": {
+        "not": {
+          "required": [
+            "perigraph.part.retry_policy.sourcing"
+          ]
+        }
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "perigraph.part.retry_policy.digest"
+              ]
+            },
+            {
+              "required": [
+                "perigraph.part.retry_policy.label"
+              ]
+            },
+            {
+              "required": [
+                "perigraph.part.retry_policy.boundary"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "retry_policy: a part that is not observable has no bytes, so it has no digest",
+      "if": {
+        "required": [
+          "perigraph.part.retry_policy.sourcing"
+        ],
+        "properties": {
+          "perigraph.part.retry_policy.sourcing": {
+            "const": "not_observable"
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "perigraph.part.retry_policy.digest"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "retry_policy: a boundary exactly when there is a digest",
+      "if": {
+        "required": [
+          "perigraph.part.retry_policy.digest"
+        ]
+      },
+      "then": {
+        "required": [
+          "perigraph.part.retry_policy.boundary"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.part.retry_policy.boundary"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "retry_policy: a detail exactly when the absence blames the collector",
+      "if": {
+        "required": [
+          "perigraph.absent.retry_policy.reason"
+        ],
+        "properties": {
+          "perigraph.absent.retry_policy.reason": {
+            "enum": [
+              "not_reachable",
+              "extraction_failed"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.absent.retry_policy.detail"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.absent.retry_policy.detail"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "readout: a part is held or absent, never both",
+      "not": {
+        "required": [
+          "perigraph.part.readout.sourcing",
+          "perigraph.absent.readout.reason"
+        ]
+      }
+    },
+    {
+      "$comment": "readout: a read lag exactly when pulled_by_us",
+      "if": {
+        "required": [
+          "perigraph.part.readout.sourcing"
+        ],
+        "properties": {
+          "perigraph.part.readout.sourcing": {
+            "const": "pulled_by_us"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.part.readout.read_lag_seconds"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.part.readout.read_lag_seconds"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "readout: digest, label and lag belong to a held part",
+      "if": {
+        "not": {
+          "required": [
+            "perigraph.part.readout.sourcing"
+          ]
+        }
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "perigraph.part.readout.digest"
+              ]
+            },
+            {
+              "required": [
+                "perigraph.part.readout.label"
+              ]
+            },
+            {
+              "required": [
+                "perigraph.part.readout.boundary"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "readout: a part that is not observable has no bytes, so it has no digest",
+      "if": {
+        "required": [
+          "perigraph.part.readout.sourcing"
+        ],
+        "properties": {
+          "perigraph.part.readout.sourcing": {
+            "const": "not_observable"
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "perigraph.part.readout.digest"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "readout: a boundary exactly when there is a digest",
+      "if": {
+        "required": [
+          "perigraph.part.readout.digest"
+        ]
+      },
+      "then": {
+        "required": [
+          "perigraph.part.readout.boundary"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.part.readout.boundary"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "readout: a detail exactly when the absence blames the collector",
+      "if": {
+        "required": [
+          "perigraph.absent.readout.reason"
+        ],
+        "properties": {
+          "perigraph.absent.readout.reason": {
+            "enum": [
+              "not_reachable",
+              "extraction_failed"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.absent.readout.detail"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.absent.readout.detail"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "decoding: a part is held or absent, never both",
+      "not": {
+        "required": [
+          "perigraph.part.decoding.sourcing",
+          "perigraph.absent.decoding.reason"
+        ]
+      }
+    },
+    {
+      "$comment": "decoding: a read lag exactly when pulled_by_us",
+      "if": {
+        "required": [
+          "perigraph.part.decoding.sourcing"
+        ],
+        "properties": {
+          "perigraph.part.decoding.sourcing": {
+            "const": "pulled_by_us"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.part.decoding.read_lag_seconds"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.part.decoding.read_lag_seconds"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "decoding: digest, label and lag belong to a held part",
+      "if": {
+        "not": {
+          "required": [
+            "perigraph.part.decoding.sourcing"
+          ]
+        }
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "perigraph.part.decoding.digest"
+              ]
+            },
+            {
+              "required": [
+                "perigraph.part.decoding.label"
+              ]
+            },
+            {
+              "required": [
+                "perigraph.part.decoding.boundary"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "decoding: a part that is not observable has no bytes, so it has no digest",
+      "if": {
+        "required": [
+          "perigraph.part.decoding.sourcing"
+        ],
+        "properties": {
+          "perigraph.part.decoding.sourcing": {
+            "const": "not_observable"
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "perigraph.part.decoding.digest"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "decoding: a boundary exactly when there is a digest",
+      "if": {
+        "required": [
+          "perigraph.part.decoding.digest"
+        ]
+      },
+      "then": {
+        "required": [
+          "perigraph.part.decoding.boundary"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.part.decoding.boundary"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "decoding: a detail exactly when the absence blames the collector",
+      "if": {
+        "required": [
+          "perigraph.absent.decoding.reason"
+        ],
+        "properties": {
+          "perigraph.absent.decoding.reason": {
+            "enum": [
+              "not_reachable",
+              "extraction_failed"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.absent.decoding.detail"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.absent.decoding.detail"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "context_partitioning: a part is held or absent, never both",
+      "not": {
+        "required": [
+          "perigraph.part.context_partitioning.sourcing",
+          "perigraph.absent.context_partitioning.reason"
+        ]
+      }
+    },
+    {
+      "$comment": "context_partitioning: a read lag exactly when pulled_by_us",
+      "if": {
+        "required": [
+          "perigraph.part.context_partitioning.sourcing"
+        ],
+        "properties": {
+          "perigraph.part.context_partitioning.sourcing": {
+            "const": "pulled_by_us"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.part.context_partitioning.read_lag_seconds"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.part.context_partitioning.read_lag_seconds"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "context_partitioning: digest, label and lag belong to a held part",
+      "if": {
+        "not": {
+          "required": [
+            "perigraph.part.context_partitioning.sourcing"
+          ]
+        }
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "perigraph.part.context_partitioning.digest"
+              ]
+            },
+            {
+              "required": [
+                "perigraph.part.context_partitioning.label"
+              ]
+            },
+            {
+              "required": [
+                "perigraph.part.context_partitioning.boundary"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "context_partitioning: a part that is not observable has no bytes, so it has no digest",
+      "if": {
+        "required": [
+          "perigraph.part.context_partitioning.sourcing"
+        ],
+        "properties": {
+          "perigraph.part.context_partitioning.sourcing": {
+            "const": "not_observable"
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "perigraph.part.context_partitioning.digest"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "context_partitioning: a boundary exactly when there is a digest",
+      "if": {
+        "required": [
+          "perigraph.part.context_partitioning.digest"
+        ]
+      },
+      "then": {
+        "required": [
+          "perigraph.part.context_partitioning.boundary"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.part.context_partitioning.boundary"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "context_partitioning: a detail exactly when the absence blames the collector",
+      "if": {
+        "required": [
+          "perigraph.absent.context_partitioning.reason"
+        ],
+        "properties": {
+          "perigraph.absent.context_partitioning.reason": {
+            "enum": [
+              "not_reachable",
+              "extraction_failed"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.absent.context_partitioning.detail"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.absent.context_partitioning.detail"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "checkpoint: a part is held or absent, never both",
+      "not": {
+        "required": [
+          "perigraph.model.checkpoint.sourcing",
+          "perigraph.model_absent.checkpoint.reason"
+        ]
+      }
+    },
+    {
+      "$comment": "checkpoint: a read lag exactly when pulled_by_us",
+      "if": {
+        "required": [
+          "perigraph.model.checkpoint.sourcing"
+        ],
+        "properties": {
+          "perigraph.model.checkpoint.sourcing": {
+            "const": "pulled_by_us"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.model.checkpoint.read_lag_seconds"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.model.checkpoint.read_lag_seconds"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "checkpoint: digest, label and lag belong to a held part",
+      "if": {
+        "not": {
+          "required": [
+            "perigraph.model.checkpoint.sourcing"
+          ]
+        }
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "perigraph.model.checkpoint.digest"
+              ]
+            },
+            {
+              "required": [
+                "perigraph.model.checkpoint.label"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "checkpoint: a part that is not observable has no bytes, so it has no digest",
+      "if": {
+        "required": [
+          "perigraph.model.checkpoint.sourcing"
+        ],
+        "properties": {
+          "perigraph.model.checkpoint.sourcing": {
+            "const": "not_observable"
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "perigraph.model.checkpoint.digest"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "checkpoint: a detail exactly when the absence blames the collector",
+      "if": {
+        "required": [
+          "perigraph.model_absent.checkpoint.reason"
+        ],
+        "properties": {
+          "perigraph.model_absent.checkpoint.reason": {
+            "enum": [
+              "not_reachable",
+              "extraction_failed"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.model_absent.checkpoint.detail"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.model_absent.checkpoint.detail"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "precision: a part is held or absent, never both",
+      "not": {
+        "required": [
+          "perigraph.model.precision.sourcing",
+          "perigraph.model_absent.precision.reason"
+        ]
+      }
+    },
+    {
+      "$comment": "precision: a read lag exactly when pulled_by_us",
+      "if": {
+        "required": [
+          "perigraph.model.precision.sourcing"
+        ],
+        "properties": {
+          "perigraph.model.precision.sourcing": {
+            "const": "pulled_by_us"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.model.precision.read_lag_seconds"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.model.precision.read_lag_seconds"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "precision: digest, label and lag belong to a held part",
+      "if": {
+        "not": {
+          "required": [
+            "perigraph.model.precision.sourcing"
+          ]
+        }
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "perigraph.model.precision.digest"
+              ]
+            },
+            {
+              "required": [
+                "perigraph.model.precision.label"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "precision: a part that is not observable has no bytes, so it has no digest",
+      "if": {
+        "required": [
+          "perigraph.model.precision.sourcing"
+        ],
+        "properties": {
+          "perigraph.model.precision.sourcing": {
+            "const": "not_observable"
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "perigraph.model.precision.digest"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "precision: a detail exactly when the absence blames the collector",
+      "if": {
+        "required": [
+          "perigraph.model_absent.precision.reason"
+        ],
+        "properties": {
+          "perigraph.model_absent.precision.reason": {
+            "enum": [
+              "not_reachable",
+              "extraction_failed"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.model_absent.precision.detail"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.model_absent.precision.detail"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "runtime: a part is held or absent, never both",
+      "not": {
+        "required": [
+          "perigraph.model.runtime.sourcing",
+          "perigraph.model_absent.runtime.reason"
+        ]
+      }
+    },
+    {
+      "$comment": "runtime: a read lag exactly when pulled_by_us",
+      "if": {
+        "required": [
+          "perigraph.model.runtime.sourcing"
+        ],
+        "properties": {
+          "perigraph.model.runtime.sourcing": {
+            "const": "pulled_by_us"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.model.runtime.read_lag_seconds"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.model.runtime.read_lag_seconds"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "runtime: digest, label and lag belong to a held part",
+      "if": {
+        "not": {
+          "required": [
+            "perigraph.model.runtime.sourcing"
+          ]
+        }
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "perigraph.model.runtime.digest"
+              ]
+            },
+            {
+              "required": [
+                "perigraph.model.runtime.label"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "runtime: a part that is not observable has no bytes, so it has no digest",
+      "if": {
+        "required": [
+          "perigraph.model.runtime.sourcing"
+        ],
+        "properties": {
+          "perigraph.model.runtime.sourcing": {
+            "const": "not_observable"
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "perigraph.model.runtime.digest"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "runtime: a detail exactly when the absence blames the collector",
+      "if": {
+        "required": [
+          "perigraph.model_absent.runtime.reason"
+        ],
+        "properties": {
+          "perigraph.model_absent.runtime.reason": {
+            "enum": [
+              "not_reachable",
+              "extraction_failed"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.model_absent.runtime.detail"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.model_absent.runtime.detail"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "answer_mode: a part is held or absent, never both",
+      "not": {
+        "required": [
+          "perigraph.model.answer_mode.sourcing",
+          "perigraph.model_absent.answer_mode.reason"
+        ]
+      }
+    },
+    {
+      "$comment": "answer_mode: a read lag exactly when pulled_by_us",
+      "if": {
+        "required": [
+          "perigraph.model.answer_mode.sourcing"
+        ],
+        "properties": {
+          "perigraph.model.answer_mode.sourcing": {
+            "const": "pulled_by_us"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.model.answer_mode.read_lag_seconds"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.model.answer_mode.read_lag_seconds"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "answer_mode: digest, label and lag belong to a held part",
+      "if": {
+        "not": {
+          "required": [
+            "perigraph.model.answer_mode.sourcing"
+          ]
+        }
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "perigraph.model.answer_mode.digest"
+              ]
+            },
+            {
+              "required": [
+                "perigraph.model.answer_mode.label"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "answer_mode: a part that is not observable has no bytes, so it has no digest",
+      "if": {
+        "required": [
+          "perigraph.model.answer_mode.sourcing"
+        ],
+        "properties": {
+          "perigraph.model.answer_mode.sourcing": {
+            "const": "not_observable"
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "perigraph.model.answer_mode.digest"
+          ]
+        }
+      }
+    },
+    {
+      "$comment": "answer_mode: a digested answer mode is labelled with its value (section 9)",
+      "if": {
+        "required": [
+          "perigraph.model.answer_mode.digest"
+        ]
+      },
+      "then": {
+        "required": [
+          "perigraph.model.answer_mode.label"
+        ],
+        "properties": {
+          "perigraph.model.answer_mode.label": {
+            "enum": [
+              "generated_text",
+              "option_scores",
+              "classifier_output"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "$comment": "answer_mode: a detail exactly when the absence blames the collector",
+      "if": {
+        "required": [
+          "perigraph.model_absent.answer_mode.reason"
+        ],
+        "properties": {
+          "perigraph.model_absent.answer_mode.reason": {
+            "enum": [
+              "not_reachable",
+              "extraction_failed"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "perigraph.model_absent.answer_mode.detail"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "perigraph.model_absent.answer_mode.detail"
+          ]
+        }
+      }
+    }
+  ]
+}

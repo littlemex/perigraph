@@ -218,6 +218,7 @@
       "perigraph.collector": "string. Which collector produced this record.",
       "perigraph.collector_version": "string. Its version. A part that stopped being readable between two versions cannot be attributed without it.",
       "perigraph.collector_reaches": "comma-separated part names. What this collector CLAIMS it can reach here, static per version -- a manifest that adapted to what it found could never contradict a record, which is the one thing it is for.",
+      "perigraph.model_reaches": "comma-separated model part names. The model half's manifest: what this collector claims it can reach of checkpoint, precision, runtime and answer_mode, static per version, read and contradicted exactly as collector_reaches is.",
       "perigraph.status": "one of status.values.",
       "perigraph.harness_identity": "string or absent. Version 1's 'perigraph.identity', renamed now that there are three; computed exactly as before over the harness parts.",
       "perigraph.model_identity": "string or absent. Over all four model parts, each loaded_by_us with a digest, sorted by part name, serialised as the harness identity is. Comparable only against another from the same collector and collector version, because precision and runtime are collector renderings. Stamped on every answer by the process that loaded the model.",
@@ -239,6 +240,9 @@
       "perigraph.model.<name>.read_lag_seconds": "number. Required for pulled_by_us and refused elsewhere.",
       "perigraph.model_absent.<name>.reason": "one of absence_reasons.values.",
       "perigraph.model_absent.<name>.detail": "string. Required when the reason blames the collector, refused otherwise."
+    },
+    "extensions": {
+      "perigraph.ext.<vendor>.<key>": "reserved for attributes outside this specification. Never keys an identity, never lifts a refusal, and a receiver MUST NOT reject a record for carrying one (SPEC section 13.2)."
     }
   },
   "receiver_obligations": {
@@ -266,7 +270,7 @@
     ]
   },
   "digest": {
-    "note": "Added in response to the second implementation, which could not interoperate without it. Section 5 said 'lowercase hex sha256 of the part's bytes' and never said what bytes a STRING has, nor how the identity combines its parts, nor that the result is truncated. A UTF-16 implementation would have produced a different identity for every non-ASCII instruction while passing every test it wrote for itself.",
+    "note": "Added in response to the second implementation, which could not interoperate without it. Section 6 (the wire form) said 'lowercase hex sha256 of the part's bytes' and never said what bytes a STRING has, nor how the identity combines its parts, nor that the result is truncated. A UTF-16 implementation would have produced a different identity for every non-ASCII instruction while passing every test it wrote for itself.",
     "algorithm": "sha256",
     "encoding": "utf-8",
     "identity_length": 24,

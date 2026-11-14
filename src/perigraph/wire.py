@@ -69,6 +69,15 @@ def to_attributes(record: Record) -> dict[str, str | int | float]:
     return out
 
 
+def _names(field: str) -> tuple[str, ...]:
+    """A manifest read off the wire (section 6): empty entries dropped, and a repeated name counted once.
+
+    The list is a set. A collector SHOULD NOT repeat a name, and a receiver that refused a record for doing so would turn
+    a cosmetic fault into a lost record -- which section 1.1 forbids a receiver to cause.
+    """
+    return tuple(dict.fromkeys(r for r in field.split(",") if r))
+
+
 def from_attributes(attrs: dict) -> Record:
     """Rebuild a record from attributes, refusing a version this reader does not implement.
 
@@ -117,10 +126,10 @@ def from_attributes(attrs: dict) -> Record:
     model = None
     if f"{PREFIX}.model_reaches" in attrs or mparts or mabsences:
         mreach = str(attrs.get(f"{PREFIX}.model_reaches", ""))
-        model = Model(parts=tuple(mparts), absences=tuple(mabsences), reaches=tuple(r for r in mreach.split(",") if r))
+        model = Model(parts=tuple(mparts), absences=tuple(mabsences), reaches=_names(mreach))
     record = Record(manifest=Manifest(collector=str(attrs[f"{PREFIX}.collector"]),
                                       version=str(attrs[f"{PREFIX}.collector_version"]),
-                                      reaches=tuple(r for r in reaches.split(",") if r)),
+                                      reaches=_names(reaches)),
                     status=str(attrs[f"{PREFIX}.status"]),
                     parts=tuple(parts), absences=tuple(absences), model=model)
     # The identities on the wire are derived values. One that disagrees with the parts it claims to be over is a sender

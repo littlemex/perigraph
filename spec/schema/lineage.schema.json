@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/littlemex/perigraph/blob/main/spec/schema/lineage.schema.json",
+  "title": "perigraph lineage document, spec_version 2 (generated from spec/vocabularies.json)",
+  "description": "One trainer's account of how one artifact came to be (SPEC section 10). Shape only: that the parent differs from the subject, and what an incomplete chain means, are a receiver's rules.",
+  "type": "object",
+  "required": [
+    "spec_version",
+    "subject",
+    "parent",
+    "method"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "spec_version": {
+      "const": 2
+    },
+    "subject": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{24}$"
+    },
+    "parent": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{24}$"
+        },
+        {
+          "const": "none"
+        }
+      ]
+    },
+    "method": {
+      "enum": [
+        "pretrained",
+        "sft",
+        "distillation",
+        "rl",
+        "merge",
+        "reserialisation"
+      ]
+    },
+    "sets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "role",
+          "digest"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "role": {
+            "enum": [
+              "trained_on",
+              "consulted"
+            ]
+          },
+          "digest": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    "signal": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "artifact_identity": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{24}$"
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "trainer": {
+      "type": "string"
+    }
+  },
+  "allOf": [
+    {
+      "$comment": "a pretrained artifact has no parent, and only a pretrained one has none",
+      "if": {
+        "properties": {
+          "method": {
+            "const": "pretrained"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "parent": {
+            "const": "none"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "parent": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{24}$"
+          }
+        }
+      }
+    },
+    {
+      "$comment": "distillation and rl name what their signal came from",
+      "if": {
+        "properties": {
+          "method": {
+            "enum": [
+              "distillation",
+              "rl"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "signal"
+        ]
+      }
+    }
+  ]
+}

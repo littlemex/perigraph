@@ -1,0 +1,769 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>perigraph: a record of what surrounded the model, and of what answered</title>
+<meta name="description" content="perigraph is an open specification for one record per model call: each harness and model part identified by a digest of its content, how each fact reached the record, and whose fault each gap is.">
+<script>document.documentElement.classList.add('js')</script>
+<style>
+:root{
+  /* Cloudscape visual-refresh tokens (light) */
+  --ink:#0f141a;          /* color-text-body-default */
+  --ink2:#424650;         /* color-text-heading-secondary */
+  --ink3:#656871;         /* color-text-body-secondary */
+  --bg:#ffffff;           /* color-background-layout-main */
+  --shade:#f6f6f9;        /* color-background-cell-shaded */
+  --card:#ffffff;         /* color-background-container-content */
+  --line:#c6c6cd;         /* color-border-divider-default */
+  --line2:#ebebf0;        /* color-border-divider-secondary */
+  --link:#006ce0;         /* color-text-link-default */
+  --link-h:#002b66;       /* color-text-link-hover */
+  --accent:#006ce0;       /* color-background-button-primary-default */
+  --accent-soft:#f0fbff;  /* status info background */
+  --ok:#00802f; --ok-soft:#effff1;
+  --err:#db0000; --err-soft:#fff5f5;
+  --code-bg:#0f141a; --code-ink:#dedee3;
+  --r-btn:20px; --r-in:8px; --r-box:16px;
+  --font:'Open Sans','Helvetica Neue',Roboto,Arial,"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",sans-serif;
+  --mono:Monaco,Menlo,Consolas,'Courier New',monospace;
+  --shadow:0 1px 1px rgba(15,20,26,.04),0 6px 24px -8px rgba(15,20,26,.12);
+  --ease:cubic-bezier(.2,.7,.2,1);
+}
+@media (prefers-color-scheme: dark){
+  .btn.primary:hover{color:var(--bg)}
+  :root{
+    --ink:#dedee3; --ink2:#b4b4bb; --ink3:#a4a4ad;
+    --bg:#0f141a; --shade:#161d26; --card:#161d26;
+    --line:#424650; --line2:#232b37;
+    --link:#42b4ff; --link-h:#75cfff; --accent:#42b4ff; --accent-soft:#001129;
+    --ok:#2bb534; --ok-soft:#001a02; --err:#ff7a7a; --err-soft:#1f0000;
+    --code-bg:#06090d; --code-ink:#dedee3;
+    --shadow:0 1px 1px rgba(0,0,0,.3),0 8px 28px -10px rgba(0,0,0,.6);
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+html[lang=ja] body{word-break:normal;overflow-wrap:break-word}
+html[lang=ja] :is(h1,h2,h3,summary){word-break:auto-phrase;text-wrap:balance}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.7;
+  -webkit-font-smoothing:antialiased;word-break:keep-all;line-break:strict;overflow-wrap:anywhere}
+a{color:var(--link);text-decoration:none}
+a:hover{color:var(--link-h);text-decoration:underline}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+code,pre,.mono{font-family:var(--mono);font-size:.88em}
+p code,li code,td code{background:var(--shade);border:1px solid var(--line2);border-radius:6px;padding:.05em .35em}
+h1,h2,h3{margin:0;letter-spacing:-.015em;line-height:1.25;color:var(--ink)}
+h1{font-size:clamp(34px,5.2vw,58px);font-weight:700;letter-spacing:-.03em;line-height:1.12}
+h2{font-size:clamp(26px,3.4vw,38px);font-weight:700}
+h3{font-size:19px;font-weight:700}
+p{margin:0 0 14px}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+.muted{color:var(--ink3)}
+.eyebrow{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
+.lede{font-size:19px;color:var(--ink2);max-width:680px}
+
+/* header */
+header.top{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--bg) 86%,transparent);
+  backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line2)}
+header.top .wrap{display:flex;align-items:center;gap:20px;height:60px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;color:var(--ink);font-size:17px}
+.brand:hover{text-decoration:none;color:var(--ink)}
+nav.sections{display:flex;gap:4px;margin-left:auto}
+nav.sections a{color:var(--ink2);font-size:14px;font-weight:600;padding:6px 12px;border-radius:var(--r-btn)}
+nav.sections a:hover,nav.sections a.on{background:var(--shade);color:var(--ink);text-decoration:none}
+.lang{display:flex;border:1px solid var(--line);border-radius:var(--r-btn);padding:2px}
+.lang button{font:inherit;font-size:13px;font-weight:700;border:0;background:none;color:var(--ink2);padding:3px 11px;border-radius:var(--r-btn);cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.gh{display:flex;align-items:center;color:var(--ink2)}
+.gh:hover{color:var(--ink)}
+@media (max-width:820px){nav.sections{display:none}.lang{margin-left:auto}}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:8px;font:inherit;font-size:15px;font-weight:700;border-radius:var(--r-btn);
+  padding:9px 20px;border:2px solid var(--accent);cursor:pointer;transition:background .2s,color .2s,transform .2s var(--ease)}
+.btn.primary{background:var(--accent);color:var(--bg)}
+.btn.primary:hover{background:var(--link-h);border-color:var(--link-h);color:#fff;text-decoration:none}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.ghost:hover{background:var(--accent-soft);text-decoration:none}
+.btn:active{transform:translateY(1px)}
+.btn.small{font-size:13px;padding:5px 14px;border-width:1.5px}
+
+/* sections */
+section{padding:88px 0;border-top:1px solid var(--line2)}
+section.hero{border-top:0;padding:72px 0 56px}
+section.band{background:var(--shade)}
+.sec-head{max-width:760px;margin-bottom:44px}
+.sec-head h2{margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+@media (max-width:900px){.grid2,.grid3{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--line2);border-radius:var(--r-box);padding:24px;box-shadow:var(--shadow)}
+section.band .panel{border-color:transparent}
+
+/* reveal */
+.js .rv{opacity:0;transform:translateY(14px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+.js .rv.in{opacity:1;transform:none}
+@media (prefers-reduced-motion: reduce){.rv{opacity:1;transform:none;transition:none}}
+</style>
+<style>
+.hero-grid{display:grid;grid-template-columns:1fr 1.15fr;gap:44px;align-items:center}
+@media (max-width:960px){.hero-grid{grid-template-columns:1fr;gap:28px}}
+.hero h1{margin-bottom:20px}
+html[lang=ja] .hero h1{font-size:clamp(28px,4vw,46px);line-height:1.25}
+html[lang=ja] h2{font-size:clamp(24px,3vw,34px);line-height:1.4}
+html[lang=ja] .eyebrow,html[lang=ja] a.pillar .k{text-transform:none;letter-spacing:.04em}
+.hero h1 .hl{color:var(--accent)}
+.hero .lede{margin-bottom:28px}
+.cta{display:flex;gap:12px;flex-wrap:wrap}
+.pillars{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:56px}
+@media (max-width:900px){.pillars{grid-template-columns:1fr 1fr}}
+@media (max-width:520px){.pillars{grid-template-columns:1fr}}
+a.pillar{display:flex;flex-direction:column;gap:6px;background:var(--shade);border-radius:var(--r-box);padding:20px;color:var(--ink2);font-size:14.5px;transition:transform .25s var(--ease),background .25s}
+a.pillar:hover{text-decoration:none;transform:translateY(-3px);background:var(--accent-soft)}
+a.pillar .k{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+a.pillar b{font-size:17px;color:var(--ink);line-height:1.35}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:52px;border-top:1px solid var(--line2);padding-top:24px}
+@media (max-width:900px){.stats{grid-template-columns:1fr 1fr}}
+.stats b{display:block;font-size:40px;font-weight:700;letter-spacing:-.03em;line-height:1.1;color:var(--ink)}
+.stats span{font-size:14px;color:var(--ink2)}
+table.t{width:100%;border-collapse:collapse;font-size:15px;background:var(--card);border-radius:var(--r-box);overflow:hidden;box-shadow:var(--shadow)}
+table.t th,table.t td{text-align:left;vertical-align:top;padding:12px 16px;border-bottom:1px solid var(--line2)}
+table.t th{font-size:13px;color:var(--ink3);font-weight:700;background:var(--shade)}
+table.t tr:last-child td{border-bottom:0}
+table.t td b{color:var(--ink)}
+table.t td:first-child,table.t th{white-space:nowrap}
+#problem table.t td:first-child{white-space:normal}
+.tablewrap{overflow-x:auto}
+.src{font-size:14px;color:var(--ink3);margin-top:14px}
+.fig{margin:0}
+.fig svg{width:100%;height:auto;display:block}
+.fig figcaption{font-size:14px;color:var(--ink3);margin-top:10px}
+.fig text{font-family:var(--font);fill:var(--ink);font-size:14px;font-weight:700}
+.fig text.s{fill:var(--ink3);font-size:12px;font-weight:400}
+.fig text.m{font-family:var(--mono);font-size:12.5px;font-weight:400;fill:var(--ink)}
+.fig .box{fill:var(--card);stroke:var(--line);stroke-width:1.5}
+.fig .box.acc{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}
+.fig .box.err{fill:var(--err-soft);stroke:var(--err);stroke-width:2;stroke-dasharray:6 4}
+.fig .box.ok{fill:var(--ok-soft);stroke:var(--ok);stroke-width:2}
+.fig .w{stroke:var(--ink2);stroke-width:2;fill:none}
+.fig .w.k{stroke:var(--accent);stroke-width:3}
+.fig .w.d{stroke:var(--ink3);stroke-width:1.5;stroke-dasharray:4 4}
+.fig .ax{stroke:var(--ink);stroke-width:2}
+.fig .bg{fill:var(--shade)}
+.decisions{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media (max-width:900px){.decisions{grid-template-columns:1fr}}
+.dec{background:var(--card);border:1px solid var(--line2);border-radius:var(--r-box);padding:22px 24px;box-shadow:var(--shadow)}
+.dec .n{font-family:var(--mono);font-size:12px;color:var(--ink3)}
+.dec h3{margin:6px 0 8px}
+.dec p{font-size:15px;color:var(--ink2)}
+details.more{border-top:1px solid var(--line2);margin-top:10px}
+details.more>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:10px 0;font-weight:700;font-size:14.5px;color:var(--ink)}
+details.more>summary::-webkit-details-marker{display:none}
+details.more>summary::before{content:"";width:9px;height:9px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(-45deg);transition:transform .3s var(--ease);flex:none;margin:0 3px}
+details.more[open]>summary::before{transform:rotate(45deg)}
+details.more .body{padding:2px 0 8px;color:var(--ink2);font-size:14.5px;overflow:hidden}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.tabs button{font:inherit;font-size:14px;font-weight:700;border:1.5px solid var(--line);background:var(--card);color:var(--ink2);border-radius:var(--r-btn);padding:5px 16px;cursor:pointer}
+.tabs button[aria-selected="true"]{border-color:var(--ink);background:var(--ink);color:var(--bg)}
+.codewrap{background:var(--code-bg);border-radius:12px;overflow:hidden}
+.codehead{display:flex;justify-content:flex-end;padding:8px 10px 0}
+.copy{font:inherit;font-size:12px;font-weight:700;border:1px solid #424650;background:#161d26;color:#dedee3;border-radius:var(--r-btn);padding:3px 12px;cursor:pointer}
+pre.term{background:var(--code-bg);color:var(--code-ink);padding:14px 20px 18px;overflow-x:auto;margin:0;line-height:1.6;font-size:13px;white-space:pre}
+pre.term .c{color:#9aa0aa}
+.note{background:var(--accent-soft);border-radius:12px;padding:14px 16px;font-size:14.5px;color:var(--ink2);margin-top:18px}
+.note b{color:var(--ink)}
+ul.plain{margin:0;padding-left:20px;color:var(--ink2);font-size:15px}
+ul.plain li{margin-bottom:8px}
+.grid2>*,.hero-grid>*,.decisions>*{min-width:0}
+@media (prefers-reduced-motion: reduce){.js .rv{opacity:1;transform:none;transition:none}}
+@media (max-width:700px){.fig{overflow-x:auto}.fig svg{min-width:640px}}
+footer{border-top:1px solid var(--line2);padding:40px 0 56px;font-size:14px;color:var(--ink3)}
+footer .wrap{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap}
+footer a{color:var(--ink2)}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top" translate="no">perigraph</a>
+    <nav class="sections" aria-label="Sections">
+      <a href="#problem" data-t="nav.problem">Problem</a>
+      <a href="#design" data-t="nav.design">Design</a>
+      <a href="#receivers" data-t="nav.receivers">Refusals</a>
+      <a href="#relation" data-t="nav.relation">OTel</a>
+      <a href="#start" data-t="nav.start">Start</a>
+      <a href="#status" data-t="nav.status">Status</a>
+    </nav>
+    <div class="lang" role="group" aria-label="Language" data-t-aria="aria.lang">
+      <button type="button" data-lang="ja" aria-pressed="false">JA</button>
+      <button type="button" data-lang="en" aria-pressed="true">EN</button>
+    </div>
+    <a class="gh" href="https://github.com/littlemex/perigraph" aria-label="GitHub">
+      <svg width="22" height="22" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+    </a>
+  </div>
+</header>
+
+<main id="top">
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div class="rv">
+        <div class="eyebrow" data-t="hero.eyebrow">Open specification &middot; spec_version 2, provisional</div>
+        <h1 data-t="hero.h">A record of what surrounded the model, <span class="hl">and of what answered.</span></h1>
+        <p class="lede" data-t="hero.lede">One record per model call. Every part of the harness and of the model is identified by a digest of its exact content, says how that fact reached the record, and, when it is missing, says whose fault the gap is. A receiver can then refuse a claim about accuracy or cost that the records cannot support.</p>
+        <div class="cta">
+          <a class="btn primary" href="https://github.com/littlemex/perigraph/blob/main/SPEC.md" data-t="hero.cta1">Read the specification</a>
+          <a class="btn ghost" href="#start" data-t="hero.cta2">Try it</a>
+        </div>
+      </div>
+      <figure class="fig rv">
+        <svg viewBox="0 0 700 430" role="img" aria-labelledby="f1t" id="fig1">
+          <title id="f1t" data-t="f1.title">What ran, its parts, the identities they key, and what a receiver does</title>
+          <text x="75" y="22" text-anchor="middle" data-t="f1.c1">What ran</text><text x="277" y="22" text-anchor="middle" data-t="f1.c2">Parts, each digested</text><text x="496" y="22" text-anchor="middle" data-t="f1.c3">Identities</text><text x="636" y="22" text-anchor="middle" data-t="f1.c4">Receiver</text>
+          <rect class="box" x="10" y="50" width="130" height="156" rx="12"/><text x="75" y="120" text-anchor="middle" data-t="f1.req">the request</text><text class="s" x="75" y="140" text-anchor="middle" data-t="f1.req2">sent by the requester</text>
+          <rect class="box" x="10" y="230" width="130" height="122" rx="12"/><text x="75" y="286" text-anchor="middle" data-t="f1.mod">the loaded model</text><text class="s" x="75" y="306" text-anchor="middle" data-t="f1.mod2">in the serving process</text>
+          <path class="w" d="M140 128 H163"/><path class="w" d="M140 291 H163"/>
+          <text class="s" x="167" y="44" data-t="f1.harness">harness half</text>
+          <rect class="box acc" x="165" y="52" width="225" height="26" rx="6"/><text class="m" x="175" y="70">instruction</text><text class="s" x="382" y="69" text-anchor="end">model_visible</text>
+          <rect class="box " x="165" y="84" width="225" height="26" rx="6"/><text class="m" x="175" y="102">tool_schemas</text><text class="s" x="382" y="101" text-anchor="end">parsed</text>
+          <rect class="box " x="165" y="116" width="225" height="26" rx="6"/><text class="m" x="175" y="134">decoding</text><text class="s" x="382" y="133" text-anchor="end">parsed</text>
+          <rect class="box err" x="165" y="148" width="225" height="26" rx="6"/><text class="m" x="175" y="166">loop</text><text class="s" x="382" y="165" text-anchor="end">not_provided</text>
+          <rect class="box err" x="165" y="180" width="225" height="26" rx="6"/><text class="m" x="175" y="198">tool_extension</text><text class="s" x="382" y="197" text-anchor="end">not_observable</text>
+          <text class="s" x="167" y="224" data-t="f1.model">model half</text>
+          <rect class="box acc" x="165" y="232" width="225" height="26" rx="6"/><text class="m" x="175" y="250">checkpoint</text><text class="s" x="382" y="249" text-anchor="end">loaded_by_us</text>
+          <rect class="box acc" x="165" y="264" width="225" height="26" rx="6"/><text class="m" x="175" y="282">precision</text><text class="s" x="382" y="281" text-anchor="end">loaded_by_us</text>
+          <rect class="box acc" x="165" y="296" width="225" height="26" rx="6"/><text class="m" x="175" y="314">runtime</text><text class="s" x="382" y="313" text-anchor="end">loaded_by_us</text>
+          <rect class="box acc" x="165" y="328" width="225" height="26" rx="6"/><text class="m" x="175" y="346">answer_mode</text><text class="s" x="382" y="345" text-anchor="end">loaded_by_us</text>
+          <path class="w k" d="M390 65 H440"/>
+          <rect class="box acc" x="440" y="46" width="112" height="40" rx="10"/><text x="496" y="71" text-anchor="middle" data-t="f1.hid">harness</text>
+          <path class="w d" d="M390 97 C410 97 410 126 420 126"/><path class="w d" d="M390 129 H420"/><text class="s" x="426" y="131" data-t="f1.nokey">recorded, keys nothing</text>
+          <path class="w k" d="M390 245 C418 245 418 262 440 262"/>
+          <path class="w k" d="M390 277 C418 277 418 275 440 275"/>
+          <path class="w k" d="M390 309 C418 309 418 288 440 288"/>
+          <path class="w k" d="M390 341 C418 341 418 300 440 300"/>
+          <rect class="box acc" x="440" y="252" width="112" height="56" rx="10"/><text x="496" y="276" text-anchor="middle" data-t="f1.mid">model</text><text class="s" x="496" y="294" text-anchor="middle" data-t="f1.mid2">all four parts</text>
+          <path class="w k" d="M390 245 C410 245 410 360 440 360"/>
+          <rect class="box acc" x="440" y="336" width="112" height="44" rx="10"/><text x="496" y="355" text-anchor="middle" data-t="f1.aid">artifact</text><text class="s" x="496" y="371" text-anchor="middle" data-t="f1.aid2">checkpoint only</text>
+          <path class="w" d="M552 66 C566 66 566 150 578 150"/><path class="w" d="M552 280 C566 280 566 210 578 210"/><path class="w" d="M552 358 C570 358 570 240 578 240"/>
+          <rect class="box" x="578" y="110" width="116" height="170" rx="12"/>
+          <text class="s" x="636" y="146" text-anchor="middle" data-t="f1.r1">reject</text>
+          <text class="s" x="636" y="182" text-anchor="middle" data-t="f1.r2">store</text>
+          <text class="s" x="636" y="218" text-anchor="middle" data-t="f1.r3">refuse a verdict</text>
+          <text class="s" x="636" y="254" text-anchor="middle" data-t="f1.r4">refuse a comparison</text>
+          <path class="w k" d="M20 410 H56"/><text class="s" x="62" y="414" data-t="f1.l1">keys an identity</text><path class="w d" d="M220 410 H256"/><text class="s" x="262" y="414" data-t="f1.l2">recorded, keys nothing</text><rect class="box err" x="440" y="401" width="36" height="18" rx="4"/><text class="s" x="482" y="414" data-t="f1.l3">absent, with whose fault</text>
+          </svg>
+        <figcaption data-t="f1.cap">A request adapter holds the left half and reports the model half not_observable; the process that loaded the model holds the right half. Shown here together.</figcaption>
+      </figure>
+    </div>
+    <div class="pillars">
+      <a class="pillar rv" href="#d1"><span class="k" data-t="p1.k">Content</span><b data-t="p1.h">A digest per part, never a name</b><span data-t="p1.p">A label its owner controls can stay the same while the bytes change. Names are kept for readers and key nothing.</span></a>
+      <a class="pillar rv" href="#d2"><span class="k" data-t="p2.k">Boundary</span><b data-t="p2.h">Only what the model reads keys an identity</b><span data-t="p2.p">Each digest names the boundary it is over: the wire, the parsed values, or the text the model reads.</span></a>
+      <a class="pillar rv" href="#d3"><span class="k" data-t="p3.k">Sourcing</span><b data-t="p3.h">How each fact got here</b><span data-t="p3.p">In the request, loaded by us, pulled with a lag, pushed by its owner, or not observable. Unchecked claims only subtract.</span></a>
+      <a class="pillar rv" href="#d4"><span class="k" data-t="p4.k">Blame</span><b data-t="p4.h">Every gap names whose it is</b><span data-t="p4.p">The requester, the collector, or nobody. A collector's own manifest turns a silent regression into a contradiction.</span></a>
+    </div>
+    <div class="stats rv">
+      <div><b>10</b><span data-t="st1">harness parts, from the instruction to how contexts are partitioned</span></div>
+      <div><b>4</b><span data-t="st2">model parts: checkpoint, precision, runtime, answer mode</span></div>
+      <div><b>13</b><span data-t="st3">refusals a conforming receiver performs, and 4 it must not</span></div>
+      <div><b>3</b><span data-t="st4">implementations checked by one conformance runner: Python, TypeScript, Go</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="problem" class="band">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="eyebrow" data-t="pr.eyebrow">The problem</div>
+      <h2 data-t="pr.h">The names stayed the same. The answers did not.</h2>
+      <p class="lede" data-t="pr.lede">A comparison between two runs is only as good as the evidence that each side was what its name says. In one distillation study, each of these changed the answers while every name stayed the same.</p>
+    </div>
+    <div class="tablewrap rv">
+      <table class="t">
+        <thead><tr><th data-t="pr.th1">what happened</th><th data-t="pr.th2">what stayed the same</th><th data-t="pr.th3">what changed</th></tr></thead>
+        <tbody>
+          <tr><td data-t="pr.r1a">A model was re-trained from the same recipe, data and seed</td><td data-t="pr.r1b">the model name, the recipe</td><td data-t="pr.r1c">its labels agreed with the earlier model's on <b>93.4%</b> of items</td></tr>
+          <tr><td data-t="pr.r2a">The same weights were quantised to int8 when loaded</td><td data-t="pr.r2b">the stored files, the model name</td><td data-t="pr.r2c">its answers agreed with the bf16 model's on <b>33 to 40%</b> of items</td></tr>
+          <tr><td data-t="pr.r3a">A model trained to answer by comparing option scores was asked to generate text</td><td data-t="pr.r3b">the model, the files</td><td data-t="pr.r3c">it produced <code>1111</code> instead of a label</td></tr>
+          <tr><td data-t="pr.r4a">The serving image was rebuilt and lost some packages</td><td data-t="pr.r4b">the model name, the checkpoint</td><td data-t="pr.r4c"><b>97 of 100</b> answers agreed with the earlier ones</td></tr>
+          <tr><td data-t="pr.r5a">A router was deployed, which writes into the fallback model's serving specification</td><td data-t="pr.r5b">the fallback model</td><td data-t="pr.r5c">its version string, so the same model became a different arm</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="src rv"><span data-t="pr.src">Sources:</span> <a href="https://github.com/littlemex/tierbook/blob/497d5cd5ba7acf219ac90dde5648c20514f02deb/docs/verify/v0.5.0-distillation-loop.md" data-t="pr.src1">tierbook verification record</a> (rows 1 to 4) &middot; <a href="https://github.com/littlemex/Prismyra/commit/84cf43dd77164ac3a23c8442b8d378a19eb59d14" data-t="pr.src2">Prismyra commit 84cf43d</a> (row 5)</p>
+    <div class="note rv" data-t="pr.note"><b>Two failure directions.</b> The first four made two different things look the same; the fifth made the same thing look different. A content digest catches the first kind, and it catches the second only when it covers what the model actually reads and nothing else. Most of the specification is about that second condition.</div>
+  </div>
+</section>
+
+<section id="design">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="eyebrow" data-t="de.eyebrow">How it is designed, and why</div>
+      <h2 data-t="de.h">Nine decisions, each with the failure it prevents</h2>
+      <p class="lede" data-t="de.lede">Each decision is stated with the alternatives that were weighed. Open one to see them. The section of the specification that makes it normative is named on each card.</p>
+    </div>
+    <div class="decisions">
+      <article class="dec rv" id="d1"><div class="n">1 &middot; SPEC 2.2</div><h3 data-t="d1.h">A digest of each part's content, not its name</h3><p data-t="d1.p">A prompt can stay <code>v3</code> while its text changes, and a model name can survive a re-training. Each part carries the sha256 of its exact content; names are labels for a reader.</p>
+        <details class="more"><summary data-t="alt">Alternatives weighed</summary><div class="body" data-t="d1.alt">A name and version per component, which every convention surveyed carries and which the incidents above defeat. One digest over the whole prompt, which says that something changed but not which part.</div></details></article>
+      <article class="dec rv" id="d2"><div class="n">2 &middot; SPEC 2.1, 2.4</div><h3 data-t="d2.h">Every digest names its boundary</h3><p data-t="d2.p">A <code>tools</code> array is in the request, but the provider renders it into the prompt however it likes. Only a <code>model_visible</code> digest keys the harness identity, and that text is hashed raw. For a Chat Completions request, the identity is the instruction's alone, and the record says so.</p>
+        <details class="more"><summary data-t="alt">Alternatives weighed</summary><div class="body" data-t="d2.alt">Keying on every field, which changes when a gateway re-serialises JSON and stays the same when a provider changes how it renders tools. Canonical JSON everywhere, which makes two instructions that differ only in white space look identical, though such differences change model behaviour.</div></details></article>
+      <article class="dec rv" id="d3"><div class="n">3 &middot; SPEC 1.1a</div><h3 data-t="d3.h">Every fact says how it reached the record</h3><p data-t="d3.p">Five sourcing values, per part. A pulled fact carries how many seconds before the request it was read. A claim nobody downstream can check may trigger a refusal and may never lift one.</p>
+        <details class="more"><summary data-t="alt">Alternatives weighed</summary><div class="body" data-t="d3.alt">Trusting declared metadata, which lets a statement stand in for an observation. Refusing declarations outright, which throws away the only source for parts a request cannot carry, such as a retry policy.</div></details></article>
+      <article class="dec rv" id="d4"><div class="n">4 &middot; SPEC 1.2, 1.3</div><h3 data-t="d4.h">Every absence names whose fault it is</h3><p data-t="d4.p">A collector that loses the ability to read a field after a client library renames it would otherwise write the same gap as a requester who sent nothing. Each absence blames the requester, the collector or nobody, and the collector publishes in advance what it can reach.</p>
+        <details class="more"><summary data-t="alt">Alternatives weighed</summary><div class="body" data-t="d4.alt">Omitted or null fields, which cannot tell a regression from an empty request. A free-text reason, which no receiver can act on.</div></details></article>
+      <article class="dec rv" id="d5"><div class="n">5 &middot; SPEC 1.1</div><h3 data-t="d5.h">Permissive toward the sender, exact about itself</h3><p data-t="d5.p">A record missing any number of parts is still a record, because a refused record looks the same as a run that never happened. Every failure path, an exception included, still emits one, with status <code>collector_failed</code>.</p>
+        <details class="more"><summary data-t="alt">Alternatives weighed</summary><div class="body" data-t="d5.alt">Strict validation that rejects incomplete records, which turns every partial observation into silence.</div></details></article>
+      <article class="dec rv" id="d6"><div class="n">6 &middot; SPEC 9</div><h3 data-t="d6.h">What answered is identified by the process that loaded it</h3><p data-t="d6.p">Checkpoint files, precision after loading, runtime packages and answer mode: one part for each incident above. Only <code>loaded_by_us</code> keys the model identity. A model behind a provider's API has none and stays admissible.</p>
+        <details class="more"><summary data-t="alt">Alternatives weighed</summary><div class="body" data-t="d6.alt">A model name or a provider's model identifier, which is a label. A digest of the stored files alone, which cannot tell bf16 from int8 of the same files.</div></details></article>
+      <article class="dec rv" id="d7"><div class="n">7 &middot; SPEC 10</div><h3 data-t="d7.h">A model's history is a separate document that can only subtract</h3><p data-t="d7.p">Its trainer writes the parent, the method and the item sets used, about one artifact identity. A set named as trained on makes a verdict on that set suspect. A missing ancestor is unknown, never clean.</p>
+        <details class="more"><summary data-t="alt">Alternatives weighed</summary><div class="body" data-t="d7.alt">Lineage fields in every record, which would make the server that holds the bytes vouch for a history it does not hold.</div></details></article>
+      <article class="dec rv" id="d8"><div class="n">8 &middot; SPEC 6</div><h3 data-t="d8.h">Flat attributes, keyed by part name</h3><p data-t="d8.p">The record rides on a span any tracer already emits, on a log line or in a file. Keys never use positions, which shift when a collector learns one more part. A missing identity is omitted, never an empty string that would group every unidentifiable run.</p>
+        <details class="more"><summary data-t="alt">Alternatives weighed</summary><div class="body" data-t="d8.alt">A nested JSON document, which needs a serialiser on both ends and puts the record's shape into the transport, where every change to it breaks compatibility.</div></details></article>
+      <article class="dec rv" id="d9"><div class="n">9 &middot; SPEC 8</div><h3 data-t="d9.h">Conformance is a closed list of refusals</h3><p data-t="d9.p">A receiver conforms by refusing what records cannot support, and by not refusing what they can, such as a record missing parts. So a receiver cannot become conformant by refusing everything.</p>
+        <details class="more"><summary data-t="alt">Alternatives weighed</summary><div class="body" data-t="d9.alt">A list of capabilities a receiver supports, which says what it can do and not what it will not let through.</div></details></article>
+    </div>
+    <figure class="fig rv" style="margin-top:48px">
+      <svg viewBox="0 0 1000 260" role="img" aria-labelledby="f2t">
+        <title id="f2t" data-t="f2.title">The five sourcing values, from bytes the collector holds to facts nobody can see</title>
+        <rect class="box acc" x="40" y="30" width="400" height="34" rx="8"/>
+        <text x="240" y="52" text-anchor="middle" data-t="f2.b1">may key an identity</text>
+        <rect class="box" x="470" y="30" width="160" height="34" rx="8"/>
+        <text x="550" y="52" text-anchor="middle" data-t="f2.b2">keys nothing</text>
+        <rect class="box" x="650" y="30" width="160" height="34" rx="8" style="stroke-dasharray:6 4"/>
+        <text x="730" y="52" text-anchor="middle" data-t="f2.b3">only subtracts</text>
+        <rect class="box err" x="830" y="30" width="140" height="34" rx="8"/>
+        <text x="900" y="52" text-anchor="middle" data-t="f2.b4">never digested</text>
+        <path class="ax" d="M40 120 H960"/><path class="ax" d="M948 112 L962 120 L948 128"/>
+        <g>
+          <circle cx="140" cy="120" r="7" fill="var(--accent)"/><text class="m" x="140" y="100" text-anchor="middle">in_the_request</text>
+          <circle cx="340" cy="120" r="7" fill="var(--accent)"/><text class="m" x="340" y="100" text-anchor="middle">loaded_by_us</text>
+          <circle cx="550" cy="120" r="7" fill="var(--card)" stroke="var(--ink)" stroke-width="2"/><text class="m" x="550" y="100" text-anchor="middle">pulled_by_us</text>
+          <circle cx="730" cy="120" r="7" fill="var(--card)" stroke="var(--ink)" stroke-width="2" stroke-dasharray="3 2"/><text class="m" x="730" y="100" text-anchor="middle">pushed_by_owner</text>
+          <path d="M893 113 L907 127 M907 113 L893 127" stroke="var(--err)" stroke-width="3"/><text class="m" x="900" y="100" text-anchor="middle">not_observable</text>
+        </g>
+        <text class="s" x="140" y="150" text-anchor="middle" data-t="f2.s1a">bytes the request carried</text>
+        <text class="s" x="140" y="168" text-anchor="middle" data-t="f2.s1b">harness parts; keys only if</text>
+        <text class="s" x="140" y="186" text-anchor="middle" data-t="f2.s1c">the digest is model_visible</text>
+        <text class="s" x="340" y="150" text-anchor="middle" data-t="f2.s2a">digested by the process</text>
+        <text class="s" x="340" y="168" text-anchor="middle" data-t="f2.s2b">that loaded the model;</text>
+        <text class="s" x="340" y="186" text-anchor="middle" data-t="f2.s2c">model parts only</text>
+        <text class="s" x="550" y="150" text-anchor="middle" data-t="f2.s3a">read from elsewhere,</text>
+        <text class="s" x="550" y="168" text-anchor="middle" data-t="f2.s3b">earlier; carries its lag</text>
+        <text class="s" x="550" y="186" text-anchor="middle" data-t="f2.s3c">in seconds</text>
+        <text class="s" x="730" y="150" text-anchor="middle" data-t="f2.s4a">the owner's declaration;</text>
+        <text class="s" x="730" y="168" text-anchor="middle" data-t="f2.s4b">may trigger a refusal,</text>
+        <text class="s" x="730" y="186" text-anchor="middle" data-t="f2.s4c">never lift one</text>
+        <text class="s" x="900" y="150" text-anchor="middle" data-t="f2.s5a">nobody can see it,</text>
+        <text class="s" x="900" y="168" text-anchor="middle" data-t="f2.s5b">such as what a tool</text>
+        <text class="s" x="900" y="186" text-anchor="middle" data-t="f2.s5c">actually does</text>
+        <text x="40" y="236" data-t="f2.left">bytes the collector holds</text>
+        <text x="960" y="236" text-anchor="end" data-t="f2.right">nobody can check</text>
+      </svg>
+      <figcaption data-t="f2.cap">SPEC 1.1a. Moving right, a fact says less about what ran, and the record says so per part instead of treating every value alike.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="receivers" class="band">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="eyebrow" data-t="rc.eyebrow">Refusals</div>
+      <h2 data-t="rc.h">The collector never refuses. The receiver does.</h2>
+      <p class="lede" data-t="rc.lede">A collector that dropped a partial record would leave a hole nobody can see, so it always emits one and names what it could not read. All the refusing happens at the receiver, against a closed list.</p>
+    </div>
+    <figure class="fig rv">
+      <svg viewBox="0 0 1000 360" role="img" aria-labelledby="f3t">
+        <title id="f3t" data-t="f3.title">Sender side always emits a record; receiver side rejects, stores, or refuses</title>
+        <rect class="bg" x="10" y="10" width="420" height="340" rx="16"/>
+        <text x="30" y="42" data-t="f3.lh">Toward the sender: permissive</text>
+        <rect class="box" x="30" y="64" width="380" height="72" rx="10"/>
+        <text x="46" y="92" data-t="f3.l1">parts are missing</text>
+        <text class="s" x="46" y="114" data-t="f3.l1s">each gap is an absence with a reason</text>
+        <rect class="box" x="30" y="150" width="380" height="72" rx="10"/>
+        <text x="46" y="178" data-t="f3.l2">a field cannot be read</text>
+        <text class="s" x="46" y="200" data-t="f3.l2s">extraction_failed, with a detail naming the field</text>
+        <rect class="box" x="30" y="236" width="380" height="72" rx="10"/>
+        <text x="46" y="264" data-t="f3.l3">the collector itself fails</text>
+        <text class="s" x="46" y="286" data-t="f3.l3s">status collector_failed, still emitted</text>
+        <path class="w" d="M410 100 C440 100 440 186 466 186"/>
+        <path class="w" d="M410 186 H466"/>
+        <path class="w" d="M410 272 C440 272 440 186 466 186"/>
+        <rect class="box acc" x="466" y="150" width="88" height="72" rx="12"/>
+        <text x="510" y="191" text-anchor="middle" data-t="f3.rec">a record</text>
+        
+        <rect class="bg" x="590" y="10" width="400" height="340" rx="16"/>
+        <text x="610" y="42" data-t="f3.rh">At the receiver: a closed list</text>
+        <rect class="box err" x="610" y="60" width="360" height="62" rx="10"/>
+        <text x="626" y="84" data-t="f3.r1">reject</text>
+        <text class="s" x="626" y="106" data-t="f3.r1s">an unknown version or value, or a wrong identity</text>
+        <rect class="box" x="610" y="134" width="360" height="62" rx="10" style="stroke-dasharray:6 4;stroke-width:2"/>
+        <text x="626" y="158" data-t="f3.r2">store, refuse a verdict</text>
+        <text class="s" x="626" y="180" data-t="f3.r2s">status not complete, no harness identity, a contradiction</text>
+        <rect class="box" x="610" y="208" width="360" height="62" rx="10" style="stroke-dasharray:2 3;stroke-width:2"/>
+        <text x="626" y="232" data-t="f3.r3">refuse a comparison</text>
+        <text class="s" x="626" y="254" data-t="f3.r3s">different missing facts, model identities from different collectors</text>
+        <rect class="box ok" x="610" y="282" width="360" height="56" rx="10"/>
+        <text x="626" y="306" data-t="f3.r4">store, admissible</text>
+        <text class="s" x="626" y="326" data-t="f3.r4s">including a record missing parts, or a model behind an API</text>
+        <path class="w" d="M554 186 C580 186 580 91 610 91"/><path class="w" d="M554 186 C584 186 584 165 610 165"/><path class="w" d="M554 186 C584 186 584 239 610 239"/><path class="w" d="M554 186 C580 186 580 310 610 310"/>
+      </svg>
+      <figcaption data-t="f3.cap">The outcomes differ by border as well as by colour: thick dashes for a rejection, thin dashes for a refused verdict, dots for a refused comparison, a solid line for admissible.</figcaption>
+    </figure>
+    <div class="grid2" style="margin-top:36px">
+      <div class="rv"><h3 data-t="rc.k1">Thirteen refusals a receiver performs</h3><p class="muted" data-t="rc.k1p">Each exists because a published number would otherwise have had to be withdrawn. They are listed as <code>receiver_obligations.must_refuse</code> in <code>spec/vocabularies.json</code>.</p></div>
+      <div class="rv"><h3 data-t="rc.k2">Four it must not</h3><p class="muted" data-t="rc.k2p">A record missing parts, an incomplete record kept as a log, a record with no model identity, and one with no model half at all. Refusing these would make a receiver conformant by refusing everything.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="relation">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="eyebrow" data-t="re.eyebrow">Relation to existing conventions</div>
+      <h2 data-t="re.h">It rides on a span. It does not replace one.</h2>
+      <p class="lede" data-t="re.lede">The other attributes of a span say what was said. A perigraph record on the same span says whether two runs were the same. None of the three conventions surveyed carries a content digest per part or a sourcing mode per part.</p>
+    </div>
+    <div class="tablewrap rv">
+      <table class="t">
+        <thead><tr><th data-t="re.th1">convention</th><th data-t="re.th2">surveyed at</th><th data-t="re.th3">carries, and perigraph does not</th><th data-t="re.th4">does not carry</th></tr></thead>
+        <tbody>
+          <tr><td>OpenTelemetry GenAI</td><td><a href="https://github.com/open-telemetry/semantic-conventions-genai/tree/e6658f1"><code>e6658f1</code></a>, 2026-11-06</td><td data-t="re.r1c">request parameters, messages when content capture is on, evaluation results; every attribute at development stability</td><td data-t="re.r1d">a digest per part, a sourcing mode per part, cost, a routing decision</td></tr>
+          <tr><td>OpenInference</td><td><a href="https://github.com/Arize-ai/openinference/tree/715e299"><code>715e299</code></a>, 2026-11-11</td><td data-t="re.r2c">a DECISION span kind, cost in USD, evaluation results</td><td data-t="re.r2d">a digest per part, a sourcing mode per part</td></tr>
+          <tr><td>OpenLLMetry</td><td><a href="https://github.com/traceloop/openllmetry/tree/e3d651a"><code>e3d651a</code></a>, 2026-11-05</td><td data-t="re.r3c">one digest over a whole prompt version</td><td data-t="re.r3d">a digest per part, evaluation results, cost</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="src rv" data-t="re.src">The OpenTelemetry binding maps each part to the nearest attributes and says how a span's attribute limit can drop part of a record: <a href="https://github.com/littlemex/perigraph/blob/main/spec/bindings/otel.md">spec/bindings/otel.md</a>.</p>
+  </div>
+</section>
+
+<section id="start" class="band">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="eyebrow" data-t="qs.eyebrow">Quickstart</div>
+      <h2 data-t="qs.h">Three languages, one identity</h2>
+      <p class="lede" data-t="qs.lede">No package is on a registry yet, so each quickstart runs from a clone. All three record the same request and print the harness identity c8f8edc45e222f663d8d70ac.</p>
+    </div>
+    <div class="rv">
+      <div class="tabs" role="tablist" aria-label="Language" data-t-aria="aria.qs">
+        <button type="button" role="tab" id="tab-py" aria-controls="qs-py" aria-selected="true">Python</button>
+        <button type="button" role="tab" id="tab-ts" aria-controls="qs-ts" aria-selected="false" tabindex="-1">TypeScript</button>
+        <button type="button" role="tab" id="tab-go" aria-controls="qs-go" aria-selected="false" tabindex="-1">Go</button>
+      </div>
+      <div id="qs-py" role="tabpanel" aria-labelledby="tab-py" class="codewrap"><div class="codehead"><button class="copy" type="button" data-t="copy">Copy</button></div><pre class="term" translate="no">git clone https://github.com/littlemex/perigraph.git
+cd perigraph
+python3 -m venv .venv
+. .venv/bin/activate
+pip install .
+python examples/quickstart.py</pre></div>
+      <div id="qs-ts" role="tabpanel" aria-labelledby="tab-ts" class="codewrap" hidden><div class="codehead"><button class="copy" type="button" data-t="copy">Copy</button></div><pre class="term" translate="no">git clone https://github.com/littlemex/perigraph.git
+cd perigraph/typescript
+npm install
+npm run build
+node examples/quickstart.mjs</pre></div>
+      <div id="qs-go" role="tabpanel" aria-labelledby="tab-go" class="codewrap" hidden><div class="codehead"><button class="copy" type="button" data-t="copy">Copy</button></div><pre class="term" translate="no">git clone https://github.com/littlemex/perigraph.git
+cd perigraph/go
+go run ./examples/quickstart</pre></div>
+      <p class="src" data-t="qs.out">Python and TypeScript end with <code>harness identity: c8f8edc45e222f663d8d70ac</code> and <code>verdict: admissible</code>, after reading the record back as a receiver. Go is a sender only and ends with the identity.</p>
+    </div>
+    <div class="grid2" style="margin-top:40px">
+      <div class="rv">
+        <h3 data-t="cf.h">Conformance, for any language</h3>
+        <p class="muted" data-t="cf.p">The runner checks an implementation through a small adapter that reads one JSON request per line and answers one line each. It never imports the implementation. Collectors are checked against the identity fixtures and the record schema, stampers against the model fixtures, and receivers against the receiver cases.</p>
+        <div class="codewrap"><div class="codehead"><button class="copy" type="button" data-t="copy">Copy</button></div><pre class="term" translate="no">pip install jsonschema
+python tools/conform.py --adapter "python conformance/adapters/python_adapter.py"</pre></div>
+      </div>
+      <div class="rv">
+        <h3 data-t="im.h">Implementations</h3>
+        <table class="t">
+          <thead><tr><th data-t="im.th1">implementation</th><th data-t="im.th2">roles</th><th data-t="im.th3">written by</th></tr></thead>
+          <tbody>
+            <tr><td>Python</td><td data-t="im.r1">collector, stamper, receiver</td><td data-t="im.a1">the specification's author</td></tr>
+            <tr><td>TypeScript</td><td data-t="im.r2">collector, stamper, receiver</td><td data-t="im.a2">the specification's author</td></tr>
+            <tr><td>Go</td><td data-t="im.r3">collector, stamper</td><td data-t="im.a3">OpenAI GPT-6 Sol, from the specification alone</td></tr>
+          </tbody>
+        </table>
+        <p class="note" data-t="im.note"><b>Still wanted:</b> an implementation by a person other than the specification's author. If yours disagrees with a fixture or a case, the disagreement is the contribution.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="status">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="eyebrow" data-t="ss.eyebrow">Status</div>
+      <h2 data-t="ss.h">Version 2, provisional</h2>
+      <p class="lede" data-t="ss.lede">spec_version is a single integer. Removing or renaming a value, changing what one means or how an identity is computed, and adding a receiver refusal are breaking. A change that only withdraws an identity is not, while every known sender is built from this repository. A formal versioning and compatibility policy is planned and not yet in place.</p>
+    </div>
+    <div class="grid2">
+      <div class="rv">
+        <h3 data-t="nc.h">What it does not cover</h3>
+        <ul class="plain">
+          <li data-t="nc.1">Whether a claim is true, or which model should answer.</li>
+          <li data-t="nc.2">Authenticity: records are not signed, and a receiver trusts the collector for every digest it did not compute.</li>
+          <li data-t="nc.3">Secrecy: a digest of short or predictable content can be recovered by guessing.</li>
+          <li data-t="nc.4">How a provider renders tools and settings into the prompt.</li>
+          <li data-t="nc.5">Run-to-run nondeterminism, such as batch-dependent kernels.</li>
+          <li data-t="nc.6">Portable checks of the comparison refusals, which need facts the version 2 record does not carry.</li>
+        </ul>
+      </div>
+      <div class="rv">
+        <h3 data-t="rm.h">Roadmap, without dates</h3>
+        <ul class="plain">
+          <li data-t="rm.1">A formal versioning and compatibility policy.</li>
+          <li data-t="rm.2">Signed records, stamps and lineage documents, and keyed digests.</li>
+          <li data-t="rm.3">A carrier for a model stamp between the serving process and a router, with attribution.</li>
+          <li data-t="rm.4">Attributes for the facts the comparison refusals read, and conformance cases for them.</li>
+          <li data-t="rm.5">Bindings for more request shapes, and the Chat Completions fields not read today.</li>
+          <li data-t="rm.6">Published packages, more maintainers, and an independent implementation.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span data-t="foot.l">Open specification under Apache-2.0.</span>
+    <span translate="no">
+      <a href="https://github.com/littlemex/perigraph">GitHub</a> &middot;
+      <a href="https://github.com/littlemex/perigraph#readme">README</a> &middot;
+      <a href="https://github.com/littlemex/perigraph/blob/main/SPEC.md">SPEC</a> &middot;
+      <a href="https://github.com/littlemex/perigraph/blob/main/conformance/README.md">Conformance</a> &middot;
+      <a href="https://github.com/littlemex/perigraph/blob/main/GOVERNANCE.md">Governance</a>
+    </span>
+  </div>
+</footer>
+<script>
+window.__JA = {
+"doc.title": "perigraph: モデルの周りにあったものと、答えたものの記録",
+"aria.lang": "表示言語", "aria.qs": "言語",
+"nav.problem": "問題", "nav.design": "設計", "nav.receivers": "拒否", "nav.relation": "OTel", "nav.start": "試す", "nav.status": "状況",
+"hero.eyebrow": "公開仕様 &middot; spec_version 2 (暫定)",
+"hero.h": "モデルの周りにあったものと、<span class=\"hl\">答えたものの記録。</span>",
+"hero.lede": "モデルの呼び出し 1 回につき記録を 1 つ作ります。ハーネスとモデルの各部品を、名前ではなく中身そのもののダイジェスト (sha256) で識別し、その事実がどこから来たかを書き、欠けている部品には誰のせいで欠けたかを書きます。こうすると受け手 (receiver) は、記録から裏付けられない精度やコストの主張を拒否できます。",
+"hero.cta1": "仕様を読む", "hero.cta2": "試す",
+"f1.title": "実行されたもの、その部品、部品が決める識別子、受け手がすること",
+"f1.c1": "実行されたもの", "f1.c2": "部品ごとのダイジェスト", "f1.c3": "識別子", "f1.c4": "受け手",
+"f1.req": "リクエスト", "f1.req2": "依頼側が送ったもの", "f1.mod": "読み込まれたモデル", "f1.mod2": "配信プロセスの中",
+"f1.harness": "ハーネス側", "f1.model": "モデル側", "f1.nokey": "記録するが識別に使わない",
+"f1.hid": "ハーネス", "f1.mid": "モデル", "f1.mid2": "4 部品すべて", "f1.aid": "成果物", "f1.aid2": "checkpoint のみ",
+"f1.r1": "棄却", "f1.r2": "保存", "f1.r3": "判定を拒否", "f1.r4": "比較を拒否",
+"f1.l1": "識別子を決める", "f1.l2": "記録するが識別に使わない", "f1.l3": "欠落 (誰のせいか付き)",
+"f1.cap": "リクエストを読む収集側 (collector) は左半分を持ち、モデル側を not_observable と報告します。右半分を持てるのはモデルを読み込んだプロセスだけです。ここでは両方を並べています。",
+"p1.k": "中身", "p1.h": "名前ではなく部品ごとのダイジェスト", "p1.p": "持ち主が決めるラベルは、中身が変わっても同じままでいられます。名前は読む人のために残し、識別には使いません。",
+"p2.k": "境界", "p2.h": "モデルが読むものだけが識別子を決める", "p2.p": "各ダイジェストは、何の上で取ったか (通信路、解析後の値、モデルが読む文字列) を名乗ります。",
+"p3.k": "出どころ", "p3.h": "各事実がどう届いたか", "p3.p": "リクエストにあった、自分で読み込んだ、遅れ付きで取りに行った、持ち主が申告した、観測できない、のどれかです。確かめられない申告は、判定を厳しくする方向にしか働きません。",
+"p4.k": "責任", "p4.h": "欠落は必ず誰のせいかを名乗る", "p4.p": "依頼側、収集側、誰でもない、のどれかです。収集側が事前に出す読める範囲の宣言 (manifest) があるので、黙った劣化は矛盾として表に出ます。",
+"st1": "ハーネスの部品。指示文 (instruction) から文脈の分け方まで",
+"st2": "モデルの部品。checkpoint、精度、実行環境、答えの取り出し方",
+"st3": "適合する受け手が行う拒否。してはいけない拒否も 4 つ決めています",
+"st4": "1 つの適合性テストで確かめている実装。Python、TypeScript、Go",
+"pr.eyebrow": "問題", "pr.h": "名前は同じだった。答えは同じではなかった。",
+"pr.lede": "2 つの実行の比較は、それぞれが名前どおりのものだったという証拠と同じだけしか信用できません。ある蒸留の研究では、次のどれもが、名前を何ひとつ変えずに答えを変えました。",
+"pr.th1": "起きたこと", "pr.th2": "同じままだったもの", "pr.th3": "変わったもの",
+"pr.r1a": "同じレシピ、データ、seed でモデルを訓練し直した", "pr.r1b": "モデル名、レシピ", "pr.r1c": "前のモデルとラベルが一致したのは項目の <b>93.4%</b>",
+"pr.r2a": "同じ重みを、読み込み時に int8 に量子化した", "pr.r2b": "保存されたファイル、モデル名", "pr.r2c": "bf16 のモデルと答えが一致したのは項目の <b>33 から 40%</b>",
+"pr.r3a": "選択肢のスコアを比べて答えるよう訓練したモデルに、文章を生成させた", "pr.r3b": "モデル、ファイル", "pr.r3c": "ラベルの代わりに <code>1111</code> を出力した",
+"pr.r4a": "配信用のイメージを作り直し、一部のパッケージが抜けた", "pr.r4b": "モデル名、checkpoint", "pr.r4c": "前と同じ答えだったのは <b>100 件中 97 件</b>",
+"pr.r5a": "ルーターを配備した。配備はフォールバック先モデルの配信設定に書き込む", "pr.r5b": "フォールバック先のモデル", "pr.r5c": "バージョン文字列が変わり、同じモデルが別の候補 (arm) として扱われた",
+"pr.src": "出典:", "pr.src1": "tierbook の検証記録", "pr.src2": "Prismyra のコミット 84cf43d",
+"pr.note": "<b>失敗には 2 つの向きがあります。</b> 最初の 4 つは違うものを同じに見せ、5 つ目は同じものを違って見せました。中身のダイジェストは前者を捕まえます。後者を捕まえられるのは、ダイジェストがモデルが実際に読むものだけを覆っているときだけです。仕様の大部分は、この 2 つ目の条件についての話です。"
+};
+</script>
+<script>
+Object.assign(window.__JA, {
+"de.eyebrow": "設計と、その理由", "de.h": "9 つの決定と、それぞれが防ぐ失敗",
+"de.lede": "各決定には、検討した別案を添えています。開くと別案が読めます。各カードの番号の横に、それを規範として定める仕様の節を書いています。",
+"alt": "検討した別案",
+"d1.h": "名前ではなく、部品ごとの中身のダイジェスト",
+"d1.p": "プロンプトは中身が変わっても <code>v3</code> のままでいられ、モデル名は訓練し直しても残ります。各部品はその中身そのものの sha256 を持ち、名前は読む人のためのラベルです。",
+"d1.alt": "部品ごとの名前とバージョン。調べたどの規約もこれを持ちますが、上の事例はこれでは捕まりません。プロンプト全体で 1 つのダイジェスト。何かが変わったことは分かっても、どの部品かは分かりません。",
+"d2.h": "ダイジェストは必ず境界を名乗る",
+"d2.p": "<code>tools</code> 配列はリクエストに入っていますが、プロバイダーはそれを好きな形でプロンプトに書き込みます。ハーネスの識別子を決めるのは <code>model_visible</code> のダイジェストだけで、その文字列は手を加えずにハッシュします。Chat Completions のリクエストでは識別子は指示文だけで決まり、記録はそのことを明記します。",
+"d2.alt": "全フィールドで識別する案。ゲートウェイが JSON を整形し直すと変わり、プロバイダーがツールの書き込み方を変えても変わりません。全部を正規化した JSON にする案。空白だけが違う 2 つの指示文が同じに見えますが、その違いはモデルの挙動を変えます。",
+"d3.h": "各事実は、どう記録に届いたかを名乗る",
+"d3.p": "部品ごとに 5 種類の出どころ (sourcing) を持ちます。取りに行った事実は、リクエストの何秒前に読んだかを持ちます。下流の誰も確かめられない申告は拒否のきっかけにはなれても、拒否を解除することはできません。",
+"d3.alt": "申告されたメタデータを信じる案。観測の代わりに言い分が通ります。申告を一切受け取らない案。リトライ方針のように、リクエストに載らない部品の唯一の情報源を捨てることになります。",
+"d4.h": "欠落は必ず誰のせいかを名乗る",
+"d4.p": "クライアントライブラリがフィールド名を変えて収集側が読めなくなったとき、何も送らなかった依頼側と同じ欠落を書いてしまう、という失敗を防ぎます。欠落は依頼側、収集側、誰でもない、のどれかを責め、収集側は読める範囲を先に宣言します。",
+"d4.alt": "フィールドを省く、または null にする案。劣化と空のリクエストを区別できません。自由記述の理由。受け手が機械的に扱えません。",
+"d5.h": "送り手には寛容に、自分自身には厳密に",
+"d5.p": "部品がいくつ欠けても記録は記録です。拒否された記録は、行われなかった実行と区別がつかないからです。例外を含むどの失敗の経路でも、状態 <code>collector_failed</code> の記録を必ず出します。",
+"d5.alt": "厳密に検証して不完全な記録を捨てる案。部分的な観測がすべて沈黙に変わります。",
+"d6.h": "答えたものは、それを読み込んだプロセスが識別する",
+"d6.p": "checkpoint のファイル、読み込み後の精度、実行環境のパッケージ、答えの取り出し方。上の事例 1 つにつき部品 1 つです。モデルの識別子を決めるのは <code>loaded_by_us</code> だけです。プロバイダーの API の向こうにあるモデルには識別子がなく、それでも判定には使えます。",
+"d6.alt": "モデル名やプロバイダーのモデル ID。これはラベルです。保存されたファイルだけのダイジェスト。同じファイルの bf16 と int8 を区別できません。",
+"d7.h": "モデルの来歴は別の文書で、厳しくする方向にしか働かない",
+"d7.p": "訓練した側が、親、手法、使った項目の集合を、1 つの成果物識別子 (artifact identity) について書きます。訓練に使ったと書かれた集合での判定は疑わしくなります。祖先が欠けていれば不明であって、潔白ではありません。",
+"d7.alt": "すべての記録に来歴の欄を持たせる案。重みを持つだけのサーバーに、持っていない来歴の保証をさせることになります。",
+"d8.h": "平らな属性で、キーは部品の名前",
+"d8.p": "記録は、トレーサーが既に出しているスパン、ログの 1 行、ファイルに載ります。キーに位置番号は使いません。収集側が部品を 1 つ多く読めるようになると番号がずれるからです。識別子がないときは空文字列にせず省きます。空文字列同士は等しいので、識別できない実行がすべて 1 つにまとまってしまいます。",
+"d8.alt": "入れ子の JSON 文書。両端にシリアライザーが要り、記録の形が通信路に入り込んで、形を変えるたびに互換性が壊れます。",
+"d9.h": "適合性は、閉じた拒否のリストで決める",
+"d9.p": "受け手は、記録が裏付けられないものを拒否し、裏付けられるもの (部品が欠けた記録など) を拒否しないことで適合します。だから何でも拒否して適合を名乗ることはできません。",
+"d9.alt": "受け手ができることの一覧。何ができるかは言えても、何を通さないかは言えません。",
+"f2.title": "5 種類の出どころ。収集側が持つバイトから、誰も見えない事実まで",
+"f2.b1": "識別子を決めてよい", "f2.b2": "識別に使わない", "f2.b3": "厳しくするだけ", "f2.b4": "ダイジェストなし",
+"f2.s1a": "リクエストにあったバイト", "f2.s1b": "ハーネスの部品。識別に使うのは", "f2.s1c": "model_visible のときだけ",
+"f2.s2a": "モデルを読み込んだ", "f2.s2b": "プロセスが取ったダイジェスト", "f2.s2c": "モデルの部品だけ",
+"f2.s3a": "よそから先に読んだもの", "f2.s3b": "何秒前かを必ず持つ", "f2.s3c": "",
+"f2.s4a": "持ち主の申告", "f2.s4b": "拒否のきっかけになれるが", "f2.s4c": "拒否を解除できない",
+"f2.s5a": "誰にも見えない", "f2.s5b": "例: ツールが実際に", "f2.s5c": "何をするか",
+"f2.left": "収集側が持つバイト", "f2.right": "誰も確かめられない",
+"f2.cap": "SPEC 1.1a。右へ行くほど、その事実は実行されたものについて多くを語れなくなります。記録はすべての値を同じに扱わず、部品ごとにそれを書きます。"
+});
+</script>
+<script>
+Object.assign(window.__JA, {
+"f2.s3b": "何秒前に読んだかを", "f2.s3c": "必ず持つ",
+"rc.eyebrow": "拒否", "rc.h": "収集側は拒否しない。拒否するのは受け手だ。",
+"rc.lede": "部分的な記録を捨てる収集側は、誰にも見えない穴を残します。だから収集側は必ず記録を出し、読めなかったものを名指しします。拒否はすべて受け手が、閉じたリストに沿って行います。",
+"f3.title": "送り手側は必ず記録を出し、受け手側は棄却、保存、拒否のどれかを行う",
+"f3.lh": "送り手に対して: 寛容", "f3.l1": "部品が欠けている", "f3.l1s": "欠落ごとに理由付きの absence",
+"f3.l2": "フィールドが読めない", "f3.l2s": "extraction_failed。どのフィールドかを detail に書く",
+"f3.l3": "収集側自身が失敗した", "f3.l3s": "状態 collector_failed で、それでも出す",
+"f3.rec": "記録", "f3.rh": "受け手: 閉じたリスト",
+"f3.r1": "棄却", "f3.r1s": "未知のバージョンや値、合わない識別子",
+"f3.r2": "保存して、判定を拒否", "f3.r2s": "状態が complete でない、識別子がない、矛盾がある",
+"f3.r3": "比較を拒否", "f3.r3s": "欠けていた事実が違う、別の収集側のモデル識別子",
+"f3.r4": "保存して、判定に使える", "f3.r4s": "部品が欠けた記録や、API の向こうのモデルも含む",
+"f3.cap": "結果は色だけでなく枠線でも区別しています。太い破線は棄却、細い破線は判定の拒否、点線は比較の拒否、実線は判定に使える記録です。",
+"rc.k1": "受け手が行う 13 の拒否", "rc.k1p": "どれも、なければ公表した数字を取り下げることになったから存在します。<code>spec/vocabularies.json</code> の <code>receiver_obligations.must_refuse</code> にあります。",
+"rc.k2": "してはいけない 4 つの拒否", "rc.k2p": "部品が欠けた記録、ログとして残す不完全な記録、モデル識別子のない記録、モデル側がまるごとない記録です。これらを拒否してよければ、何でも拒否して適合を名乗れてしまいます。",
+"re.eyebrow": "既存の規約との関係", "re.h": "スパンに相乗りする。スパンの代わりにはならない。",
+"re.lede": "スパンの他の属性は、何が言われたかを伝えます。同じスパンに載る perigraph の記録は、2 つの実行が同じだったかを伝えます。調べた 3 つの規約のどれも、部品ごとのダイジェストと部品ごとの出どころを持っていません。",
+"re.th1": "規約", "re.th2": "調べた時点", "re.th3": "持っていて perigraph にないもの", "re.th4": "持っていないもの",
+"re.r1c": "リクエストのパラメーター、内容の取得を有効にしたときのメッセージ、評価結果。属性はすべて development の安定度", "re.r1d": "部品ごとのダイジェスト、部品ごとの出どころ、コスト、ルーティングの決定",
+"re.r2c": "DECISION という種類のスパン、USD のコスト、評価結果", "re.r2d": "部品ごとのダイジェスト、部品ごとの出どころ",
+"re.r3c": "プロンプトのバージョン全体で 1 つのダイジェスト", "re.r3d": "部品ごとのダイジェスト、評価結果、コスト",
+"re.src": "OpenTelemetry への載せ方 (binding) は、各部品に最も近い属性を対応づけ、スパンの属性数の上限で記録の一部が落ちうることを書いています: <a href=\"https://github.com/littlemex/perigraph/blob/main/spec/bindings/otel.md\">spec/bindings/otel.md</a>。",
+"qs.eyebrow": "クイックスタート", "qs.h": "3 つの言語、1 つの識別子",
+"qs.lede": "まだどのパッケージもレジストリに公開していないので、clone して動かします。3 つとも同じリクエストを記録し、ハーネス識別子 c8f8edc45e222f663d8d70ac を表示します。",
+"copy": "コピー",
+"qs.out": "Python と TypeScript は、記録を受け手として読み戻したあとに <code>harness identity: c8f8edc45e222f663d8d70ac</code> と <code>verdict: admissible</code> で終わります。Go は送り手だけなので、識別子の行で終わります。",
+"cf.h": "どの言語でも使える適合性テスト",
+"cf.p": "実行器 (runner) は、1 行に 1 つの JSON リクエストを読んで 1 行ずつ答える小さなアダプター越しに実装を確かめ、実装を import しません。収集側は識別子の fixture と記録の schema で、stamper はモデルの fixture で、受け手は受け手用のケースで確かめます。",
+"im.h": "実装", "im.th1": "実装", "im.th2": "役割", "im.th3": "書いた人",
+"im.r1": "collector、stamper、receiver", "im.a1": "仕様の著者", "im.r2": "collector、stamper、receiver", "im.a2": "仕様の著者",
+"im.r3": "collector、stamper", "im.a3": "OpenAI GPT-6 Sol。仕様だけを読んで書いた",
+"im.note": "<b>まだ求めているもの:</b> 仕様の著者ではない人が書いた実装です。あなたの実装が fixture やケースと食い違ったら、その食い違いこそが貢献です。",
+"ss.eyebrow": "状況", "ss.h": "バージョン 2、暫定",
+"ss.lede": "spec_version は 1 つの整数です。値の削除や改名、値の意味や識別子の計算の変更、受け手の拒否の追加は互換性を壊します。識別子を取り下げるだけの変更は、知られている送り手がすべてこのリポジトリから作られている間は壊しません。正式なバージョニングと互換性の方針は予定していて、まだありません。",
+"nc.h": "扱わないこと",
+"nc.1": "主張が正しいかどうか、どのモデルが答えるべきか。",
+"nc.2": "真正性。記録には署名がなく、受け手は自分で計算していないダイジェストについて収集側を信頼します。",
+"nc.3": "秘匿。短い中身や予想しやすい中身のダイジェストは、推測で元に戻せます。",
+"nc.4": "プロバイダーがツールや設定をどうプロンプトに書き込むか。",
+"nc.5": "バッチに依存するカーネルなど、実行ごとの非決定性。",
+"nc.6": "比較の拒否を持ち運べる形で確かめること。バージョン 2 の記録に載らない事実が要るためです。",
+"rm.h": "今後の予定 (日付なし)",
+"rm.1": "正式なバージョニングと互換性の方針。",
+"rm.2": "記録、モデルの刻印 (stamp)、来歴文書への署名と、鍵付きのダイジェスト。",
+"rm.3": "配信プロセスからルーターへモデルの刻印を運ぶ手段と、その出元の明示。",
+"rm.4": "比較の拒否が読む事実のための属性と、そのための適合性ケース。",
+"rm.5": "他のリクエスト形式への載せ方と、Chat Completions で今は読んでいないフィールド。",
+"rm.6": "パッケージの公開、メンテナーの追加、独立した実装。",
+"foot.l": "Apache-2.0 の公開仕様です。"
+});
+</script>
+<script>
+(() => {
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const RM = matchMedia('(prefers-reduced-motion: reduce)');
+const EN = {};
+const JA = window.__JA || {};
+let LANG = 'en';
+function applyLang(lang) {
+  LANG = lang;
+  document.documentElement.lang = lang;
+  for (const el of $$('[data-t]')) {
+    const k = el.dataset.t;
+    if (!(k in EN)) EN[k] = el.innerHTML;
+    el.innerHTML = lang === 'ja' && JA[k] ? JA[k] : EN[k];
+  }
+  for (const el of $$('[data-t-aria]')) {
+    const k = el.dataset.tAria, key = 'aria:' + k;
+    if (!(key in EN)) EN[key] = el.getAttribute('aria-label');
+    el.setAttribute('aria-label', lang === 'ja' && JA[k] ? JA[k] : EN[key]);
+  }
+  if (!('doc.title' in EN)) EN['doc.title'] = document.title;
+  document.title = lang === 'ja' ? JA['doc.title'] : EN['doc.title'];
+  for (const b of $$('.lang button')) b.setAttribute('aria-pressed', String(b.dataset.lang === lang));
+  const u = new URL(location.href);
+  u.searchParams.set('lang', lang);
+  history.replaceState(null, '', u);
+  try { localStorage.setItem('pg-lang', lang); } catch (_) {}
+}
+const q = new URLSearchParams(location.search).get('lang');
+let saved = null; try { saved = localStorage.getItem('pg-lang'); } catch (_) {}
+const initial = (q === 'ja' || q === 'en') ? q : (saved || ((navigator.language || '').toLowerCase().startsWith('ja') ? 'ja' : 'en'));
+for (const b of $$('.lang button')) b.addEventListener('click', () => applyLang(b.dataset.lang));
+applyLang(initial);
+
+const io = new IntersectionObserver((es) => {
+  for (const e of es) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+}, { rootMargin: '0px 0px -8% 0px' });
+$$('.rv').forEach((el, i) => { el.style.transitionDelay = (i % 4) * 60 + 'ms'; io.observe(el); });
+
+const navLinks = $$('nav.sections a');
+const secIO = new IntersectionObserver((es) => {
+  for (const e of es) if (e.isIntersecting)
+    for (const a of navLinks) a.classList.toggle('on', a.getAttribute('href') === '#' + e.target.id);
+}, { rootMargin: '-45% 0px -50% 0px' });
+['problem', 'design', 'receivers', 'relation', 'start', 'status'].forEach((id) => { const s = document.getElementById(id); if (s) secIO.observe(s); });
+
+for (const d of $$('details.more')) {
+  const sum = d.querySelector('summary'), body = d.querySelector('.body');
+  sum.addEventListener('click', (ev) => {
+    if (RM.matches || !body.animate) return;
+    ev.preventDefault();
+    if (d.open) {
+      const h = body.offsetHeight;
+      body.animate([{ height: h + 'px', opacity: 1 }, { height: '0px', opacity: 0 }], { duration: 240, easing: 'cubic-bezier(.2,.7,.2,1)' }).onfinish = () => { d.open = false; };
+    } else {
+      d.open = true;
+      const h = body.offsetHeight;
+      body.animate([{ height: '0px', opacity: 0 }, { height: h + 'px', opacity: 1 }], { duration: 280, easing: 'cubic-bezier(.2,.7,.2,1)' });
+    }
+  });
+}
+
+for (const list of $$('.tabs[role=tablist]')) {
+  const btns = $$('[role=tab]', list);
+  const pick = (b, focus) => {
+    for (const x of btns) {
+      const on = x === b;
+      x.setAttribute('aria-selected', String(on)); x.tabIndex = on ? 0 : -1;
+      document.getElementById(x.getAttribute('aria-controls')).hidden = !on;
+    }
+    if (focus) b.focus();
+  };
+  btns.forEach((b, i) => {
+    b.addEventListener('click', () => pick(b));
+    b.addEventListener('keydown', (e) => {
+      const d = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+      if (d) { e.preventDefault(); pick(btns[(i + d + btns.length) % btns.length], true); }
+    });
+  });
+}
+
+for (const b of $$('.copy')) {
+  b.addEventListener('click', async () => {
+    const pre = b.closest('.codewrap').querySelector('pre');
+    try {
+      await navigator.clipboard.writeText(pre.innerText);
+      const was = b.innerHTML;
+      b.textContent = LANG === 'ja' ? 'コピーしました' : 'Copied';
+      setTimeout(() => { b.innerHTML = was; }, 1400);
+    } catch (_) {}
+  });
+}
+})();
+</script>
+</body>
+</html>

@@ -60,6 +60,12 @@ export function toAttributes(record: Record_): Attributes {
   return out;
 }
 
+// A manifest read off the wire (section 6): empty entries dropped, and a repeated name counted once. The list is a set,
+// and refusing a record for a repeated name would turn a cosmetic fault into a lost record.
+function names(field: string): string[] {
+  return [...new Set(field.split(",").filter((r) => r !== ""))];
+}
+
 export function fromAttributes(attrs: Attributes): Record_ {
   const got = attrs[`${PREFIX}.spec_version`];
   if (got !== SPEC_VERSION) {
@@ -114,14 +120,10 @@ export function fromAttributes(attrs: Attributes): Record_ {
     }
   }
   // See AMBIGUITY 5: splitting "" on "," yields [""], which is a part named empty-string.
-  const reaches = String(attrs[`${PREFIX}.collector_reaches`] ?? "")
-    .split(",")
-    .filter((r) => r !== "");
+  const reaches = names(String(attrs[`${PREFIX}.collector_reaches`] ?? ""));
   let model: Model | null = null;
   if (`${PREFIX}.model_reaches` in attrs || mparts.length > 0 || mabsences.length > 0) {
-    const mreach = String(attrs[`${PREFIX}.model_reaches`] ?? "")
-      .split(",")
-      .filter((r) => r !== "");
+    const mreach = names(String(attrs[`${PREFIX}.model_reaches`] ?? ""));
     model = new Model(mparts, mabsences, mreach);
   }
   const record = new Record_(
