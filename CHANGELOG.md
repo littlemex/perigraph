@@ -5,6 +5,19 @@ Versions here are the **package** version. The **protocol** version is `spec_ver
 
 ## Unreleased
 
+### Integrations
+
+* **`integrations/vllm`: records from a stock vLLM 0.27.1 server, with no change to vLLM.** A `vllm.general_plugins`
+  entry registers a `perigraph` model loader (`--load-format perigraph`) that stamps the model half in each worker
+  during its load, hashing each weight file through a descriptor opened before the load read it; an ASGI middleware
+  (`--middleware perigraph_vllm.Middleware`) records the harness half from the bytes the server received and relays
+  the model half, one JSON line per request, with only an opaque record id on the response. LoRA, tensor and pipeline
+  parallelism, and untested vLLM versions get no model half, with the reason.
+* **`integrations/vsr`: no collector in vLLM Semantic Router.** An adapter turns the router's own replay receipts
+  (`prepared_dispatch.sha256`) into hop rows, so a receiver can check that the router and the backend held the same
+  bytes. The router rewrites `max_tokens` to `max_completion_tokens`, so routed and direct requests get different
+  harness identities; draft proposals 0004 (a backend states the parts it does not read) and 0005 (that alias).
+
 ### Specification version 4
 
 `spec_version` 4. Breaking: a version 3 receiver rejects every version 4 record. A record whose request carries no

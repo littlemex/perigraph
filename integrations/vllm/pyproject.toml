@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "perigraph-vllm"
+version = "0.1.0"
+description = "perigraph records from a stock vLLM server through its public plug-in seams: a model loader that stamps the model half during the load, and an ASGI middleware that records the harness half from the bytes received"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+authors = [{ name = "littlemex" }]
+dependencies = ["perigraph>=0.2.1"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[project.entry-points."vllm.general_plugins"]
+perigraph = "perigraph_vllm.plugin:register"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/perigraph_vllm"]

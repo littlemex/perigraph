@@ -48,6 +48,10 @@ jobs:
         run: python -m pytest tests/ -q
       - name: the README quickstart runs against the installed package
         run: python examples/quickstart.py
+      - name: integrations (vLLM plug-in, vLLM Semantic Router replay adapter), without vLLM or torch
+        run: |
+          pip install ./integrations/vllm
+          python -m pytest integrations/vllm/tests integrations/vsr -q
 
   typescript:
     runs-on: ubuntu-latest
