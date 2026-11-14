@@ -66,6 +66,56 @@ function names(field: string): string[] {
   return [...new Set(field.split(",").filter((r) => r !== ""))];
 }
 
+const HEX64 = /^[0-9a-f]{64}$/;
+const HEX24 = /^[0-9a-f]{24}$/;
+const REQUIRED = ["spec_version", "collector", "collector_version", "collector_reaches", "status"];
+const TOP_STRINGS = ["collector", "collector_version", "collector_reaches", "status", "model_reaches",
+  "harness_identity", "model_identity", "artifact_identity"];
+const PART_FIELDS: { [group: string]: string[] } = {
+  part: ["sourcing", "digest", "boundary", "label", "read_lag_seconds"],
+  model: ["sourcing", "digest", "label", "read_lag_seconds"],
+  absent: ["reason", "detail"],
+  model_absent: ["reason", "detail"],
+};
+
+// The shape rules of section 6 that no record object enforces on its own: required keys, value types, attributes of a
+// part that carry no sourcing or reason, a boundary without a digest, and the length of digests and identities. Keys
+// under `perigraph.ext.` are skipped (section 13.2), and keys outside the prefix belong to the carrier.
+function checkShape(attrs: Attributes): void {
+  for (const k of REQUIRED) if (!(`${PREFIX}.${k}` in attrs)) throw new Unidentified(`${PREFIX}.${k} is missing`);
+  for (const k of TOP_STRINGS) {
+    const key = `${PREFIX}.${k}`;
+    if (key in attrs && typeof attrs[key] !== "string") throw new Unidentified(`${key} is not a string`);
+  }
+  for (const k of ["harness_identity", "model_identity", "artifact_identity"]) {
+    const v = attrs[`${PREFIX}.${k}`];
+    if (v !== undefined && !HEX24.test(String(v))) throw new Unidentified(`${PREFIX}.${k} is not 24 lowercase hex characters`);
+  }
+  for (const [key, value] of Object.entries(attrs)) {
+    if (!key.startsWith(`${PREFIX}.`) || key.startsWith(`${PREFIX}.ext.`)) continue;
+    const bits = key.split(".");
+    if (bits.length !== 4) continue;
+    const group = bits[1] as string;
+    const name = bits[2] as string;
+    const field = bits[3] as string;
+    const fields = PART_FIELDS[group];
+    if (fields === undefined || !fields.includes(field)) continue;
+    const anchor = group === "part" || group === "model" ? "sourcing" : "reason";
+    if (!(`${PREFIX}.${group}.${name}.${anchor}` in attrs)) {
+      throw new Unidentified(`${key} is present and ${PREFIX}.${group}.${name}.${anchor} is not`);
+    }
+    if (field === "read_lag_seconds") {
+      if (typeof value !== "number") throw new Unidentified(`${key} is not a number`);
+    } else if (typeof value !== "string") {
+      throw new Unidentified(`${key} is not a string`);
+    }
+    if (field === "digest" && !HEX64.test(value as string)) throw new Unidentified(`${key} is not 64 lowercase hex characters`);
+    if (group === "part" && field === "boundary" && !(`${PREFIX}.part.${name}.digest` in attrs)) {
+      throw new Unidentified(`${key} is present without a digest`);
+    }
+  }
+}
+
 export function fromAttributes(attrs: Attributes): Record_ {
   const got = attrs[`${PREFIX}.spec_version`];
   if (got !== SPEC_VERSION) {
@@ -75,6 +125,7 @@ export function fromAttributes(attrs: Attributes): Record_ {
         `reader cannot see`,
     );
   }
+  checkShape(attrs);
   const parts: Part[] = [];
   const absences: Absence[] = [];
   const mparts: ModelPart[] = [];

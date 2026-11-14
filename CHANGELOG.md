@@ -33,6 +33,16 @@ No change to `spec_version` (still 2) and no change to any identity or fixture. 
   receiver cases in `conformance/cases/receiver.json` and adapters for the Python, TypeScript and Go implementations.
 - Example records and a lineage chain in `spec/examples/`, each validated in CI.
 
+### Receivers and collectors
+
+- SPEC 6 lists every ground for rejecting attributes, and both receivers now apply them all: missing required
+  attributes, values of the wrong type, attributes of a part with no sourcing or reason, a boundary without a digest,
+  and digests or identities of the wrong length. The TypeScript receiver had accepted four of these, which the new
+  receiver cases found.
+- A contradiction in the model manifest refuses a verdict, as one in the harness manifest does (SPEC 1.3).
+- A collector emits every part and every model part as held or absent (SPEC 1.2), and the conformance runner checks it.
+- The verdict over a single record is named `admitted` or `refused`, the outcomes of SPEC 0.5.
+
 ### Fixed
 
 - The Python and TypeScript receivers rejected a manifest that named a part twice. SPEC 6 says a repeated name counts

@@ -44,7 +44,7 @@ def test_examples_validate_and_mean_what_they_say(path):
     if "attributes" in doc:
         assert not list(RECORD.iter_errors(doc["attributes"]))
         record = wire.from_attributes(doc["attributes"])
-        got = "admissible" if record.admissible_to_a_verdict() else "refused"
+        got = "admitted" if record.admissible_to_a_verdict() else "refused"
         assert {"outcome": "stored", "verdict": got} == doc["receiver"]
     for d in doc.get("lineage", []):
         assert not list(LINEAGE.iter_errors(d))
@@ -78,13 +78,13 @@ def test_the_runner_fails_a_receiver_that_admits_everything(tmp_path):
         for line in sys.stdin:
             req = json.loads(line)
             reply = {"name": "admits everything", "roles": ["receiver"]} if req["op"] == "describe" else \\
-                    {"outcome": "stored", "verdict": "admissible"}
+                    {"outcome": "stored", "verdict": "admitted"}
             print(json.dumps({"id": req["id"], **reply}), flush=True)
     """))
     r = run("tools/conform.py", "--adapter", f"{sys.executable} {adapter}")
     assert r.returncode == 1
     cases = json.loads((ROOT / "conformance/cases/receiver.json").read_text())["cases"]
-    should_fail = sum(1 for c in cases if c["expect"] != {"outcome": "stored", "verdict": "admissible"})
+    should_fail = sum(1 for c in cases if c["expect"] != {"outcome": "stored", "verdict": "admitted"})
     assert r.stdout.count("FAIL  receiver/") == should_fail
 
 

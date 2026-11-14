@@ -43,7 +43,7 @@ def receive(req):
         r = wire.from_attributes(req["attributes"])
     except (Unidentified, KeyError, TypeError, ValueError) as e:
         return {"outcome": "rejected", "why": str(e)}
-    return {"outcome": "stored", "verdict": "admissible" if r.admissible_to_a_verdict() else "refused"}
+    return {"outcome": "stored", "verdict": "admitted" if r.admissible_to_a_verdict() else "refused"}
 
 
 OPS = {"describe": describe, "collect": collect_, "stamp": stamp, "receive": receive}

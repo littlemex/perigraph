@@ -18,4 +18,4 @@ print(json.dumps(attributes, indent=2))
 
 received = wire.from_attributes(attributes)
 print("harness identity:", received.identity)
-print("verdict:", "admissible" if received.admissible_to_a_verdict() else "refused")
+print("verdict:", "admitted" if received.admissible_to_a_verdict() else "refused")

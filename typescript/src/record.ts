@@ -208,6 +208,9 @@ export interface ModelHalf {
   readonly modelIdentity: string;
   readonly hasArtifactIdentity: boolean;
   readonly artifactIdentity: string;
+  readonly parts: readonly { readonly kind: string }[];
+  readonly absences: readonly { readonly kind: string; readonly reason: string }[];
+  readonly reaches: readonly string[];
 }
 
 export class Record_ {
@@ -289,12 +292,27 @@ export class Record_ {
     return this.manifest.reaches.filter((k) => denied.has(k) || (!held.has(k) && !explained.has(k)));
   }
 
+  // The same test against the model manifest (section 1.3): a claimed model part denied or left unmentioned.
+  get modelContradictions(): string[] {
+    const m = this.model;
+    if (m === null) return [];
+    const held = new Set(m.parts.map((p) => p.kind));
+    const denied = new Set(m.absences.filter((a) => a.reason === "not_reachable").map((a) => a.kind));
+    const explained = new Set(m.absences.map((a) => a.kind));
+    return m.reaches.filter((k) => denied.has(k) || (!held.has(k) && !explained.has(k)));
+  }
+
   get ourFailures(): string[] {
     return this.absences.filter((a) => a.blames === "collector").map((a) => a.kind);
   }
 
   admissibleToAVerdict(): boolean {
-    return ADMISSIBLE_STATUS.includes(this.status) && this.contradictions.length === 0 && this.hasIdentity;
+    return (
+      ADMISSIBLE_STATUS.includes(this.status) &&
+      this.contradictions.length === 0 &&
+      this.modelContradictions.length === 0 &&
+      this.hasIdentity
+    );
   }
 
   whyNot(): string {
@@ -310,6 +328,9 @@ export class Record_ {
         `the manifest claims to reach ${this.contradictions} and did not deliver them, so no absence here can be read ` +
           `at face value`,
       );
+    }
+    if (this.modelContradictions.length > 0) {
+      reasons.push(`the model manifest claims to reach ${this.modelContradictions} and did not deliver them`);
     }
     if (!this.hasIdentity) {
       reasons.push(

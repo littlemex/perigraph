@@ -5,7 +5,7 @@
   ],
   "receiver": {
     "outcome": "stored",
-    "verdict": "admissible"
+    "verdict": "admitted"
   },
   "attributes": {
     "perigraph.spec_version": 2,

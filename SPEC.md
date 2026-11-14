@@ -35,8 +35,8 @@ A role is a set of obligations. One program may hold several roles, and conforma
 | role | what it does |
 |---|---|
 | **requester** | authors the request to the model. Blame value `sender` in `absence_reasons.blames` means the requester |
-| **collector** | produces records. Its name and version are `perigraph.collector` and `perigraph.collector_version` |
-| **stamper** | a collector in the process that loaded the model, and the only role that may write a model part as `loaded_by_us` (section 9) |
+| **collector** | produces records. Its name and version are `perigraph.collector` and `perigraph.collector_version`; the name SHOULD be one its author controls, such as a repository path or a domain, because comparisons that are collector-local key on it |
+| **stamper** | a collector in the process that loaded the model, and the only role that may originate a model part as `loaded_by_us` (section 9); a forwarder relays it |
 | **forwarder** | a router or gateway that relays a stamper's model half without producing it (section 9) |
 | **owner** | whoever makes a `pushed_by_owner` declaration about a part the request does not carry |
 | **trainer** | writes a lineage document about an artifact it produced (section 10) |
@@ -59,12 +59,13 @@ A receiver uses only these four actions, and the requirements below say which ap
 | action | meaning |
 |---|---|
 | **reject** | the attributes do not parse as a record of a version the receiver implements. Nothing is stored |
-| **store** | keep the record. A receiver MUST be able to store every record it does not reject |
+| **store** | keep the record. A receiver MUST store every record it does not reject |
 | **refuse a verdict** | publish no claim from this record, while still storing it |
 | **refuse a comparison** | publish no claim that rests on comparing these two records or arms |
 
 The outcome of asking for a verdict or a comparison is one of `admitted`, `refused` or `unknown`. `unknown` is the
-outcome of a rule that widens a verdict (sections 1.1a and 3.2): it is never `admitted`.
+outcome of a rule that widens a verdict (sections 1.1a and 3.2): it is never `admitted`, and a receiver publishes no
+claim on it.
 
 ## 1. The record
 
@@ -138,7 +139,7 @@ Closed, and the five are **not interchangeable**: they differ in what the fact m
 | `pushed_by_owner` | a declaration the receiver cannot check | no |
 | `not_observable` | no mode reaches it | no |
 
-**A `pulled_by_us` part MUST carry its read lag in seconds, and a part with any other sourcing MUST NOT carry one.** We read at one moment and the
+**A `pulled_by_us` part MUST carry its read lag in seconds, and a part with any other sourcing MUST NOT carry one.** The lag is a non-negative number: the time from the moment the collector read the fact to the moment it received the request, or zero if it read the fact after receiving the request. We read at one moment and the
 request ran at another, and everything that changed in between is invisible: **a lag nobody wrote down is a lag nobody
 can bound**, and an unbounded lag cannot support a per-request claim. A lag on a part from the request is meaningless,
 because bytes in the request have no lag by definition, and a lag on a pushed claim is the owner's word rather than a
@@ -155,6 +156,9 @@ exception, and section 12.1 states the trust it requires.
 
 ### 1.2 Every absence names whose it is
 
+A collector MUST emit each of the ten parts and each of the four model parts as held or as absent. A receiver reads a part
+that a record does not mention as unknown, and stores the record (`receiver_obligations.must_not_refuse`).
+
 Every absence MUST carry one of the reasons below, and the reason MUST name whose absence it is. **Rationale**: the case this
 exists for is not a shim that crashes; it is **a shim
 that loses the ability to read a part after an SDK renames a field, and writes the same absence it writes when the
@@ -169,8 +173,8 @@ An absence that does not blame the collector MUST NOT carry one: there is no mom
 **A request the collector cannot parse is an absence it names, not a record it withholds** (section 1.1). The rules in
 the rest of this paragraph and the next are for a request in the OpenAI Chat Completions shape; `spec/bindings/openai-chat-completions.md`
 maps its fields to parts, and other request shapes need their own binding. When the body
-is not valid JSON, or is JSON that is not an object, every manifest part read from the request body is
-`extraction_failed`. When a field a part is read from is present but not of the JSON type the collector expects -- for
+is not valid JSON, or is JSON that is not an object, a collector MUST give every manifest part read from the request body
+as `extraction_failed`. When a field a part is read from is present but not of the JSON type the collector expects -- for
 example `messages` or `tools` that is not an array, an entry of either that is not an object, a message whose `role` is
 missing or is not a string, or a `response_format` that is not an object -- every manifest part read from the top-level
 field holding the defect is `extraction_failed`, even if the entries it needs are readable, because the unreadable entry
@@ -178,8 +182,7 @@ might have been one of them. A system message's `content` is narrower: it fails 
 top-level field that is missing or `null` is not this case: the request carries none, which is what a client that
 serialises an unset optional field as `null` means. Parts read from anywhere else are unaffected. Each such absence
 carries a detail naming the body or the field, the entry's index where there is one, and the JSON type found, or
-`missing`, or, for a body that is not JSON, that it did not parse; it never quotes the value. The record's status is
-derived from its parts as for any other record and is never `collector_failed` for this cause: that status is for a
+`missing`, or, for a body that is not JSON, that it did not parse; it never quotes the value. The record's status is `complete`, never `collector_failed` for this cause: that status is for a
 collector that did not finish, and this one finished and named what it could not read.
 
 **An empty request field is a missing one.** An `instruction` that is empty after removing leading and trailing white
@@ -204,8 +207,8 @@ there"*, and reading the difference as a contradiction blames the collector for 
 
 `extraction_failed` is **consistent** with the claim: the capability exists and failed on this input.
 
-A receiver MUST refuse a verdict over a record with a contradiction, because no absence in such a record can be read at
-face value.
+A receiver MUST refuse a verdict over a record with a contradiction in either manifest, because no absence in such a
+record can be read at face value.
 
 ## 2. Identity
 
@@ -279,13 +282,13 @@ protocol exists to prevent.
 
 ### 2.4 Canonicalisation
 
-A sender MUST NOT canonicalise a `model_visible` payload before digesting it. A model reads a string, not a meaning, and
+A collector MUST NOT canonicalise a `model_visible` payload before digesting it. A model reads a string, not a meaning, and
 one sentence's wording moved measured accuracy by 12.04 points.
 
-A sender MAY canonicalise a `parsed` payload. **The difference is who reads them:** a machine reading a sampler setting
+A collector MAY canonicalise a `parsed` payload. **The difference is who reads them:** a machine reading a sampler setting
 cannot tell two spellings apart.
 
-A sender MUST NOT digest a payload after transmission. That hashes something other than what was sent.
+A collector MUST NOT digest a payload after transmission. That hashes something other than what was sent.
 
 **A digest names content, never a description of it.** A digest that cites a file is over the file's bytes as stored,
 which pins a list of ids and their contents together. Two digests are compared as whole strings. A digest over a summary of the content can agree while the content differs,
@@ -416,16 +419,30 @@ part, and every historical record then means something different.
 string, which would group every unidentifiable run together — the failure the identity rules exist to prevent,
 reintroduced by the transport.
 
-A receiver MUST refuse attributes whose `perigraph.spec_version` it does not implement, rather than parsing what it
+A receiver MUST reject attributes whose `perigraph.spec_version` it does not implement, rather than parsing what it
 recognises. A dropped field here is a **dropped absence**, which turns a hole the sender declared into a hole nobody
 knows exists.
 
-A receiver MUST reject attributes that do not form a record of this version: a part, model part, sourcing, boundary,
-absence reason or status outside the vocabulary; one part both held and absent; a read lag or a detail where sections
-1.1a and 1.2 forbid one, or missing where they require one; and an identity that is not the one derived from the parts
-the attributes carry. **Rationale**: an identity is a derived value, and one that disagrees with its parts is a sender
+A receiver MUST reject attributes that do not form a record of this version. That is the case exactly when:
+
+- `perigraph.spec_version`, `perigraph.collector`, `perigraph.collector_version`, `perigraph.collector_reaches` or
+  `perigraph.status` is missing, or a defined attribute has a value of the wrong JSON type;
+- a part, model part, sourcing, boundary, absence reason, status or answer mode is outside the vocabulary, including a
+  name in a manifest;
+- one part is both held and absent, or an attribute of a part is present without that part's `sourcing` or `reason`;
+- a harness part is `loaded_by_us`, a model part is `in_the_request`, or a part whose sourcing is `not_observable`
+  carries a digest;
+- a read lag or a detail is present where sections 1.1a and 1.2 forbid one, or missing where they require one, or a
+  boundary is present without a digest or missing with one;
+- a digest is not 64, or an identity not 24, lowercase hexadecimal characters, or an `answer_mode` digest is not the
+  digest of its label;
+- an identity is present and is not the one derived from the parts the attributes carry.
+
+A receiver derives each identity from the parts. An identity attribute is a check on that derivation, and a record that
+omits one its parts derive is read with the derived value. **Rationale**: an identity is a derived value, and one that disagrees with its parts is a sender
 that hashed something else -- reading it as given keys a comparison on bytes nobody can name. Keys under
-`perigraph.ext.` are never grounds for rejection (section 13.2). `conformance/cases/receiver.json` has a case for each.
+`perigraph.ext.` are never grounds for rejection (section 13.2). `conformance/cases/receiver.json` has a case for each
+ground. A receiver MUST NOT trim white space from a wire value before these checks.
 
 `perigraph.collector_reaches` is a comma-separated list of part names, and **an empty manifest is the empty string**.
 Part names contain no commas -- they come from a closed vocabulary -- so the separator is unambiguous, but a reader
@@ -481,9 +498,12 @@ negotiable is a protocol two implementations disagree about quietly, and this on
 
 **These are not breaking:**
 
-- adding a value to a closed vocabulary **whose meaning is a refusal a receiver already performs**;
+- adding a value to a closed vocabulary **whose meaning is a refusal a receiver already performs**. A receiver holding
+  the older vocabulary rejects a record that uses the new value, which loses that record but never misreads it; how such
+  a value reaches receivers is one of the questions of section 7.1;
 - adding an optional attribute a receiver may ignore without dropping an absence;
-- any change to a `note` or a `rationale`.
+- any change to a `note` or a `rationale`, except the digest definitions in `digest` and `model_parts.rationale`,
+  which are section 2.2 and section 9 restated.
 
 **A change that only withdraws an identity is not breaking**: after it, every input has either no identity or the
 identity a sender built from this repository already gave it, and no sender's identity for an input changes to a
@@ -492,7 +512,7 @@ later record of the same input then differ only in that one has no identity, whi
 and never reads as a difference. The changelog MUST list the inputs withdrawn. This exception holds only while every
 known sender is built from this repository.
 
-**A receiver meeting an unknown version refuses the record** (section 6). It does not downgrade, and it does not parse
+**A receiver meeting an unknown version rejects the record** (section 6). It does not downgrade, and it does not parse
 what it recognises: the fields it would drop are the ones that say what the record cannot see.
 
 **Version 2** is breaking on four counts: four entries in `must_refuse`, a new sourcing value that may key an identity,
@@ -528,20 +548,20 @@ match `spec/vocabularies.json` exactly. **A stamper** additionally satisfies sec
 `must_not_refuse`, and also the receiver requirements stated elsewhere in this document: rejecting an unknown
 `spec_version` and an out-of-vocabulary value (sections 1.0 and 6), dropping empty manifest entries (section 6), the
 placement of read lags and details (sections 1.1a and 1.2), and, if it reads lineage documents, section 10. A receiver for which an obligation is **unreachable** -- it never performs the comparison the
-obligation is about -- may say so instead of implementing it, and MUST be able to **demonstrate** the unreachability.
+obligation is about -- MAY say so instead of implementing it, and MUST then **demonstrate** the unreachability in the material that claims conformance.
 Asserting it is a loophole. **Example**: a receiver that only ever compares harness identities can demonstrate that the
 `parsed`-digest obligation is unreachable for it, because identifying parts are `model_visible` by construction.
 
-**Every implementation MUST reproduce `spec/fixtures/identity.json` and `spec/fixtures/model_identity.json`.** It is the only part of conformance that a second
+**A collector MUST reproduce `spec/fixtures/identity.json`, and a stamper MUST reproduce `spec/fixtures/model_identity.json`.** It is the only part of conformance that a second
 implementation cannot pass by agreeing with itself.
 
-**Neither is conformant on the strength of this document alone.** The sections say what is required; the fixtures and
+**No implementation is conformant on the strength of this document alone.** The sections say what is required; the fixtures and
 `spec/vocabularies.json` are how that is checked, and where a fixture or `spec/vocabularies.json` and this text disagree
 the file governs and the text is the defect. No implementation has yet been written by an independent person (`IMPLEMENTATIONS.md`).
 
 ## 9. What answered: the model parts
 
-A sender MUST emit a **model half** on every record: each of the four model parts below, as a part or as a named
+A collector MUST emit a **model half** on every record: each of the four model parts below, as a part or as a named
 absence; together they are what answered, as opposed to what surrounded it. Its parts are digested only by a collector
 **in the process that loaded the model**, which stamps them on every answer, because only that process holds the bytes;
 a collector anywhere else forwards that stamp, reads it back, or reports the four parts `not_observable` (section 6). A
@@ -677,7 +697,7 @@ Whether an addition is breaking is decided by section 7.
 ### 13.2 Vendor extensions
 
 The prefix `perigraph.ext.<vendor>.` is reserved for attributes outside this specification, where `<vendor>` is a name
-the extension's author controls, such as a domain or a project name. Such an attribute:
+the extension's author controls, such as a project name, written with the characters `a-z`, `0-9`, `_` and `-` only. Such an attribute:
 
 - never keys an identity, and a receiver MUST NOT compare it as if it did;
 - never lifts a refusal (section 1.1a);

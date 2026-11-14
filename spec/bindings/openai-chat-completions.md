@@ -7,12 +7,12 @@ Normative for a collector that reads a request body in the OpenAI Chat Completio
 | part | read from | boundary | identifying |
 |---|---|---|---|
 | `instruction` | the `content` of every message whose `role` is `system`, joined with U+000A in message order (SPEC 2.2) | `model_visible` | yes |
-| `tool_schemas` | `tools`: for each entry, the function's `name` and `parameters`, ordered by their rendering | `parsed` | no |
+| `tool_schemas` | `tools`: for each entry, the function's `name` and `parameters`. The serialisation and the order of entries are the collector's own, because a `parsed` digest is collector-local (SPEC 2.3) | `parsed` | no |
 | `readout` | `response_format` | `parsed` | no |
 | `decoding` | `temperature`, `top_p`, `top_k` and `seed` when present and not `null`, in that order, then `response_format` | `parsed` | no |
 | `loop`, `turn_budget`, `retry_policy`, `context_partitioning` | nothing: a request body has no field for them | -- | absent, `not_provided` |
 | `tool_extension` | nothing: what a tool does is not in any request | -- | absent, `not_observable` |
-| `tool_trace` | nothing: at request time no call has happened | -- | absent, `not_provided` |
+| `tool_trace` | nothing. Earlier `tool_calls` and `tool` messages in `messages` are not read as a trace in version 2 | -- | absent, `not_provided` |
 
 The collector's manifest is `instruction,tool_schemas,readout,decoding`. The four model parts are absent with reason `not_observable`, because a request body says nothing about what answered (SPEC section 6).
 
@@ -27,6 +27,8 @@ A version 2 collector reads only the fields above. Every other field of the requ
 | messages with `role` `developer` | not part of `instruction`. Two requests differing only in a developer message have the same harness identity. |
 | `tool_choice`, `parallel_tool_calls` | not part of `tool_schemas` or `decoding` |
 | `stop`, `max_tokens`, `max_completion_tokens`, `n`, `logit_bias`, `presence_penalty`, `frequency_penalty`, `reasoning_effort` | not part of `decoding` |
+| the `content` of messages whose role is not `system`, a system message's `name`, and earlier `tool_calls` and `tool` messages | not part of any part. Changes to the conversation do not change the harness identity |
+| a tool's `description` and `strict` | not part of `tool_schemas` |
 | `model` | not part of any part. A provider's model name may label the `checkpoint` part as `not_observable` (SPEC section 6), and it never keys anything. |
 
 Reading any of these would change the digest of a part some existing record already carries, so each one is a change of version under SPEC section 7, and none is made in version 2. They are on the roadmap in the README.

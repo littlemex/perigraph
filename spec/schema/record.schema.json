@@ -570,7 +570,7 @@
     }
   },
   "patternProperties": {
-    "^perigraph\\.ext\\.[^.]+\\..+$": {
+    "^perigraph\\.ext\\.[a-z0-9_-]+\\..+$": {
       "type": [
         "string",
         "number",

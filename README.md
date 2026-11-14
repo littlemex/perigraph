@@ -2,7 +2,7 @@
 
 **περί** (around) + **γραφή** (record): a record of what surrounded a model, and of what answered.
 
-perigraph is an open specification for one record attached to one model call. The record says which parts of the harness surrounded the model (the instruction, the tools, the loop, the decoding settings and the rest) and which model answered (its files, its precision, its runtime and how its answer is read). Each part is identified by a digest of its exact content and says how that fact reached the record. Each part that is missing says whose fault the gap is. The record exists so that a receiver can refuse a claim about accuracy or cost when the records behind the claim cannot show that the runs being compared were what the claim says they were.
+perigraph is an open specification for one record attached to one model call. The record says which parts of the harness surrounded the model (the instruction, the tools, the loop, the decoding settings and the rest) and which model answered (its files, its precision, its runtime and how its answer is read). Each part the collector can read is identified by a digest of its exact content, and every part says how that fact reached the record. Each part that is missing says whose fault the gap is. The record exists so that a receiver can refuse a claim about accuracy or cost when the records behind the claim cannot show that the runs being compared were what the claim says they were.
 
 [Project page](https://littlemex.github.io/perigraph/) · [Specification](SPEC.md) · [Conformance](conformance/README.md) · [Implementations](IMPLEMENTATIONS.md)
 
@@ -19,14 +19,14 @@ A comparison between two runs is only as good as the evidence that each side was
 
 | what happened | what stayed the same | what changed |
 |---|---|---|
-| a model was re-trained from the same recipe, data and seed | the model name, the recipe | its labels agreed with the earlier model's on 93.4% of items |
-| the same weights were quantised to int8 when loaded | the stored files, the model name | its answers agreed with the bf16 model's on 33 to 40% of items |
+| a model was re-trained from the same recipe and seed | the model name, the recipe | its labels agreed with the earlier model's on 93.4% of items |
+| the same weights were quantised to int8 when loaded | the stored files, the model name | its answers agreed with the unquantised run's on 33 to 40% of items |
 | a model trained to answer by comparing option scores was asked to generate text instead | the model, the files | it produced `1111` instead of a label |
 | the serving image was rebuilt and lost some packages | the model name, the checkpoint | 97 of 100 answers agreed with the earlier ones |
 
 A fifth case came from the version string itself. In [Prismyra](https://github.com/littlemex/Prismyra/commit/84cf43dd77164ac3a23c8442b8d378a19eb59d14), a fallback model's version was derived from its whole serving specification, so deploying a router, which writes into that specification, made the unchanged model a different arm by its version string.
 
-Each case either made two different things look the same or made the same thing look different. A record that names things cannot catch either. A record that digests the content of each part catches the first kind, and it catches the second only when the digest covers what the model actually reads and nothing else. That second condition is most of what this specification is about.
+Each case either made two different things look the same or made the same thing look different. A record that names things cannot catch either. A record that digests the content of each part catches the first kind, and it catches the second only when the digest covers the text the requester supplied for the model, and nothing else. That second condition is most of what this specification is about.
 
 ## What a record looks like
 
@@ -65,7 +65,7 @@ A name is a label its owner controls: a prompt can stay `v3` while its text chan
 
 Alternatives weighed: a name and version per component, which is what every convention surveyed carries and which the incidents above defeat; one digest over the whole prompt, as OpenLLMetry's `traceloop.prompt.version_hash` does, which says that something changed but not which part, and so cannot tell a changed tool list from a changed instruction.
 
-### 2. Every digest says which boundary it is over, and only text the model reads can key an identity
+### 2. Every digest says which boundary it is over, and only text the model reads can key the harness identity
 
 The same request can be digested at three places: the bytes on the wire, the values after parsing, or the text the model reads. A `tools` array or a sampler setting is in the request, but the provider renders it into the prompt however it likes, so its digest does not prove what the model saw. Each digest therefore names its boundary (`transport`, `parsed` or `model_visible`), and only a `model_visible` digest can key the harness identity ([SPEC 2.1](SPEC.md#21-the-three-boundaries-and-why-the-middle-one-is-the-trap)). For a request in the OpenAI Chat Completions shape this means the identity is the instruction's alone. That is a real limit, and the record says so rather than claiming more ([`spec/bindings/openai-chat-completions.md`](spec/bindings/openai-chat-completions.md)).
 
@@ -73,7 +73,7 @@ The `model_visible` text is hashed raw, without canonicalising case, white space
 
 ### 3. Every fact says how it reached the record, and a claim nobody can check can only subtract
 
-A part was in the request, loaded by the collector itself, pulled from somewhere else at some earlier moment, pushed by its owner as a declaration, or not observable at all. The record says which, per part (`sourcing`, [SPEC 1.1a](SPEC.md#11a-how-a-fact-reached-the-record)). A pulled fact carries how many seconds before the request it was read, because it describes another moment. A pushed fact may make a receiver refuse a verdict and may never make it accept one, because nobody downstream can check it.
+A part was in the request, loaded by the collector itself, pulled from somewhere else at some earlier moment, pushed by its owner as a declaration, or not observable at all. The record says which, per part (`sourcing`, [SPEC 1.1a](SPEC.md#11a-how-a-fact-reached-the-record)). A pulled fact carries its read lag in seconds, because it was read at a different moment from the request. A pushed fact may make a receiver refuse a verdict and may never make it accept one, because nobody downstream can check it. A relayed model stamp is the one exception, and SPEC 12.1 states the trust it requires.
 
 Alternatives weighed: trusting declared metadata as other conventions do, which lets an owner's statement stand in for an observation; refusing pushed facts outright, which throws away the only source for parts a request cannot carry, such as an agent's retry policy.
 
@@ -85,13 +85,13 @@ Alternatives weighed: omitting missing fields, or setting them to null, which ca
 
 ### 5. Permissive toward the sender, exact about itself
 
-A record missing any number of parts is still a valid record, because a collector that refused a partial record would produce no record, and an absent record looks the same as a run that never happened. But the record must say whether the collector finished. Every failure path, including an exception inside the collector, still emits a record, with status `collector_failed` ([SPEC 1.1](SPEC.md#11-the-two-refusals-are-about-different-objects)). Such a record is kept as a log and supports no verdict.
+A record missing any number of parts is still a valid record, because a collector that withheld a partial record would produce no record, and a record withheld is indistinguishable from a perfect record of nothing. But the record must say whether the collector finished. Every failure path, including an exception inside the collector, still emits a record, with status `collector_failed` ([SPEC 1.1](SPEC.md#11-the-two-refusals-are-about-different-objects)). Such a record is kept as a log and supports no verdict.
 
 Alternative weighed: validating strictly and rejecting incomplete records, which converts every partial observation into silence.
 
 ### 6. What answered is identified only by the process that loaded it
 
-The four model parts are the checkpoint files, the precision in force after loading, the runtime packages and the answer mode. Each one corresponds to one of the incidents above. Only a collector in the process that loaded the model holds those bytes, so only its digests (`loaded_by_us`) can key a model identity ([SPEC 9](SPEC.md#9-what-answered-the-model-parts)). A router or gateway forwards that stamp or says the model is `not_observable`. A model behind a provider's API has no model identity and stays admissible: claims about it are not bound to model bytes, and the record says so. A second identity, the artifact identity, covers the checkpoint alone and can be computed by anybody holding the files, including a trainer at save time.
+The four model parts are the checkpoint files, the precision in force after loading, the runtime packages and the answer mode. Each one corresponds to one of the incidents above. Only a collector in the process that loaded the model holds those bytes, so only its digests (`loaded_by_us`) can key a model identity ([SPEC 9](SPEC.md#9-what-answered-the-model-parts)). A router or gateway forwards that stamp or says the model is `not_observable`. A model behind a provider's API has no model identity and stays admissible: claims about it are not bound to model bytes, and the record says so. A second identity, the artifact identity, covers the checkpoint alone and can be computed by anybody holding the same set of files, including a trainer at save time.
 
 Alternatives weighed: the model name, or a provider's model identifier, which is a label (incidents 1 and 4); a digest of the stored files alone, which cannot tell bf16 from int8 of the same files (incident 2).
 
@@ -103,13 +103,13 @@ Alternative weighed: lineage fields inside every record, which would make the se
 
 ### 8. Flat scalar attributes, keyed by part name
 
-The wire form is flat `perigraph.*` keys with string or number values ([SPEC 6](SPEC.md#6-the-wire-form)), because it has to ride on a span that any tracer already emits, and the receiver that matters most is one nobody has written yet. Keys use part names and never positions: a positional index changes meaning when a collector learns to read one more part. An identity that does not exist is omitted, never written as an empty string, because two empty strings compare equal and would group every unidentifiable run together. Bindings say how the record travels on [OpenTelemetry spans](spec/bindings/otel.md), in [JSON Lines files](spec/bindings/jsonl.md), and how it is read from an [OpenAI Chat Completions request](spec/bindings/openai-chat-completions.md).
+The wire form is flat `perigraph.*` keys with string or number values (an extension may also use booleans) ([SPEC 6](SPEC.md#6-the-wire-form)), because it has to ride on a span that any tracer already emits. Keys use part names and never positions: a positional index changes meaning when a collector learns to read one more part. An identity that does not exist is omitted, never written as an empty string, because two empty strings compare equal and would group every unidentifiable run together. Bindings say how the record travels on [OpenTelemetry spans](spec/bindings/otel.md), in [JSON Lines files](spec/bindings/jsonl.md), and how it is read from an [OpenAI Chat Completions request](spec/bindings/openai-chat-completions.md).
 
 Alternative weighed: a nested JSON document, which needs a serialiser on both ends and puts the record's shape into the transport, where every change to the shape breaks compatibility.
 
 ### 9. Conformance is stated as refusals
 
-A receiver conforms by refusing what the records cannot support, for example a verdict over a record whose collector did not finish, a comparison of two arms whose decisions were missing different facts, or a comparison of two model identities produced by different collectors. The list is closed and machine-readable (`receiver_obligations` in [`spec/vocabularies.json`](spec/vocabularies.json)), and each entry exists because a published number would otherwise have had to be withdrawn. Equally closed is what a receiver must not refuse, such as a record missing parts or a model behind an API, so a receiver cannot become conformant by refusing everything ([SPEC 8](SPEC.md#8-conformance)).
+A receiver conforms by refusing what the records cannot support, for example a verdict over a record whose collector did not finish, a comparison of two arms whose decisions were missing different facts, or a comparison of two model identities produced by different collectors. The list is closed and machine-readable (`receiver_obligations` in [`spec/vocabularies.json`](spec/vocabularies.json)). Equally closed is what a receiver must not refuse, such as a record missing parts or a model behind an API, so a receiver cannot become conformant by refusing everything ([SPEC 8](SPEC.md#8-conformance)).
 
 Alternative weighed: listing capabilities a receiver supports, which says what it can do and not what it will not let through.
 
@@ -119,11 +119,11 @@ perigraph is not a telemetry convention and does not compete with one. It adds t
 
 | convention | surveyed at | what it carries that perigraph does not | what it does not carry |
 |---|---|---|---|
-| OpenTelemetry GenAI semantic conventions | [`e6658f1`](https://github.com/open-telemetry/semantic-conventions-genai/tree/e6658f1), 2026-11-06; every attribute is at `development` stability | request parameters, messages when content capture is on, `gen_ai.evaluation.result` | a content digest per part, a sourcing mode per part, cost, a routing decision |
+| OpenTelemetry GenAI semantic conventions | [`e6658f1`](https://github.com/open-telemetry/semantic-conventions-genai/tree/e6658f1), 2026-11-06; every attribute is at `development` stability | request parameters, messages when content capture is on, `gen_ai.evaluation.result` | a content digest per part, a sourcing mode per part |
 | OpenInference | [`715e299`](https://github.com/Arize-ai/openinference/tree/715e299), 2026-11-11 | a `DECISION` span kind, `llm.cost.*` in USD, `evaluation.*` | a content digest per part, a sourcing mode per part |
-| OpenLLMetry | [`e3d651a`](https://github.com/traceloop/openllmetry/tree/e3d651a), 2026-11-05 | `traceloop.prompt.version_hash`, one digest over a whole prompt version | a digest per part, evaluation results, cost |
+| OpenLLMetry | [`e3d651a`](https://github.com/traceloop/openllmetry/tree/e3d651a), 2026-11-05 | `traceloop.prompt.version_hash`, one digest over a whole prompt version | a digest per part, a sourcing mode per part |
 
-[`spec/bindings/otel.md`](spec/bindings/otel.md) maps each perigraph part to the nearest attributes of the first two and says how a span's attribute limits can drop part of a record.
+[`spec/bindings/otel.md`](spec/bindings/otel.md) maps four parts (instruction, tool_schemas, decoding and checkpoint) to the nearest attributes of the first two and says how a span's attribute limits can drop part of a record.
 
 ## Quickstart
 
@@ -147,7 +147,7 @@ python examples/quickstart.py
 
 ```text
 harness identity: c8f8edc45e222f663d8d70ac
-verdict: admissible
+verdict: admitted
 ```
 
 ### TypeScript, Node 22 or later
@@ -168,7 +168,7 @@ cd go
 go run ./examples/quickstart
 ```
 
-[`go/examples/quickstart/main.go`](go/examples/quickstart/main.go) builds the record with `FromRequestValue` and prints it with `ToAttributes`. The Go implementation is a sender only, so it ends with the identity line and no verdict.
+[`go/examples/quickstart/main.go`](go/examples/quickstart/main.go) builds the record with `FromRequestValue` and prints it with `ToAttributes`. The Go implementation implements the collector and stamper roles only, so it ends with the identity line and no verdict.
 
 ## Conformance
 
@@ -193,7 +193,7 @@ Every requirement sentence in the specification has an identifier in [`spec/requ
 |---|---|---|
 | Python, [`src/perigraph/`](src/perigraph) | collector, stamper, receiver | the specification's author |
 | TypeScript, [`typescript/`](typescript) | collector, stamper, receiver | the specification's author |
-| Go, [`go/`](go) | collector, stamper | OpenAI GPT-6 Sol, from `SPEC.md` and `spec/vocabularies.json` alone, without the other implementations' sources or the fixtures |
+| Go, [`go/`](go) | collector, stamper | OpenAI GPT-6 Sol, from `SPEC.md` and `spec/vocabularies.json`, without the other implementations' sources, and revised against compiler, test and conformance output, which includes fixture results |
 
 All three pass the conformance runner in CI, and `tools/cross_check.py` compares the three senders' output on the same bodies. **An implementation written by a person other than the specification's author is still wanted.** It is the one test none of these can be, since an implementation shares the blind spots of whatever its author read. [`IMPLEMENTATIONS.md`](IMPLEMENTATIONS.md) says how to list yours.
 
@@ -223,7 +223,11 @@ Planned and not started. None of these has a date.
 | keyed or salted digests | predictable content can be recovered from its digest (SPEC 12.2) |
 | a carrier for a stamp between a stamper and a forwarder, and attribution of a relayed stamp | model identities from forwarders are comparable only within one deployment today (SPEC 9) |
 | attributes for the facts the comparison obligations read, and conformance cases for them | lost-record counts, turn counts and missingness have no attribute in version 2 (SPEC 6.1) |
-| bindings for more request shapes, and reading `developer` messages, `tool_choice` and the remaining sampler fields | each would change existing digests, so each is a version change ([binding](spec/bindings/openai-chat-completions.md)) |
+| bindings for more request shapes, such as the Anthropic Messages API | a collector reading another shape is not conformant for it today ([binding](spec/bindings/openai-chat-completions.md)) |
+| reading `developer` messages, `tool_choice` and the remaining Chat Completions fields | each would change existing digests, so each is a version change |
+| a two-record operation in the conformance adapter, with cases for the comparison obligations a pair of records can trigger | the suite checks single records only today |
+| a refusal for an arm whose records carry more than one harness identity | adding a refusal is a version change (SPEC 7) |
+| an attribute naming the stamper behind a relayed model stamp | a forwarder's own collector name is what the collector-local comparison keys on today (SPEC 9) |
 | a registry for vendor names under `perigraph.ext.` | a vendor name is self-chosen today (SPEC 13.2) |
 | more than one maintainer | decisions are made by one person today ([GOVERNANCE.md](GOVERNANCE.md)) |
 | packages on PyPI, npm and a tagged Go module | the quickstarts run from a clone |

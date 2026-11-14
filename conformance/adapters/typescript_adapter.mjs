@@ -28,7 +28,7 @@ const ops = {
   receive: (req) => {
     try {
       const r = fromAttributes(req.attributes);
-      return { outcome: "stored", verdict: r.admissibleToAVerdict() ? "admissible" : "refused" };
+      return { outcome: "stored", verdict: r.admissibleToAVerdict() ? "admitted" : "refused" };
     } catch (e) {
       return { outcome: "rejected", why: String(e.message ?? e) };
     }

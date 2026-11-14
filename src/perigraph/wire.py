@@ -9,6 +9,8 @@ part, and every historical record then means something different. A part name do
 """
 from __future__ import annotations
 
+import re
+
 from perigraph.model import Model, ModelAbsence, ModelPart
 from perigraph.record import Absence, Manifest, Part, Record
 from perigraph.vocab import NAMESPACE, SPEC_VERSION, Unidentified
@@ -78,6 +80,53 @@ def _names(field: str) -> tuple[str, ...]:
     return tuple(dict.fromkeys(r for r in field.split(",") if r))
 
 
+_HEX64 = re.compile(r"[0-9a-f]{64}")
+_HEX24 = re.compile(r"[0-9a-f]{24}")
+_REQUIRED = ("spec_version", "collector", "collector_version", "collector_reaches", "status")
+_TOP_STRINGS = ("collector", "collector_version", "collector_reaches", "status", "model_reaches",
+                "harness_identity", "model_identity", "artifact_identity")
+_PART_FIELDS = {"part": ("sourcing", "digest", "boundary", "label", "read_lag_seconds"),
+                "model": ("sourcing", "digest", "label", "read_lag_seconds"),
+                "absent": ("reason", "detail"), "model_absent": ("reason", "detail")}
+
+
+def _check_shape(attrs: dict) -> None:
+    """The shape rules of section 6 that no record object enforces on its own: required keys, value types, attributes
+    of a part that carry no sourcing or reason, a boundary without a digest, and the length of digests and identities.
+    Keys under `perigraph.ext.` are skipped (section 13.2), and keys outside the prefix belong to the carrier."""
+    for k in _REQUIRED:
+        if f"{PREFIX}.{k}" not in attrs:
+            raise Unidentified(f"{PREFIX}.{k} is missing")
+    for k in _TOP_STRINGS:
+        if f"{PREFIX}.{k}" in attrs and not isinstance(attrs[f"{PREFIX}.{k}"], str):
+            raise Unidentified(f"{PREFIX}.{k} is not a string")
+    for k in ("harness_identity", "model_identity", "artifact_identity"):
+        v = attrs.get(f"{PREFIX}.{k}")
+        if v is not None and not _HEX24.fullmatch(v):
+            raise Unidentified(f"{PREFIX}.{k}={v!r} is not 24 lowercase hex characters")
+    for key, value in attrs.items():
+        if not key.startswith(f"{PREFIX}.") or key.startswith(f"{PREFIX}.ext."):
+            continue
+        bits = key.split(".")
+        if len(bits) != 4 or bits[1] not in _PART_FIELDS:
+            continue
+        group, name, field = bits[1], bits[2], bits[3]
+        if field not in _PART_FIELDS[group]:
+            continue
+        anchor = "sourcing" if group in ("part", "model") else "reason"
+        if f"{PREFIX}.{group}.{name}.{anchor}" not in attrs:
+            raise Unidentified(f"{key} is present and {PREFIX}.{group}.{name}.{anchor} is not")
+        if field == "read_lag_seconds":
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                raise Unidentified(f"{key} is not a number")
+        elif not isinstance(value, str):
+            raise Unidentified(f"{key} is not a string")
+        if field == "digest" and not _HEX64.fullmatch(value):
+            raise Unidentified(f"{key} is not 64 lowercase hex characters")
+        if group == "part" and field == "boundary" and f"{PREFIX}.part.{name}.digest" not in attrs:
+            raise Unidentified(f"{key} is present without a digest")
+
+
 def from_attributes(attrs: dict) -> Record:
     """Rebuild a record from attributes, refusing a version this reader does not implement.
 
@@ -91,6 +140,7 @@ def from_attributes(attrs: dict) -> Record:
             f"these attributes declare spec_version {got!r} and this reader implements {SPEC_VERSION}. Parsing it "
             f"anyway would drop the fields this version does not know, and a dropped absence is a hole the sender "
             f"declared and the reader cannot see")
+    _check_shape(attrs)
     parts: list[Part] = []
     absences: list[Absence] = []
     mparts: list[ModelPart] = []
@@ -116,7 +166,8 @@ def from_attributes(attrs: dict) -> Record:
             parts.append(Part(kind=kind, sourcing=str(value),
                               label=str(attrs.get(f"{base}.label", "")),
                               content_digest=str(attrs.get(f"{base}.digest", "")),
-                              boundary=str(attrs.get(f"{base}.boundary", "model_visible")),
+                              boundary=str(attrs.get(f"{base}.boundary", "model_visible" if f"{base}.digest" in attrs
+                                                     else "parsed")),
                               read_lag_seconds=None if lag is None else float(lag)))
         elif key.startswith(f"{PREFIX}.absent.") and key.endswith(".reason"):
             kind = key[len(f"{PREFIX}.absent."):-len(".reason")]

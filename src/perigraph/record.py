@@ -278,7 +278,13 @@ class Record:
 
     def admissible_to_a_verdict(self) -> bool:
         """Whether anything may publish a claim from this record. Three conditions, each a different failure."""
-        return self.status in ADMISSIBLE_STATUS and not self.contradictions and self.has_identity
+        return (self.status in ADMISSIBLE_STATUS and not self.contradictions and not self.model_contradictions
+                and self.has_identity)
+
+    @property
+    def model_contradictions(self) -> tuple[str, ...]:
+        """The same test against the model manifest (section 1.3): a claimed model part denied or left unmentioned."""
+        return self.model.contradictions if self.model is not None else ()
 
     def why_not(self) -> str:
         """One sentence naming everything standing between this record and a published claim."""
@@ -291,6 +297,9 @@ class Record:
         if self.contradictions:
             reasons.append(f"the manifest claims to reach {list(self.contradictions)} and did not deliver them, so no "
                            f"absence here can be read at face value")
+        if self.model_contradictions:
+            reasons.append(f"the model manifest claims to reach {list(self.model_contradictions)} and did not deliver "
+                           f"them")
         if not self.has_identity:
             reasons.append("no part was identified by bytes we hold that the model provably read, so the identity "
                            "would be the same for every possible harness")

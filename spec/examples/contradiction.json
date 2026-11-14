@@ -1,7 +1,7 @@
 {
   "description": "The manifest says this collector can reach readout, and the record says nothing about readout. That is a contradiction, louder than a hole: no absence in the record can be read at face value, so no verdict.",
   "illustrates": [
-    "PG-015"
+    "PG-070"
   ],
   "receiver": {
     "outcome": "stored",

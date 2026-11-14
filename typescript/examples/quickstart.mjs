@@ -16,4 +16,4 @@ console.log(JSON.stringify(attributes, null, 2));
 
 const received = fromAttributes(attributes);
 console.log("harness identity:", received.identity);
-console.log("verdict:", received.admissibleToAVerdict() ? "admissible" : "refused");
+console.log("verdict:", received.admissibleToAVerdict() ? "admitted" : "refused");

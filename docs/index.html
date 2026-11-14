@@ -213,7 +213,7 @@ footer a{color:var(--ink2)}
       <div class="rv">
         <div class="eyebrow" data-t="hero.eyebrow">Open specification &middot; spec_version 2, provisional</div>
         <h1 data-t="hero.h">A record of what surrounded the model, <span class="hl">and of what answered.</span></h1>
-        <p class="lede" data-t="hero.lede">One record per model call. Every part of the harness and of the model is identified by a digest of its exact content, says how that fact reached the record, and, when it is missing, says whose fault the gap is. A receiver can then refuse a claim about accuracy or cost that the records cannot support.</p>
+        <p class="lede" data-t="hero.lede">One record per model call. Each part of the harness and of the model that the collector can read is identified by a digest of its exact content, every part says how that fact reached the record, and a missing part says whose fault the gap is. A receiver can then refuse a claim about accuracy or cost that the records cannot support.</p>
         <div class="cta">
           <a class="btn primary" href="https://github.com/littlemex/perigraph/blob/main/SPEC.md" data-t="hero.cta1">Read the specification</a>
           <a class="btn ghost" href="#start" data-t="hero.cta2">Try it</a>
@@ -255,20 +255,20 @@ footer a{color:var(--ink2)}
           <text class="s" x="636" y="254" text-anchor="middle" data-t="f1.r4">refuse a comparison</text>
           <path class="w k" d="M20 410 H56"/><text class="s" x="62" y="414" data-t="f1.l1">keys an identity</text><path class="w d" d="M220 410 H256"/><text class="s" x="262" y="414" data-t="f1.l2">recorded, keys nothing</text><rect class="box err" x="440" y="401" width="36" height="18" rx="4"/><text class="s" x="482" y="414" data-t="f1.l3">absent, with whose fault</text>
           </svg>
-        <figcaption data-t="f1.cap">A request adapter holds the left half and reports the model half not_observable; the process that loaded the model holds the right half. Shown here together.</figcaption>
+        <figcaption data-t="f1.cap">A request adapter holds the upper half and reports the model half not_observable; the process that loaded the model holds the lower half. Shown here together.</figcaption>
       </figure>
     </div>
     <div class="pillars">
       <a class="pillar rv" href="#d1"><span class="k" data-t="p1.k">Content</span><b data-t="p1.h">A digest per part, never a name</b><span data-t="p1.p">A label its owner controls can stay the same while the bytes change. Names are kept for readers and key nothing.</span></a>
-      <a class="pillar rv" href="#d2"><span class="k" data-t="p2.k">Boundary</span><b data-t="p2.h">Only what the model reads keys an identity</b><span data-t="p2.p">Each digest names the boundary it is over: the wire, the parsed values, or the text the model reads.</span></a>
+      <a class="pillar rv" href="#d2"><span class="k" data-t="p2.k">Boundary</span><b data-t="p2.h">Only what the model reads keys the harness identity</b><span data-t="p2.p">Each digest names the boundary it is over: the wire, the parsed values, or the text the model reads.</span></a>
       <a class="pillar rv" href="#d3"><span class="k" data-t="p3.k">Sourcing</span><b data-t="p3.h">How each fact got here</b><span data-t="p3.p">In the request, loaded by us, pulled with a lag, pushed by its owner, or not observable. Unchecked claims only subtract.</span></a>
       <a class="pillar rv" href="#d4"><span class="k" data-t="p4.k">Blame</span><b data-t="p4.h">Every gap names whose it is</b><span data-t="p4.p">The requester, the collector, or nobody. A collector's own manifest turns a silent regression into a contradiction.</span></a>
     </div>
     <div class="stats rv">
       <div><b>10</b><span data-t="st1">harness parts, from the instruction to how contexts are partitioned</span></div>
       <div><b>4</b><span data-t="st2">model parts: checkpoint, precision, runtime, answer mode</span></div>
-      <div><b>13</b><span data-t="st3">refusals a conforming receiver performs, and 4 it must not</span></div>
-      <div><b>3</b><span data-t="st4">implementations checked by one conformance runner: Python, TypeScript, Go</span></div>
+      <div><b>13</b><span data-t="st3">refusals a conforming receiver performs, and 4 it must not. The conformance cases check the ones a single record can trigger</span></div>
+      <div><b>3</b><span data-t="st4">implementations checked by one conformance runner. None yet by a person other than the specification's author</span></div>
     </div>
   </div>
 </section>
@@ -284,16 +284,16 @@ footer a{color:var(--ink2)}
       <table class="t">
         <thead><tr><th data-t="pr.th1">what happened</th><th data-t="pr.th2">what stayed the same</th><th data-t="pr.th3">what changed</th></tr></thead>
         <tbody>
-          <tr><td data-t="pr.r1a">A model was re-trained from the same recipe, data and seed</td><td data-t="pr.r1b">the model name, the recipe</td><td data-t="pr.r1c">its labels agreed with the earlier model's on <b>93.4%</b> of items</td></tr>
-          <tr><td data-t="pr.r2a">The same weights were quantised to int8 when loaded</td><td data-t="pr.r2b">the stored files, the model name</td><td data-t="pr.r2c">its answers agreed with the bf16 model's on <b>33 to 40%</b> of items</td></tr>
+          <tr><td data-t="pr.r1a">A model was re-trained from the same recipe and seed</td><td data-t="pr.r1b">the model name, the recipe</td><td data-t="pr.r1c">its labels agreed with the earlier model's on <b>93.4%</b> of items</td></tr>
+          <tr><td data-t="pr.r2a">The same weights were quantised to int8 when loaded</td><td data-t="pr.r2b">the stored files, the model name</td><td data-t="pr.r2c">its answers agreed with the unquantised run's on <b>33 to 40%</b> of items</td></tr>
           <tr><td data-t="pr.r3a">A model trained to answer by comparing option scores was asked to generate text</td><td data-t="pr.r3b">the model, the files</td><td data-t="pr.r3c">it produced <code>1111</code> instead of a label</td></tr>
           <tr><td data-t="pr.r4a">The serving image was rebuilt and lost some packages</td><td data-t="pr.r4b">the model name, the checkpoint</td><td data-t="pr.r4c"><b>97 of 100</b> answers agreed with the earlier ones</td></tr>
           <tr><td data-t="pr.r5a">A router was deployed, which writes into the fallback model's serving specification</td><td data-t="pr.r5b">the fallback model</td><td data-t="pr.r5c">its version string, so the same model became a different arm</td></tr>
         </tbody>
       </table>
     </div>
-    <p class="src rv"><span data-t="pr.src">Sources:</span> <a href="https://github.com/littlemex/tierbook/blob/497d5cd5ba7acf219ac90dde5648c20514f02deb/docs/verify/v0.5.0-distillation-loop.md" data-t="pr.src1">tierbook verification record</a> (rows 1 to 4) &middot; <a href="https://github.com/littlemex/Prismyra/commit/84cf43dd77164ac3a23c8442b8d378a19eb59d14" data-t="pr.src2">Prismyra commit 84cf43d</a> (row 5)</p>
-    <div class="note rv" data-t="pr.note"><b>Two failure directions.</b> The first four made two different things look the same; the fifth made the same thing look different. A content digest catches the first kind, and it catches the second only when it covers what the model actually reads and nothing else. Most of the specification is about that second condition.</div>
+    <p class="src rv"><span data-t="pr.src">Sources:</span> <a href="https://github.com/littlemex/tierbook/blob/497d5cd5ba7acf219ac90dde5648c20514f02deb/docs/verify/v0.5.0-distillation-loop.md" data-t="pr.src1">tierbook verification record</a> <span data-t="pr.rows14">(rows 1 to 4)</span> &middot; <a href="https://github.com/littlemex/Prismyra/commit/84cf43dd77164ac3a23c8442b8d378a19eb59d14" data-t="pr.src2">Prismyra commit 84cf43d</a> <span data-t="pr.row5">(row 5)</span></p>
+    <div class="note rv" data-t="pr.note"><b>Two failure directions.</b> The first four made two different things look the same; the fifth made the same thing look different. A content digest catches the first kind, and it catches the second only when it covers the text the requester supplied for the model, and nothing else. Most of the specification is about that second condition.</div>
   </div>
 </section>
 
@@ -309,13 +309,13 @@ footer a{color:var(--ink2)}
         <details class="more"><summary data-t="alt">Alternatives weighed</summary><div class="body" data-t="d1.alt">A name and version per component, which every convention surveyed carries and which the incidents above defeat. One digest over the whole prompt, which says that something changed but not which part.</div></details></article>
       <article class="dec rv" id="d2"><div class="n">2 &middot; SPEC 2.1, 2.4</div><h3 data-t="d2.h">Every digest names its boundary</h3><p data-t="d2.p">A <code>tools</code> array is in the request, but the provider renders it into the prompt however it likes. Only a <code>model_visible</code> digest keys the harness identity, and that text is hashed raw. For a Chat Completions request, the identity is the instruction's alone, and the record says so.</p>
         <details class="more"><summary data-t="alt">Alternatives weighed</summary><div class="body" data-t="d2.alt">Keying on every field, which changes when a gateway re-serialises JSON and stays the same when a provider changes how it renders tools. Canonical JSON everywhere, which makes two instructions that differ only in white space look identical, though such differences change model behaviour.</div></details></article>
-      <article class="dec rv" id="d3"><div class="n">3 &middot; SPEC 1.1a</div><h3 data-t="d3.h">Every fact says how it reached the record</h3><p data-t="d3.p">Five sourcing values, per part. A pulled fact carries how many seconds before the request it was read. A claim nobody downstream can check may trigger a refusal and may never lift one.</p>
+      <article class="dec rv" id="d3"><div class="n">3 &middot; SPEC 1.1a</div><h3 data-t="d3.h">Every fact says how it reached the record</h3><p data-t="d3.p">There are five sourcing values, and each part carries one. A pulled fact carries its read lag in seconds. A claim nobody downstream can check may trigger a refusal and may never lift one; a relayed model stamp is the one exception.</p>
         <details class="more"><summary data-t="alt">Alternatives weighed</summary><div class="body" data-t="d3.alt">Trusting declared metadata, which lets a statement stand in for an observation. Refusing declarations outright, which throws away the only source for parts a request cannot carry, such as a retry policy.</div></details></article>
       <article class="dec rv" id="d4"><div class="n">4 &middot; SPEC 1.2, 1.3</div><h3 data-t="d4.h">Every absence names whose fault it is</h3><p data-t="d4.p">A collector that loses the ability to read a field after a client library renames it would otherwise write the same gap as a requester who sent nothing. Each absence blames the requester, the collector or nobody, and the collector publishes in advance what it can reach.</p>
         <details class="more"><summary data-t="alt">Alternatives weighed</summary><div class="body" data-t="d4.alt">Omitted or null fields, which cannot tell a regression from an empty request. A free-text reason, which no receiver can act on.</div></details></article>
-      <article class="dec rv" id="d5"><div class="n">5 &middot; SPEC 1.1</div><h3 data-t="d5.h">Permissive toward the sender, exact about itself</h3><p data-t="d5.p">A record missing any number of parts is still a record, because a refused record looks the same as a run that never happened. Every failure path, an exception included, still emits one, with status <code>collector_failed</code>.</p>
+      <article class="dec rv" id="d5"><div class="n">5 &middot; SPEC 1.1</div><h3 data-t="d5.h">Permissive toward the sender, exact about itself</h3><p data-t="d5.p">A record missing any number of parts is still a record, because a record the collector withheld is indistinguishable from a perfect record of nothing. Every failure path, an exception included, still emits one, with status <code>collector_failed</code>.</p>
         <details class="more"><summary data-t="alt">Alternatives weighed</summary><div class="body" data-t="d5.alt">Strict validation that rejects incomplete records, which turns every partial observation into silence.</div></details></article>
-      <article class="dec rv" id="d6"><div class="n">6 &middot; SPEC 9</div><h3 data-t="d6.h">What answered is identified by the process that loaded it</h3><p data-t="d6.p">Checkpoint files, precision after loading, runtime packages and answer mode: one part for each incident above. Only <code>loaded_by_us</code> keys the model identity. A model behind a provider's API has none and stays admissible.</p>
+      <article class="dec rv" id="d6"><div class="n">6 &middot; SPEC 9</div><h3 data-t="d6.h">What answered is identified by the process that loaded it</h3><p data-t="d6.p">Checkpoint files, precision after loading, runtime packages and answer mode: each answers one of the first four incidents above. Only <code>loaded_by_us</code> keys the model identity. A model behind a provider's API has none and stays admissible.</p>
         <details class="more"><summary data-t="alt">Alternatives weighed</summary><div class="body" data-t="d6.alt">A model name or a provider's model identifier, which is a label. A digest of the stored files alone, which cannot tell bf16 from int8 of the same files.</div></details></article>
       <article class="dec rv" id="d7"><div class="n">7 &middot; SPEC 10</div><h3 data-t="d7.h">A model's history is a separate document that can only subtract</h3><p data-t="d7.p">Its trainer writes the parent, the method and the item sets used, about one artifact identity. A set named as trained on makes a verdict on that set suspect. A missing ancestor is unknown, never clean.</p>
         <details class="more"><summary data-t="alt">Alternatives weighed</summary><div class="body" data-t="d7.alt">Lineage fields in every record, which would make the server that holds the bytes vouch for a history it does not hold.</div></details></article>
@@ -349,9 +349,9 @@ footer a{color:var(--ink2)}
         <text class="s" x="340" y="150" text-anchor="middle" data-t="f2.s2a">digested by the process</text>
         <text class="s" x="340" y="168" text-anchor="middle" data-t="f2.s2b">that loaded the model;</text>
         <text class="s" x="340" y="186" text-anchor="middle" data-t="f2.s2c">model parts only</text>
-        <text class="s" x="550" y="150" text-anchor="middle" data-t="f2.s3a">read from elsewhere,</text>
-        <text class="s" x="550" y="168" text-anchor="middle" data-t="f2.s3b">earlier; carries its lag</text>
-        <text class="s" x="550" y="186" text-anchor="middle" data-t="f2.s3c">in seconds</text>
+        <text class="s" x="550" y="150" text-anchor="middle" data-t="f2.s3a">read elsewhere, at</text>
+        <text class="s" x="550" y="168" text-anchor="middle" data-t="f2.s3b">another moment; carries</text>
+        <text class="s" x="550" y="186" text-anchor="middle" data-t="f2.s3c">its lag in seconds</text>
         <text class="s" x="730" y="150" text-anchor="middle" data-t="f2.s4a">the owner's declaration;</text>
         <text class="s" x="730" y="168" text-anchor="middle" data-t="f2.s4b">may trigger a refusal,</text>
         <text class="s" x="730" y="186" text-anchor="middle" data-t="f2.s4c">never lift one</text>
@@ -412,7 +412,7 @@ footer a{color:var(--ink2)}
       <figcaption data-t="f3.cap">The outcomes differ by border as well as by colour: thick dashes for a rejection, thin dashes for a refused verdict, dots for a refused comparison, a solid line for admissible.</figcaption>
     </figure>
     <div class="grid2" style="margin-top:36px">
-      <div class="rv"><h3 data-t="rc.k1">Thirteen refusals a receiver performs</h3><p class="muted" data-t="rc.k1p">Each exists because a published number would otherwise have had to be withdrawn. They are listed as <code>receiver_obligations.must_refuse</code> in <code>spec/vocabularies.json</code>.</p></div>
+      <div class="rv"><h3 data-t="rc.k1">Thirteen refusals a receiver performs</h3><p class="muted" data-t="rc.k1p">They are listed as <code>receiver_obligations.must_refuse</code> in <code>spec/vocabularies.json</code>.</p></div>
       <div class="rv"><h3 data-t="rc.k2">Four it must not</h3><p class="muted" data-t="rc.k2p">A record missing parts, an incomplete record kept as a log, a record with no model identity, and one with no model half at all. Refusing these would make a receiver conformant by refusing everything.</p></div>
     </div>
   </div>
@@ -429,13 +429,13 @@ footer a{color:var(--ink2)}
       <table class="t">
         <thead><tr><th data-t="re.th1">convention</th><th data-t="re.th2">surveyed at</th><th data-t="re.th3">carries, and perigraph does not</th><th data-t="re.th4">does not carry</th></tr></thead>
         <tbody>
-          <tr><td>OpenTelemetry GenAI</td><td><a href="https://github.com/open-telemetry/semantic-conventions-genai/tree/e6658f1"><code>e6658f1</code></a>, 2026-11-06</td><td data-t="re.r1c">request parameters, messages when content capture is on, evaluation results; every attribute at development stability</td><td data-t="re.r1d">a digest per part, a sourcing mode per part, cost, a routing decision</td></tr>
+          <tr><td>OpenTelemetry GenAI</td><td><a href="https://github.com/open-telemetry/semantic-conventions-genai/tree/e6658f1"><code>e6658f1</code></a>, 2026-11-06</td><td data-t="re.r1c">request parameters, messages when content capture is on, evaluation results; every attribute at development stability</td><td data-t="re.r1d">a digest per part, a sourcing mode per part</td></tr>
           <tr><td>OpenInference</td><td><a href="https://github.com/Arize-ai/openinference/tree/715e299"><code>715e299</code></a>, 2026-11-11</td><td data-t="re.r2c">a DECISION span kind, cost in USD, evaluation results</td><td data-t="re.r2d">a digest per part, a sourcing mode per part</td></tr>
-          <tr><td>OpenLLMetry</td><td><a href="https://github.com/traceloop/openllmetry/tree/e3d651a"><code>e3d651a</code></a>, 2026-11-05</td><td data-t="re.r3c">one digest over a whole prompt version</td><td data-t="re.r3d">a digest per part, evaluation results, cost</td></tr>
+          <tr><td>OpenLLMetry</td><td><a href="https://github.com/traceloop/openllmetry/tree/e3d651a"><code>e3d651a</code></a>, 2026-11-05</td><td data-t="re.r3c">one digest over a whole prompt version</td><td data-t="re.r3d">a digest per part, a sourcing mode per part</td></tr>
         </tbody>
       </table>
     </div>
-    <p class="src rv" data-t="re.src">The OpenTelemetry binding maps each part to the nearest attributes and says how a span's attribute limit can drop part of a record: <a href="https://github.com/littlemex/perigraph/blob/main/spec/bindings/otel.md">spec/bindings/otel.md</a>.</p>
+    <p class="src rv" data-t="re.src">The OpenTelemetry binding maps four parts to the nearest attributes and says how a span's attribute limit can drop part of a record: <a href="https://github.com/littlemex/perigraph/blob/main/spec/bindings/otel.md">spec/bindings/otel.md</a>.</p>
   </div>
 </section>
 
@@ -466,7 +466,7 @@ node examples/quickstart.mjs</pre></div>
       <div id="qs-go" role="tabpanel" aria-labelledby="tab-go" class="codewrap" hidden><div class="codehead"><button class="copy" type="button" data-t="copy">Copy</button></div><pre class="term" translate="no">git clone https://github.com/littlemex/perigraph.git
 cd perigraph/go
 go run ./examples/quickstart</pre></div>
-      <p class="src" data-t="qs.out">Python and TypeScript end with <code>harness identity: c8f8edc45e222f663d8d70ac</code> and <code>verdict: admissible</code>, after reading the record back as a receiver. Go is a sender only and ends with the identity.</p>
+      <p class="src" data-t="qs.out">Python and TypeScript end with <code>harness identity: c8f8edc45e222f663d8d70ac</code> and <code>verdict: admitted</code>, after reading the record back as a receiver. Go implements the collector and stamper roles only and ends with the identity.</p>
     </div>
     <div class="grid2" style="margin-top:40px">
       <div class="rv">
@@ -482,7 +482,7 @@ python tools/conform.py --adapter "python conformance/adapters/python_adapter.py
           <tbody>
             <tr><td>Python</td><td data-t="im.r1">collector, stamper, receiver</td><td data-t="im.a1">the specification's author</td></tr>
             <tr><td>TypeScript</td><td data-t="im.r2">collector, stamper, receiver</td><td data-t="im.a2">the specification's author</td></tr>
-            <tr><td>Go</td><td data-t="im.r3">collector, stamper</td><td data-t="im.a3">OpenAI GPT-6 Sol, from the specification alone</td></tr>
+            <tr><td>Go</td><td data-t="im.r3">collector, stamper</td><td data-t="im.a3">OpenAI GPT-6 Sol, from the specification without the other sources</td></tr>
           </tbody>
         </table>
         <p class="note" data-t="im.note"><b>Still wanted:</b> an implementation by a person other than the specification's author. If yours disagrees with a fixture or a case, the disagreement is the contribution.</p>
@@ -545,7 +545,7 @@ window.__JA = {
 "nav.problem": "問題", "nav.design": "設計", "nav.receivers": "拒否", "nav.relation": "OTel", "nav.start": "試す", "nav.status": "状況",
 "hero.eyebrow": "公開仕様 &middot; spec_version 2 (暫定)",
 "hero.h": "モデルの周りにあったものと、<span class=\"hl\">答えたものの記録。</span>",
-"hero.lede": "モデルの呼び出し 1 回につき記録を 1 つ作ります。ハーネスとモデルの各部品を、名前ではなく中身そのもののダイジェスト (sha256) で識別し、その事実がどこから来たかを書き、欠けている部品には誰のせいで欠けたかを書きます。こうすると受け手 (receiver) は、記録から裏付けられない精度やコストの主張を拒否できます。",
+"hero.lede": "モデルの呼び出し 1 回につき記録を 1 つ作ります。ハーネスとモデルの部品のうち収集側が読めるものは、中身そのもののダイジェストで識別します。どの部品にもその事実がどう記録に届いたかを書き、欠けている部品には誰のせいで欠けたかを書きます。こうすると受け手 (receiver) は、記録から裏付けられない正確さやコストの主張を拒否できます。",
 "hero.cta1": "仕様を読む", "hero.cta2": "試す",
 "f1.title": "実行されたもの、その部品、部品が決める識別子、受け手がすること",
 "f1.c1": "実行されたもの", "f1.c2": "部品ごとのダイジェスト", "f1.c3": "識別子", "f1.c4": "受け手",
@@ -554,25 +554,25 @@ window.__JA = {
 "f1.hid": "ハーネス", "f1.mid": "モデル", "f1.mid2": "4 部品すべて", "f1.aid": "成果物", "f1.aid2": "checkpoint のみ",
 "f1.r1": "棄却", "f1.r2": "保存", "f1.r3": "判定を拒否", "f1.r4": "比較を拒否",
 "f1.l1": "識別子を決める", "f1.l2": "記録するが識別に使わない", "f1.l3": "欠落 (誰のせいか付き)",
-"f1.cap": "リクエストを読む収集側 (collector) は左半分を持ち、モデル側を not_observable と報告します。右半分を持てるのはモデルを読み込んだプロセスだけです。ここでは両方を並べています。",
+"f1.cap": "リクエストを読む収集側 (collector) は上半分を持ち、モデル側を not_observable と報告します。下半分を持つのは、モデルを読み込んだプロセスです。ここでは両方を並べています。",
 "p1.k": "中身", "p1.h": "名前ではなく部品ごとのダイジェスト", "p1.p": "持ち主が決めるラベルは、中身が変わっても同じままでいられます。名前は読む人のために残し、識別には使いません。",
-"p2.k": "境界", "p2.h": "モデルが読むものだけが識別子を決める", "p2.p": "各ダイジェストは、何の上で取ったか (通信路、解析後の値、モデルが読む文字列) を名乗ります。",
+"p2.k": "境界", "p2.h": "ハーネス識別子を決めるのは、モデルが読む文字列だけ", "p2.p": "各ダイジェストは、どの境界の内容から取ったか (通信路上のバイト、解析後の値、モデルが読む文字列) を名乗ります。",
 "p3.k": "出どころ", "p3.h": "各事実がどう届いたか", "p3.p": "リクエストにあった、自分で読み込んだ、遅れ付きで取りに行った、持ち主が申告した、観測できない、のどれかです。確かめられない申告は、判定を厳しくする方向にしか働きません。",
-"p4.k": "責任", "p4.h": "欠落は必ず誰のせいかを名乗る", "p4.p": "依頼側、収集側、誰でもない、のどれかです。収集側が事前に出す読める範囲の宣言 (manifest) があるので、黙った劣化は矛盾として表に出ます。",
+"p4.k": "責任", "p4.h": "欠落は必ず誰のせいかを名乗る", "p4.p": "依頼側、収集側、誰でもない、のどれかです。収集側が事前に出す読める範囲の宣言 (manifest) があるので、気づかれないまま読めなくなる退行 (regression) は矛盾として表に出ます。",
 "st1": "ハーネスの部品。指示文 (instruction) から文脈の分け方まで",
-"st2": "モデルの部品。checkpoint、精度、実行環境、答えの取り出し方",
-"st3": "適合する受け手が行う拒否。してはいけない拒否も 4 つ決めています",
-"st4": "1 つの適合性テストで確かめている実装。Python、TypeScript、Go",
+"st2": "モデルの部品。checkpoint、数値精度 (precision)、実行環境 (runtime)、回答方式 (answer_mode)",
+"st3": "適合する受け手が行う拒否。してはいけない拒否も 4 つ決めています。適合性ケースが確かめるのは、記録 1 つで起きるものです",
+"st4": "1 つの適合性ランナー (runner) で確かめている実装。仕様の著者以外の人による実装はまだありません",
 "pr.eyebrow": "問題", "pr.h": "名前は同じだった。答えは同じではなかった。",
 "pr.lede": "2 つの実行の比較は、それぞれが名前どおりのものだったという証拠と同じだけしか信用できません。ある蒸留の研究では、次のどれもが、名前を何ひとつ変えずに答えを変えました。",
 "pr.th1": "起きたこと", "pr.th2": "同じままだったもの", "pr.th3": "変わったもの",
-"pr.r1a": "同じレシピ、データ、seed でモデルを訓練し直した", "pr.r1b": "モデル名、レシピ", "pr.r1c": "前のモデルとラベルが一致したのは項目の <b>93.4%</b>",
-"pr.r2a": "同じ重みを、読み込み時に int8 に量子化した", "pr.r2b": "保存されたファイル、モデル名", "pr.r2c": "bf16 のモデルと答えが一致したのは項目の <b>33 から 40%</b>",
+"pr.r1a": "同じレシピと seed でモデルを訓練し直した", "pr.r1b": "モデル名、レシピ", "pr.r1c": "前のモデルとラベルが一致したのは項目の <b>93.4%</b>",
+"pr.r2a": "同じ重みを、読み込み時に int8 に量子化した", "pr.r2b": "保存されたファイル、モデル名", "pr.r2c": "量子化しない実行と答えが一致したのは項目の <b>33 から 40%</b>",
 "pr.r3a": "選択肢のスコアを比べて答えるよう訓練したモデルに、文章を生成させた", "pr.r3b": "モデル、ファイル", "pr.r3c": "ラベルの代わりに <code>1111</code> を出力した",
 "pr.r4a": "配信用のイメージを作り直し、一部のパッケージが抜けた", "pr.r4b": "モデル名、checkpoint", "pr.r4c": "前と同じ答えだったのは <b>100 件中 97 件</b>",
-"pr.r5a": "ルーターを配備した。配備はフォールバック先モデルの配信設定に書き込む", "pr.r5b": "フォールバック先のモデル", "pr.r5c": "バージョン文字列が変わり、同じモデルが別の候補 (arm) として扱われた",
-"pr.src": "出典:", "pr.src1": "tierbook の検証記録", "pr.src2": "Prismyra のコミット 84cf43d",
-"pr.note": "<b>失敗には 2 つの向きがあります。</b> 最初の 4 つは違うものを同じに見せ、5 つ目は同じものを違って見せました。中身のダイジェストは前者を捕まえます。後者を捕まえられるのは、ダイジェストがモデルが実際に読むものだけを覆っているときだけです。仕様の大部分は、この 2 つ目の条件についての話です。"
+"pr.r5a": "ルーターを配備した。配備はフォールバック先モデルの配信設定に書き込む", "pr.r5b": "フォールバック先のモデル", "pr.r5c": "バージョン文字列が変わり、同じモデルが別の arm (1 つの構成として扱う実行の集まり) になった",
+"pr.src": "出典:", "pr.rows14": "(1 から 4 行目)", "pr.row5": "(5 行目)", "pr.src1": "tierbook の検証記録", "pr.src2": "Prismyra のコミット 84cf43d",
+"pr.note": "<b>失敗には 2 つの向きがあります。</b> 最初の 4 つは違うものを同じに見せ、5 つ目は同じものを違って見せました。中身のダイジェストは前者を捕まえます。後者を捕まえられるのは、ダイジェストが依頼側がモデルに渡した文字列だけを覆っているときだけです。仕様の大部分は、この 2 つ目の条件についての話です。"
 };
 </script>
 <script>
@@ -587,20 +587,20 @@ Object.assign(window.__JA, {
 "d2.p": "<code>tools</code> 配列はリクエストに入っていますが、プロバイダーはそれを好きな形でプロンプトに書き込みます。ハーネスの識別子を決めるのは <code>model_visible</code> のダイジェストだけで、その文字列は手を加えずにハッシュします。Chat Completions のリクエストでは識別子は指示文だけで決まり、記録はそのことを明記します。",
 "d2.alt": "全フィールドで識別する案。ゲートウェイが JSON を整形し直すと変わり、プロバイダーがツールの書き込み方を変えても変わりません。全部を正規化した JSON にする案。空白だけが違う 2 つの指示文が同じに見えますが、その違いはモデルの挙動を変えます。",
 "d3.h": "各事実は、どう記録に届いたかを名乗る",
-"d3.p": "部品ごとに 5 種類の出どころ (sourcing) を持ちます。取りに行った事実は、リクエストの何秒前に読んだかを持ちます。下流の誰も確かめられない申告は拒否のきっかけにはなれても、拒否を解除することはできません。",
+"d3.p": "出どころ (sourcing) は 5 種類あり、部品ごとにそのどれか 1 つを書きます。取りに行った事実は、読んだ時点とリクエストの時点のずれ (read lag) を秒数で持ちます。下流の誰も確かめられない申告は拒否のきっかけにはなれても、拒否を解除することはできません (中継されたモデルの刻印だけが例外です)。",
 "d3.alt": "申告されたメタデータを信じる案。観測の代わりに言い分が通ります。申告を一切受け取らない案。リトライ方針のように、リクエストに載らない部品の唯一の情報源を捨てることになります。",
 "d4.h": "欠落は必ず誰のせいかを名乗る",
 "d4.p": "クライアントライブラリがフィールド名を変えて収集側が読めなくなったとき、何も送らなかった依頼側と同じ欠落を書いてしまう、という失敗を防ぎます。欠落は依頼側、収集側、誰でもない、のどれかを責め、収集側は読める範囲を先に宣言します。",
-"d4.alt": "フィールドを省く、または null にする案。劣化と空のリクエストを区別できません。自由記述の理由。受け手が機械的に扱えません。",
+"d4.alt": "フィールドを省く、または null にする案。退行と空のリクエストを区別できません。自由記述の理由。受け手が機械的に扱えません。",
 "d5.h": "送り手には寛容に、自分自身には厳密に",
-"d5.p": "部品がいくつ欠けても記録は記録です。拒否された記録は、行われなかった実行と区別がつかないからです。例外を含むどの失敗の経路でも、状態 <code>collector_failed</code> の記録を必ず出します。",
-"d5.alt": "厳密に検証して不完全な記録を捨てる案。部分的な観測がすべて沈黙に変わります。",
+"d5.p": "部品がいくつ欠けても記録は記録です。収集側が出さなかった記録は、「何もなかった」と完全に記録したものと区別がつかないからです。例外を含むどの失敗の経路でも、状態 <code>collector_failed</code> の記録を必ず出します。",
+"d5.alt": "厳密に検証して、部品の欠けた記録を棄却する案。部分的な観測がすべて沈黙に変わります。",
 "d6.h": "答えたものは、それを読み込んだプロセスが識別する",
-"d6.p": "checkpoint のファイル、読み込み後の精度、実行環境のパッケージ、答えの取り出し方。上の事例 1 つにつき部品 1 つです。モデルの識別子を決めるのは <code>loaded_by_us</code> だけです。プロバイダーの API の向こうにあるモデルには識別子がなく、それでも判定には使えます。",
+"d6.p": "checkpoint のファイル、読み込み後の数値精度 (precision)、実行環境のパッケージ、回答方式 (answer_mode) です。4 つの部品は、上の表の最初の 4 つの事例にそれぞれ対応します。モデル識別子を決めるのは <code>loaded_by_us</code> だけです。プロバイダーの API の向こうにあるモデルにはモデル識別子がなく、それでも判定には使えます。",
 "d6.alt": "モデル名やプロバイダーのモデル ID。これはラベルです。保存されたファイルだけのダイジェスト。同じファイルの bf16 と int8 を区別できません。",
 "d7.h": "モデルの来歴は別の文書で、厳しくする方向にしか働かない",
 "d7.p": "訓練した側が、親、手法、使った項目の集合を、1 つの成果物識別子 (artifact identity) について書きます。訓練に使ったと書かれた集合での判定は疑わしくなります。祖先が欠けていれば不明であって、潔白ではありません。",
-"d7.alt": "すべての記録に来歴の欄を持たせる案。重みを持つだけのサーバーに、持っていない来歴の保証をさせることになります。",
+"d7.alt": "すべての記録に来歴の欄を持たせる案。バイトを持っているサーバーに、持っていない来歴の保証をさせることになります。",
 "d8.h": "平らな属性で、キーは部品の名前",
 "d8.p": "記録は、トレーサーが既に出しているスパン、ログの 1 行、ファイルに載ります。キーに位置番号は使いません。収集側が部品を 1 つ多く読めるようになると番号がずれるからです。識別子がないときは空文字列にせず省きます。空文字列同士は等しいので、識別できない実行がすべて 1 つにまとまってしまいます。",
 "d8.alt": "入れ子の JSON 文書。両端にシリアライザーが要り、記録の形が通信路に入り込んで、形を変えるたびに互換性が壊れます。",
@@ -611,7 +611,7 @@ Object.assign(window.__JA, {
 "f2.b1": "識別子を決めてよい", "f2.b2": "識別に使わない", "f2.b3": "厳しくするだけ", "f2.b4": "ダイジェストなし",
 "f2.s1a": "リクエストにあったバイト", "f2.s1b": "ハーネスの部品。識別に使うのは", "f2.s1c": "model_visible のときだけ",
 "f2.s2a": "モデルを読み込んだ", "f2.s2b": "プロセスが取ったダイジェスト", "f2.s2c": "モデルの部品だけ",
-"f2.s3a": "よそから先に読んだもの", "f2.s3b": "何秒前かを必ず持つ", "f2.s3c": "",
+"f2.s3a": "よそから別の時点に読んだもの",
 "f2.s4a": "持ち主の申告", "f2.s4b": "拒否のきっかけになれるが", "f2.s4c": "拒否を解除できない",
 "f2.s5a": "誰にも見えない", "f2.s5b": "例: ツールが実際に", "f2.s5c": "何をするか",
 "f2.left": "収集側が持つバイト", "f2.right": "誰も確かめられない",
@@ -620,37 +620,37 @@ Object.assign(window.__JA, {
 </script>
 <script>
 Object.assign(window.__JA, {
-"f2.s3b": "何秒前に読んだかを", "f2.s3c": "必ず持つ",
+"f2.s3b": "読んだ時点とのずれを", "f2.s3c": "秒数で必ず持つ",
 "rc.eyebrow": "拒否", "rc.h": "収集側は拒否しない。拒否するのは受け手だ。",
 "rc.lede": "部分的な記録を捨てる収集側は、誰にも見えない穴を残します。だから収集側は必ず記録を出し、読めなかったものを名指しします。拒否はすべて受け手が、閉じたリストに沿って行います。",
-"f3.title": "送り手側は必ず記録を出し、受け手側は棄却、保存、拒否のどれかを行う",
-"f3.lh": "送り手に対して: 寛容", "f3.l1": "部品が欠けている", "f3.l1s": "欠落ごとに理由付きの absence",
+"f3.title": "収集側は必ず記録を出し、受け手は棄却、保存、拒否のどれかを行う",
+"f3.lh": "送り手に対して: 寛容", "f3.l1": "部品が欠けている", "f3.l1s": "欠けた部品ごとに、理由付きの欠落 (absence) を書く",
 "f3.l2": "フィールドが読めない", "f3.l2s": "extraction_failed。どのフィールドかを detail に書く",
 "f3.l3": "収集側自身が失敗した", "f3.l3s": "状態 collector_failed で、それでも出す",
 "f3.rec": "記録", "f3.rh": "受け手: 閉じたリスト",
 "f3.r1": "棄却", "f3.r1s": "未知のバージョンや値、合わない識別子",
-"f3.r2": "保存して、判定を拒否", "f3.r2s": "状態が complete でない、識別子がない、矛盾がある",
+"f3.r2": "保存して、判定を拒否", "f3.r2s": "状態が complete でない、ハーネス識別子がない、矛盾がある",
 "f3.r3": "比較を拒否", "f3.r3s": "欠けていた事実が違う、別の収集側のモデル識別子",
 "f3.r4": "保存して、判定に使える", "f3.r4s": "部品が欠けた記録や、API の向こうのモデルも含む",
 "f3.cap": "結果は色だけでなく枠線でも区別しています。太い破線は棄却、細い破線は判定の拒否、点線は比較の拒否、実線は判定に使える記録です。",
-"rc.k1": "受け手が行う 13 の拒否", "rc.k1p": "どれも、なければ公表した数字を取り下げることになったから存在します。<code>spec/vocabularies.json</code> の <code>receiver_obligations.must_refuse</code> にあります。",
-"rc.k2": "してはいけない 4 つの拒否", "rc.k2p": "部品が欠けた記録、ログとして残す不完全な記録、モデル識別子のない記録、モデル側がまるごとない記録です。これらを拒否してよければ、何でも拒否して適合を名乗れてしまいます。",
+"rc.k1": "受け手が行う 13 の拒否", "rc.k1p": "<code>spec/vocabularies.json</code> の <code>receiver_obligations.must_refuse</code> にあります。",
+"rc.k2": "してはいけない 4 つの拒否", "rc.k2p": "部品が欠けた記録、状態が complete でない記録 (ログとしては残す)、モデル識別子のない記録、モデル側がまるごとない記録です。これらを拒否してよければ、何でも拒否して適合を名乗れてしまいます。",
 "re.eyebrow": "既存の規約との関係", "re.h": "スパンに相乗りする。スパンの代わりにはならない。",
 "re.lede": "スパンの他の属性は、何が言われたかを伝えます。同じスパンに載る perigraph の記録は、2 つの実行が同じだったかを伝えます。調べた 3 つの規約のどれも、部品ごとのダイジェストと部品ごとの出どころを持っていません。",
 "re.th1": "規約", "re.th2": "調べた時点", "re.th3": "持っていて perigraph にないもの", "re.th4": "持っていないもの",
-"re.r1c": "リクエストのパラメーター、内容の取得を有効にしたときのメッセージ、評価結果。属性はすべて development の安定度", "re.r1d": "部品ごとのダイジェスト、部品ごとの出どころ、コスト、ルーティングの決定",
+"re.r1c": "リクエストのパラメーター、内容の取得を有効にしたときのメッセージ、評価結果。属性はすべて development の安定度", "re.r1d": "部品ごとのダイジェスト、部品ごとの出どころ",
 "re.r2c": "DECISION という種類のスパン、USD のコスト、評価結果", "re.r2d": "部品ごとのダイジェスト、部品ごとの出どころ",
-"re.r3c": "プロンプトのバージョン全体で 1 つのダイジェスト", "re.r3d": "部品ごとのダイジェスト、評価結果、コスト",
-"re.src": "OpenTelemetry への載せ方 (binding) は、各部品に最も近い属性を対応づけ、スパンの属性数の上限で記録の一部が落ちうることを書いています: <a href=\"https://github.com/littlemex/perigraph/blob/main/spec/bindings/otel.md\">spec/bindings/otel.md</a>。",
+"re.r3c": "プロンプトのバージョン全体で 1 つのダイジェスト", "re.r3d": "部品ごとのダイジェスト、部品ごとの出どころ",
+"re.src": "OpenTelemetry への載せ方 (binding) は、4 つの部品 (instruction、tool_schemas、decoding、checkpoint) を最も近い属性に対応づけ、スパンの属性数の上限で記録の一部が落ちうることを書いています: <a href=\"https://github.com/littlemex/perigraph/blob/main/spec/bindings/otel.md\">spec/bindings/otel.md</a>。",
 "qs.eyebrow": "クイックスタート", "qs.h": "3 つの言語、1 つの識別子",
 "qs.lede": "まだどのパッケージもレジストリに公開していないので、clone して動かします。3 つとも同じリクエストを記録し、ハーネス識別子 c8f8edc45e222f663d8d70ac を表示します。",
 "copy": "コピー",
-"qs.out": "Python と TypeScript は、記録を受け手として読み戻したあとに <code>harness identity: c8f8edc45e222f663d8d70ac</code> と <code>verdict: admissible</code> で終わります。Go は送り手だけなので、識別子の行で終わります。",
+"qs.out": "Python と TypeScript は、記録を受け手として読み戻したあとに <code>harness identity: c8f8edc45e222f663d8d70ac</code> と <code>verdict: admitted</code> で終わります。Go は記録を出す側 (collector と stamper) だけの実装なので、識別子の行で終わります。",
 "cf.h": "どの言語でも使える適合性テスト",
-"cf.p": "実行器 (runner) は、1 行に 1 つの JSON リクエストを読んで 1 行ずつ答える小さなアダプター越しに実装を確かめ、実装を import しません。収集側は識別子の fixture と記録の schema で、stamper はモデルの fixture で、受け手は受け手用のケースで確かめます。",
+"cf.p": "実行器 (runner) は、1 行に 1 つの JSON リクエストを読んで 1 行ずつ答える小さなアダプター越しに実装を確かめ、実装を import しません。収集側は識別子の fixture と記録の schema で、刻印する側 (stamper) はモデルの fixture で、受け手は受け手用のケースで確かめます。",
 "im.h": "実装", "im.th1": "実装", "im.th2": "役割", "im.th3": "書いた人",
 "im.r1": "collector、stamper、receiver", "im.a1": "仕様の著者", "im.r2": "collector、stamper、receiver", "im.a2": "仕様の著者",
-"im.r3": "collector、stamper", "im.a3": "OpenAI GPT-6 Sol。仕様だけを読んで書いた",
+"im.r3": "collector、stamper", "im.a3": "OpenAI GPT-6 Sol。他の実装のソースを見ずに仕様から書いた",
 "im.note": "<b>まだ求めているもの:</b> 仕様の著者ではない人が書いた実装です。あなたの実装が fixture やケースと食い違ったら、その食い違いこそが貢献です。",
 "ss.eyebrow": "状況", "ss.h": "バージョン 2、暫定",
 "ss.lede": "spec_version は 1 つの整数です。値の削除や改名、値の意味や識別子の計算の変更、受け手の拒否の追加は互換性を壊します。識別子を取り下げるだけの変更は、知られている送り手がすべてこのリポジトリから作られている間は壊しません。正式なバージョニングと互換性の方針は予定していて、まだありません。",
@@ -660,13 +660,13 @@ Object.assign(window.__JA, {
 "nc.3": "秘匿。短い中身や予想しやすい中身のダイジェストは、推測で元に戻せます。",
 "nc.4": "プロバイダーがツールや設定をどうプロンプトに書き込むか。",
 "nc.5": "バッチに依存するカーネルなど、実行ごとの非決定性。",
-"nc.6": "比較の拒否を持ち運べる形で確かめること。バージョン 2 の記録に載らない事実が要るためです。",
+"nc.6": "比較の拒否を、どの実装にも使える共通のケースで確かめること。バージョン 2 の記録に載らない事実が要るためです。",
 "rm.h": "今後の予定 (日付なし)",
 "rm.1": "正式なバージョニングと互換性の方針。",
 "rm.2": "記録、モデルの刻印 (stamp)、来歴文書への署名と、鍵付きのダイジェスト。",
 "rm.3": "配信プロセスからルーターへモデルの刻印を運ぶ手段と、その出元の明示。",
 "rm.4": "比較の拒否が読む事実のための属性と、そのための適合性ケース。",
-"rm.5": "他のリクエスト形式への載せ方と、Chat Completions で今は読んでいないフィールド。",
+"rm.5": "他のリクエスト形式の読み取り方 (binding) と、Chat Completions で今は読んでいないフィールド。",
 "rm.6": "パッケージの公開、メンテナーの追加、独立した実装。",
 "foot.l": "Apache-2.0 の公開仕様です。"
 });

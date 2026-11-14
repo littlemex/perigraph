@@ -119,7 +119,7 @@ def build() -> dict:
                      f"{P}.status"],
         "properties": props,
         "patternProperties": {
-            f"^{esc(P)}\\.ext\\.[^.]+\\..+$": {"type": ["string", "number", "boolean"]},
+            f"^{esc(P)}\\.ext\\.[a-z0-9_-]+\\..+$": {"type": ["string", "number", "boolean"]},
             f"^{esc(P)}\\.(?:part|absent)\\.(?!(?:{known_parts})\\.)": False,
             f"^{esc(P)}\\.(?:model|model_absent)\\.(?!(?:{known_model})\\.)": False,
         },

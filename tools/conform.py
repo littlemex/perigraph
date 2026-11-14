@@ -30,7 +30,9 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 P = "perigraph."
-MODEL_PARTS = json.loads((ROOT / "spec" / "vocabularies.json").read_text(encoding="utf-8"))["model_parts"]["values"]
+_V = json.loads((ROOT / "spec" / "vocabularies.json").read_text(encoding="utf-8"))
+MODEL_PARTS = _V["model_parts"]["values"]
+PARTS = _V["parts"]["values"]
 
 
 def load(rel: str) -> dict:
@@ -92,6 +94,9 @@ def check_collector(a: Adapter, v) -> list[tuple[str, list[str], list[str]]]:
             got = attrs.get(key)
             if got != want:
                 errs.append(f"{key} is {got!r}, the fixture says {want!r}")
+        for part in PARTS:
+            if P + f"part.{part}.sourcing" not in attrs and P + f"absent.{part}.reason" not in attrs:
+                errs.append(f"part {part} is neither held nor absent (every part is required, SPEC 1.2)")
         for part in MODEL_PARTS:
             if P + f"model.{part}.sourcing" not in attrs and P + f"model_absent.{part}.reason" not in attrs:
                 errs.append(f"model part {part} is neither a part nor an absence (a model half is required)")

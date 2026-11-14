@@ -1,11 +1,11 @@
 {
   "description": "The same request, recorded by a collector inside the process that loaded the model: the four model parts are loaded_by_us, so the record carries a model identity and an artifact identity.",
   "illustrates": [
-    "PG-045"
+    "PG-079"
   ],
   "receiver": {
     "outcome": "stored",
-    "verdict": "admissible"
+    "verdict": "admitted"
   },
   "attributes": {
     "perigraph.spec_version": 2,

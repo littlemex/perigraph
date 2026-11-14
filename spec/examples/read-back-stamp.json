@@ -1,11 +1,11 @@
 {
   "description": "A router that read the backend's stamp over a separate request 42 seconds before this one. The pulled fact carries its lag and keys no identity: it describes another moment, and possibly another replica.",
   "illustrates": [
-    "PG-008"
+    "PG-067"
   ],
   "receiver": {
     "outcome": "stored",
-    "verdict": "admissible"
+    "verdict": "admitted"
   },
   "attributes": {
     "perigraph.spec_version": 2,
@@ -14,7 +14,7 @@
     "perigraph.collector_reaches": "instruction,tool_schemas,readout,decoding",
     "perigraph.status": "complete",
     "perigraph.harness_identity": "bce1661a858007475f0904f2",
-    "perigraph.model_reaches": "checkpoint,precision,runtime,answer_mode",
+    "perigraph.model_reaches": "checkpoint",
     "perigraph.model.checkpoint.sourcing": "pulled_by_us",
     "perigraph.model.checkpoint.digest": "ba14484c2ca910e1568c78c7ec762fd27ae5a7b8a80a449f565e1a6cb7fae8ad",
     "perigraph.model.checkpoint.read_lag_seconds": 42.0,
